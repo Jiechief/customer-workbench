@@ -1374,6 +1374,7 @@ body{background:var(--bg);}
 
       <!-- 视图：工作台总览 -->
       <div id="viewDashboard" class="view">
+        <div id="dashHero"></div>
         <div class="stats" id="stats"></div>
         <div class="dash-tabs" style="display:none;">
           <button class="dash-tab active" data-tab="overview" type="button" onclick="switchDashTab('overview')">总览</button>
@@ -2713,7 +2714,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<div class="dash-mini alert"><span class="dm-label">待跟进</span><span class="dm-num">'+over+'</span></div>'+
       '</div>';
     var chartRow='<div class="dash-chart-row">'+donutCard+miniRow+'</div>';
-    document.getElementById("stats").innerHTML=hero+chartRow;
+    document.getElementById("dashHero").innerHTML=hero;
+    document.getElementById("stats").innerHTML=chartRow;
     document.getElementById("overdueCount").textContent=over;
     var parts=['今日 <b>'+rem+'</b> 项提醒','共 <b>'+total+'</b> 位客户','<b>'+over+'</b> 位待跟进','高意向 <b>'+high+'</b> 位'];
     var hs=document.getElementById("headerStatus");
