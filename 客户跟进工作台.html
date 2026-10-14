@@ -282,6 +282,21 @@
   .info-value a:hover{text-decoration:underline;}
   .empty-sm{color:var(--muted2);font-size:12px;font-style:italic;}
 
+  /* 内联编辑样式 */
+  .inline-edit{width:100%;padding:4px 8px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s,background .15s;}
+  .inline-edit:hover{border-color:var(--border);background:var(--panel2);}
+  .inline-edit:focus{border-color:var(--accent);background:var(--card-bg);}
+  .inline-edit::placeholder{color:var(--muted2);font-size:12px;}
+  .accio-table .inline-edit{font-size:13px;}
+  .accio-table input[type=date].inline-edit{min-width:120px;}
+  .inline-edit-text{width:100%;padding:4px 8px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s,background .15s;}
+  .inline-edit-text:hover{border-color:var(--border);background:var(--panel2);}
+  .inline-edit-text:focus{border-color:var(--accent);background:var(--card-bg);}
+  .inline-edit-text::placeholder{color:var(--muted2);font-size:12px;}
+  .inline-edit-name{cursor:text;border-radius:4px;padding:2px 4px;margin:-2px -4px;}
+  .inline-edit-name:hover{background:var(--panel2);}
+  .inline-edit-name:focus{background:var(--card-bg);outline:1px solid var(--accent);}
+
   .edit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 14px;margin-bottom:12px;}
   .edit-full{grid-column:1/-1;}
   .edit-field textarea{width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--panel2);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;min-height:70px;}
@@ -1344,6 +1359,8 @@ body{background:var(--bg);}
             <div class="accio-toolbar" id="accioToolbar">
               <span class="accio-filter-label">名前标记：</span>
               <div class="accio-filter-group" id="accioFilterChips"></div>
+              <span class="accio-filter-label" style="margin-left:8px;">交付人：</span>
+              <select id="accioDelivererFilter" onchange="accioDoSearch()"><option value="">全部</option></select>
               <button class="btn" type="button" id="accioResetBtn" onclick="accioResetFilter()" style="display:none;">重置</button>
               <div class="accio-search">
                 <input id="accioSearchInput" type="text" placeholder="搜索客户名称…" onkeydown="if(event.key==='Enter'){accioDoSearch();}">
@@ -1434,11 +1451,11 @@ body{background:var(--bg);}
         <div class="prompts-wrap">
           <div class="prompts-sticky">
             <div class="prompts-toolbar">
+              <select id="promptCatFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;"><option value="all">全部分类</option></select>
               <input type="text" class="search" id="promptSearch" placeholder="搜索指令 / 智能体 / 关键词...">
               <button class="btn primary" id="btnAddPrompt" type="button">+ 添加指令</button>
               <button class="btn" id="btnResetPrompts" type="button" title="清空自定义内容并恢复默认清单">恢复默认</button>
             </div>
-            <div class="prompt-tabs" id="promptTabs"></div>
           </div>
           <div id="promptsRoot"></div>
         </div>
@@ -1920,7 +1937,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var accioSkills=[];
   var accioMarks={}; // {accioId: colorKey} 仅用于 AccioWork 名称前的自定义标记，独立存储不污染客户结构
   var accioFilterMarks=[]; // 名前标记筛选：当前选中的色 key（空数组=不筛选；含 "none" 表示筛「无标记」）
-  var accioSearchKw=""; // 客户名称搜索关键词（已转小写；空串=不搜索）
+  var accioSearchKw="";
+  var accioFilterDeliverer=""; // 交付人筛选 // 客户名称搜索关键词（已转小写；空串=不搜索）
   var MARK_LABELS={red:"红",orange:"橙",amber:"黄",green:"绿",blue:"蓝",purple:"紫",gray:"灰"};
   var skillCats=["开通配置","交付SOP","故障排查","销售话术","进阶玩法"];
   var pendingSkillFile=null; // 暂存待存入的文件（base64）
@@ -2009,7 +2027,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var promptAdding=false;
   // seed 由 https://awb-checklist.site.accio.ai/ （AWB 新手上手清单 · Accio Work × Agent Hub）提炼
   var promptSeed=[
-    {cat:"商品管理",items:[
+    {cat:"商品运营",items:[
       {title:"选品和采购",agents:["类目风向标·选品参谋"],prompts:[
         "看看女装类目的趋势",
         "看看国内电商平台哪些马克杯卖得好",
@@ -2047,36 +2065,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         "帮我诊断天猫、淘宝店铺近 30 天的全店商品数据，先确认平台、店铺和时间范围，再下载商品明细并生成商品问题诊断报告。请重点检查流量、成交、转化、库存和售后表现，找出需要优先处理的问题商品"
       ]}
     ]},
-    {cat:"信息调研",items:[
+    {cat:"客户与询盘",items:[
       {title:"客户背调",agents:["客户背调"],prompts:[
         "我想知道这个客户【客户名/邮箱等】的信息，请帮我背调，并给我详细的包括whatsapp/gmail等客户联系方式"
       ]},
-      {title:"公开资料整理·行业信息搜集",agents:["行业全景分析专家"],prompts:[
-        "我想在国际站卖 办公家具，请帮我做一次深度市场透视",
-        "查询近一个月 我的主营类目 在 美国 市场最畅销的商品，并结合当地文化习俗或季节性因素，解释其热销背景"
-      ]}
-    ]},
-    {cat:"营销获客",items:[
-      {title:"广告投放·广告诊断优化",agents:["国际站大促营销助手","国际站营销助手"],prompts:[
-        "总结上周全站推的整体数据表现，推荐本周重点关注的计划，给出优化建议",
-        "对全站推广_推商品_优品助推，[计划ID]，做一次计划级深度诊断",
-        "我的店铺还有哪些增长空间？怎么通过直通车做多询盘？"
-      ]},
-      {title:"投广方案咨询",agents:["国际站大促营销助手","国际站营销助手"],prompts:[
-        "我的店铺还有哪些增长空间？在考虑投广告，什么方案最适合我的店铺？",
-        "我新开店，店铺的哪些商品适合投广？需要多少预算？投广商机有保效吗？"
-      ]}
-    ]},
-    {cat:"品牌及宣传",items:[
-      {title:"社媒运营·店铺装修",agents:["国际站生意助手","店铺架构师"],prompts:[
-        "参考模版A0002，风格要求：米色与浅棕色为主，金色点缀，圆角卡片配柔和阴影，留白充足，圆润无衬线字体，温暖雅致的高端质感。请基于我的店铺信息和主营产品，生成对应风格的店铺首页"
-      ]},
-      {title:"社媒运营·国内外社媒发布",agents:["国内社媒运营师","社媒运营师"],prompts:[
-        "按照这个文件的内容帮我生成小红书/微博/视频号/抖音/b站文案/图片/视频 并且发布",
-        "按照这个文件的内容帮我生成Instagram 和 X 文案/图片/视频 并且发布"
-      ]}
-    ]},
-    {cat:"询盘获客成交",items:[
       {title:"RFQ报价",agents:["RFQ狙击手"],prompts:[
         "请分析这条RFQ，评估投标等级，并根据买家需求生成一封包含三档FOB价格、交期、认证和跟进话术的定制化英文报价"
       ]},
@@ -2087,7 +2079,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         "总结上周询盘，推荐今日重点跟进的买家，给出跟进建议"
       ]}
     ]},
-    {cat:"资金交易和物流",items:[
+    {cat:"营销推广",items:[
+      {title:"广告投放·广告诊断优化",agents:["国际站大促营销助手","国际站营销助手"],prompts:[
+        "总结上周全站推的整体数据表现，推荐本周重点关注的计划，给出优化建议",
+        "对全站推广_推商品_优品助推，[计划ID]，做一次计划级深度诊断",
+        "我的店铺还有哪些增长空间？怎么通过直通车做多询盘？"
+      ]},
+      {title:"投广方案咨询",agents:["国际站大促营销助手","国际站营销助手"],prompts:[
+        "我的店铺还有哪些增长空间？在考虑投广告，什么方案最适合我的店铺？",
+        "我新开店，店铺的哪些商品适合投广？需要多少预算？投广商机有保效吗？"
+      ]},
+      {title:"社媒运营·店铺装修",agents:["国际站生意助手","店铺架构师"],prompts:[
+        "参考模版A0002，风格要求：米色与浅棕色为主，金色点缀，圆角卡片配柔和阴影，留白充足，圆润无衬线字体，温暖雅致的高端质感。请基于我的店铺信息和主营产品，生成对应风格的店铺首页"
+      ]},
+      {title:"社媒运营·国内外社媒发布",agents:["国内社媒运营师","社媒运营师"],prompts:[
+        "按照这个文件的内容帮我生成小红书/微博/视频号/抖音/b站文案/图片/视频 并且发布",
+        "按照这个文件的内容帮我生成Instagram 和 X 文案/图片/视频 并且发布"
+      ]}
+    ]},
+    {cat:"资金物流与合规",items:[
       {title:"交易跟单",agents:["信保跟单助手"],prompts:[
         "查最近60天信保订单按待发货、待付款、待确认收货分类，并标出需要今天处理的订单",
         "生成今天的信保跟单日报，包含阶段分布、今日新增、P0紧急订单、P1关注订单和交易健康情况"
@@ -2098,9 +2108,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       {title:"物流",agents:["跨境物流参谋"],prompts:[
         "深圳发到美国洛杉矶，500kg、3CBM，帮我比较海运、空运和海派成本及时效",
         "蓝牙耳机出口德国，HS编码为8518300000，查询关税、CE要求和清关风险"
-      ]}
-    ]},
-    {cat:"合规经营",items:[
+      ]},
       {title:"合规咨询·财税咨询",agents:["财税合规专家"],prompts:[
         "请计算2026年7月应缴增值税及附加税费，并列出完整计算过程",
         "请根据以下科目余额表编制资产负债表和利润表，并检查借贷是否平衡、资产是否等于负债加所有者权益"
@@ -2121,6 +2129,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ]},
       {title:"跨平台店铺诊断",agents:["电商管家"],prompts:[
         "采集我在 [淘宝/天猫/京东/抖店/拼多多/1688] 近7天的经营数据，下载到本地，并进行经营分析，包括流量/交易/交易转换/广告等"
+      ]},
+      {title:"公开资料整理·行业信息搜集",agents:["行业全景分析专家"],prompts:[
+        "我想在国际站卖 办公家具，请帮我做一次深度市场透视",
+        "查询近一个月 我的主营类目 在 美国 市场最畅销的商品，并结合当地文化习俗或季节性因素，解释其热销背景"
       ]}
     ]},
     {cat:"办公协同",items:[
@@ -2595,7 +2607,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var h='<div class="card-head"><div class="top" style="display:flex;align-items:center;gap:12px;">';
     h+=avatar(c.name);
     h+='<div style="flex:1;min-width:0;">'+
-      '<span class="name">'+esc(c.name||"未命名")+'</span>'+
+      '<span class="name inline-edit-name" contenteditable="true" data-id="'+c.id+'" data-f="name" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" onblur="inlineSaveCustomer(this,\''+c.id+'\')">'+esc(c.name||"未命名")+'</span>'+
       '<div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;">'+levelChip(c.intention)+statusChips(c)+'</div>'+
     '</div>';
     if(batchMode&&!isEdit){
@@ -2608,13 +2620,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     h+='</div>';
     return h;
   }
-  function infoValue(label,value,isLink){
+  function infoValue(label,value,isLink,cid){
     var v;
+    var fieldMap={"联系人名称":"contactName","职位":"position","联系人电话":"phone","真实地址":"address","客户所属地区":"region","客户产品名称":"product","是否有电商经验":"ecomExp","电商店铺链接":"shopLinks"};
+    var fkey=fieldMap[label]||"";
     if(!value||!String(value).trim())v='<span class="empty-sm">未填写</span>';
-    else if(isLink&&/^https?:\/\//i.test(String(value))){
-      var text=String(value),display=text.length>36?text.slice(0,33)+'...':text;
-      v='<a href="'+esc(text)+'" target="_blank" rel="noopener" title="'+esc(text)+'"><span class="url-display">'+esc(display)+'</span></a>';
-    }else v=esc(value);
+    else if(isLink&&/^https?:\/\//i.test(String(value))){var text=String(value),display=text.length>36?text.slice(0,33)+'...':text;v='<a href="'+esc(text)+'" target="_blank" rel="noopener" title="'+esc(text)+'"><span class="url-display">'+esc(display)+'</span></a>';}
+    else v=esc(value);
+    if(fkey&&fkey!=="ecomExp"&&!isLink){
+      return '<div class="info-field"><label>'+label+'</label><div class="info-value"><input type="text" class="inline-edit-text" data-id="'+(cid||"")+'" data-f="'+fkey+'" value="'+esc(value||"")+'" placeholder="未填写" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"></div></div>';
+    }
     return '<div class="info-field"><label>'+label+'</label><div class="info-value">'+v+'</div></div>';
   }
   function renderRelatedCompanies(value){
@@ -2779,16 +2794,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+='</div>';
       }else{
         html+='<div class="info-grid">';
-        html+=infoValue("联系人名称",c.contactName,false);
-        html+=infoValue("职位",c.position,false);
+        html+=infoValue("联系人名称",c.contactName,false,c.id);
+        html+=infoValue("职位",c.position,false,c.id);
         if(c.relatedCompany && String(c.relatedCompany).trim()){
           html+='<div class="info-field info-full"><label>关联公司名称</label><div class="info-value related-list">'+renderRelatedCompanies(c.relatedCompany)+'</div></div>';
         }
-        html+=infoValue("联系人电话",c.phone,false);
-        html+=infoValue("真实地址",c.address,false);
-        html+=infoValue("客户所属地区",c.region,false);
-        html+=infoValue("客户产品名称",c.product,false);
-        html+=infoValue("是否有电商经验",c.ecomExp,false);
+        html+=infoValue("联系人电话",c.phone,false,c.id);
+        html+=infoValue("真实地址",c.address,false,c.id);
+        html+=infoValue("客户所属地区",c.region,false,c.id);
+        html+=infoValue("客户产品名称",c.product,false,c.id);
+        html+=infoValue("是否有电商经验",c.ecomExp,false,c.id);
         html+=infoValue("下次跟进时间",c.followUpAt?fmtFollow(c.followUpAt):"",false);
         html+=infoValue("电商店铺链接",c.shopLinks,true);
         html+='</div>';
@@ -2826,6 +2841,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var lb=$("loadMoreBtn");
     if(lb)lb.onclick=function(){listEnd=Math.min(list.length,listEnd+PAGE_SIZE);renderList();};
     if(batchMode)updateBatchUI();
+    // 绑定客户列表内联编辑 blur 保存
+    Array.prototype.forEach.call(box.querySelectorAll(".inline-edit-text"),function(inp){
+      inp.addEventListener("blur",function(){
+        var id=inp.getAttribute("data-id");var f=inp.getAttribute("data-f");var v=inp.value.trim();
+        if(!id||!f)return;
+        var c=customers.find(function(x){return x.id===id;});
+        if(!c)return;
+        if((c[f]||"")===v)return;
+        c[f]=v;c.updatedAt=Date.now();
+        saveCustomers();renderStats();toast("已更新");
+      });
+    });
   }
   // 筛选条件变化时重置分页，从头展示
   function refreshList(){listEnd=PAGE_SIZE;renderList();}
@@ -2903,6 +2930,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function accioFilteredCustomers(){
     return accioCustomers.filter(function(a){
       if(accioFilterMarks.length&&accioFilterMarks.indexOf(accioMarkKeyOf(a))<0)return false;
+      if(accioFilterDeliverer&&(a.deliverer||"")!==accioFilterDeliverer)return false;
       if(accioSearchKw&&(a.name||"").toLowerCase().indexOf(accioSearchKw)<0)return false;
       return true;
     });
@@ -2916,8 +2944,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var dot=m.c?'<span class="cdot" style="background:'+m.c+'"></span>':'<span class="cdot none"></span>';
       return '<span class="accio-chip'+sel+'" data-k="'+m.k+'" onclick="accioToggleMark(\''+m.k+'\')">'+dot+esc(m.label)+'</span>';
     }).join("");
+    // 交付人筛选下拉
+    var dsel=$("accioDelivererFilter");
+    if(dsel){
+      var deliverers=accioCustomers.map(function(a){return a.deliverer||"";}).filter(function(d){return d.trim();});
+      deliverers=deliverers.filter(function(d,i,arr){return arr.indexOf(d)===i;}).sort();
+      var prev=accioFilterDeliverer;
+      dsel.innerHTML='<option value="">全部</option>'+deliverers.map(function(d){return '<option value="'+esc(d)+'"'+(d===prev?' selected':'')+'>'+esc(d)+'</option>';}).join("");
+    }
     var rb=$("accioResetBtn");
-    if(rb)rb.style.display=(accioFilterMarks.length>0||accioSearchKw)?"":"none";
+    if(rb)rb.style.display=(accioFilterMarks.length>0||accioSearchKw||accioFilterDeliverer)?"":"none";
   }
   window.accioToggleMark=function(k){
     var i=accioFilterMarks.indexOf(k);
@@ -2928,6 +2964,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.accioResetFilter=function(){
     accioFilterMarks=[];
     accioSearchKw="";
+    accioFilterDeliverer="";
     var inp=$("accioSearchInput");
     if(inp)inp.value="";
     renderAccioFilterChips();
@@ -2937,6 +2974,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.accioDoSearch=function(){
     var inp=$("accioSearchInput");
     accioSearchKw=inp?(inp.value||"").trim().toLowerCase():"";
+    var dsel=$("accioDelivererFilter");
+    accioFilterDeliverer=dsel?dsel.value:"";
     renderAccioFilterChips();
     renderAccioBoard();
   };
@@ -2986,11 +3025,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '</tr></thead><tbody>';
     list.forEach(function(a){
       var plan=a.plan?esc(a.plan):'<span class="empty-sm">未选择</span>';
-      var open=a.openAt?esc(a.openAt):'<span class="empty-sm">-</span>';
-      var deliverer=a.deliverer?esc(a.deliverer):'<span class="empty-sm">-</span>';
-      var deliver=a.deliverables?esc(a.deliverables):'<span class="empty-sm">-</span>';
-      var time=a.time?esc(a.time):'<span class="empty-sm">-</span>';
-      var block=a.blockReason?esc(a.blockReason):'<span class="empty-sm">-</span>';
+      var open=a.openAt?'<input type="date" class="inline-edit" data-id="'+a.id+'" data-f="openAt" value="'+esc(a.openAt)+'">':'<input type="date" class="inline-edit" data-id="'+a.id+'" data-f="openAt" value="">';
+      var deliverer='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverer" value="'+esc(a.deliverer||"")+'" placeholder="-">';
+      var deliver='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverables" value="'+esc(a.deliverables||"")+'" placeholder="-">';
+      var time='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="time" value="'+esc(a.time||"")+'" placeholder="-">';
+      var block='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="blockReason" value="'+esc(a.blockReason||"")+'" placeholder="-">';
       html+='<tr>'+
         '<td class="col-name"><span class="accio-name-cell">'+accioMarkDot(a.id)+avatar(a.name,true)+esc(a.name||"未命名")+'</span></td>'+
         '<td class="col-plan">'+(a.plan?'<span class="chip follow"><i class="dot"></i>'+plan+'</span>':plan)+'</td>'+
@@ -3004,6 +3043,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     html+='</tbody></table>';
     box.innerHTML=html;
+    // 绑定内联编辑回车保存
+    Array.prototype.forEach.call(box.querySelectorAll(".inline-edit"),function(inp){
+      inp.addEventListener("keydown",function(ev){
+        if(ev.key==="Enter"){ev.preventDefault();inp.blur();}
+      });
+      inp.addEventListener("blur",function(){
+        var id=inp.getAttribute("data-id");var f=inp.getAttribute("data-f");var v=inp.value.trim();
+        var a=accioCustomers.find(function(x){return x.id===id;});
+        if(!a)return;
+        if((a[f]||"")===v)return; // 无变化
+        a[f]=v;a.updatedAt=Date.now();
+        saveAccio();
+        toast("已更新");
+      });
+      if(inp.type==="date"){
+        inp.addEventListener("change",function(){
+          var id=inp.getAttribute("data-id");var f=inp.getAttribute("data-f");var v=inp.value.trim();
+          var a=accioCustomers.find(function(x){return x.id===id;});
+          if(!a)return;
+          if((a[f]||"")===v)return;
+          a[f]=v;a.updatedAt=Date.now();
+          saveAccio();
+          toast("已更新");
+        });
+      }
+    });
   }
   function openAccioModal(id){
     var title=$("accioTitle"), fid=$("accio_id"), name=$("accio_name"), plan=$("accio_plan"), openAt=$("accio_openAt"), deliver=$("accio_deliverables"), time=$("accio_time"), block=$("accio_blockReason"), deliverer=$("accio_deliverer");
@@ -4852,15 +4917,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function renderPromptTabs(){
+    var sel=$("promptCatFilter"); if(!sel)return;
     var cats=["all"].concat(promptGroups.map(function(g){return g.cat;}));
     var html=cats.map(function(c){
-      return '<button type="button" class="prompt-tab'+(c===promptTab?" active":"")+'" data-cat="'+esc(c)+'">'+esc(c==="all"?"全部":c)+'</button>';
+      return '<option value="'+esc(c)+'"'+(c===promptTab?' selected':'')+'>'+(c==="all"?"全部分类":esc(c))+'</option>';
     }).join("");
-    var tabs=$("promptTabs"); if(!tabs)return;
-    tabs.innerHTML=html;
-    Array.prototype.forEach.call(tabs.querySelectorAll(".prompt-tab"),function(b){
-      b.onclick=function(){promptTab=b.getAttribute("data-cat");renderPromptTabs();renderPrompts();};
-    });
+    sel.innerHTML=html;
+    sel.onchange=function(){promptTab=sel.value;renderPrompts();};
   }
 
   function renderPrompts(){
@@ -4977,6 +5040,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.startEdit=startEdit;
   function cancelCardEdit(){editingId=null;renderList();}
   window.cancelCardEdit=cancelCardEdit;
+
+  // ---------- 页面直接编辑保存 ----------
+  function inlineSaveCustomer(el,id){
+    var f=el.getAttribute("data-f");
+    var v=(el.textContent||"").trim();
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    if((c[f]||"")===v)return;
+    if(!v){el.textContent=c[f]||"未命名";return;}
+    c[f]=v;c.updatedAt=Date.now();
+    saveCustomers();renderStats();toast("已更新");
+  }
+  window.inlineSaveCustomer=inlineSaveCustomer;
   function saveCardEdit(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
