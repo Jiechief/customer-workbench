@@ -1377,8 +1377,6 @@ body{background:var(--bg);}
         <div class="stats" id="stats"></div>
         <div class="dash-tabs" style="display:none;">
           <button class="dash-tab active" data-tab="overview" type="button" onclick="switchDashTab('overview')">总览</button>
-          <button class="dash-tab" data-tab="accio" type="button" onclick="switchDashTab('accio')">AccioWork</button>
-          <button class="dash-tab" data-tab="skill" type="button" onclick="switchDashTab('skill')">Agent/Skill</button>
         </div>
 
         <!-- 标签：总览 -->
@@ -1436,7 +1434,7 @@ body{background:var(--bg);}
         </div>
 
         <!-- 标签：AccioWork -->
-        <div id="paneAccio" class="dash-pane" style="display:none;">
+        <div id="paneAccio" class="dash-pane" style="display:none !important;">
           <div class="panel accio-board">
             <div class="panel-head">
               <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg></span>AccioWork</h3>
@@ -1462,7 +1460,7 @@ body{background:var(--bg);}
         </div>
 
         <!-- 标签：Agent/Skill -->
-        <div id="paneSkill" class="dash-pane" style="display:none;">
+        <div id="paneSkill" class="dash-pane" style="display:none !important;">
           <!-- 常用 Agent 模块 -->
           <div class="panel" style="margin-bottom:16px;">
             <div class="panel-head">
@@ -2694,8 +2692,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var donut=renderDonut(high,mid,low,total);
     var tabs='<div class="dash-hero-tabs">'+
       '<button class="dash-hero-tab active" type="button" onclick="switchDashTab(\'overview\')">总览</button>'+
-      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'accio\')">AccioWork</button>'+
-      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'skill\')">Agent/Skill</button>'+
       '</div>';
     var heroNum='<div class="dash-hero-num"><b>'+total+'</b><span>总客户数</span></div>';
     var hero='<div class="dash-hero">'+tabs+heroNum+'</div>';
