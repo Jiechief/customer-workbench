@@ -386,7 +386,9 @@
   .accio-table .col-owner{min-width:90px;max-width:140px;word-break:break-all;}
   .accio-table .col-deliver{min-width:180px;max-width:280px;word-break:break-all;}
   .accio-table .col-time{min-width:140px;max-width:220px;word-break:break-all;}
-  .accio-table .col-block{min-width:180px;max-width:280px;word-break:break-all;}
+  .accio-table .col-block{min-width:200px;max-width:320px;white-space:normal;}
+  .accio-table .col-block .inline-edit{white-space:normal;word-break:break-word;height:auto;line-height:1.5;}
+  .inline-edit-area{min-height:36px;resize:vertical;width:100%;}
   .accio-table .col-actions{min-width:100px;white-space:nowrap;text-align:right;}
   .accio-table .btn{padding:5px 12px;font-size:13px;}
   /* AccioWork 名称前的自定义标记（低调小圆点） */
@@ -445,12 +447,28 @@
   .skill-toolbar input[type=text]:focus{outline:none;border-color:var(--accent);}
   .skill-toolbar select{padding:8px 10px;border:1px solid var(--border2);
     border-radius:var(--radius-sm);background:var(--panel);color:var(--text);font-size:13px;font-family:inherit;}
-  .skill-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
-  .skill-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);
-    padding:14px 16px;display:flex;flex-direction:column;gap:10px;
-    transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}
-  .skill-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--accent-soft);}
-  .skill-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .skill-list{display:flex;flex-direction:column;gap:0;}
+  .skill-card{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:8px;padding:12px 16px;display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;
+    transition:background .12s ease,border-color .12s ease;margin-bottom:8px;}
+  .skill-card:hover{background:var(--accent-weak);border-color:var(--accent-soft);}
+  .skill-card-head{display:flex;align-items:center;gap:8px;flex:0 0 auto;min-width:0;}
+  .skill-card-head .skill-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+  .skill-card-head .sk-cat{flex-shrink:0;}
+  .skill-file{flex:0 0 auto;}
+  .skill-content{font-size:13px;color:var(--muted);line-height:1.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:120px;max-width:400px;}
+  .skill-actions{display:flex;gap:6px;flex:0 0 auto;margin-left:auto;}
+  .skill-actions .btn{padding:4px 10px;font-size:12px;}
+  .skill-row-file{display:flex;align-items:center;gap:6px;font-size:12px;flex:0 0 auto;}
+  /* Agent 行 */
+  .agent-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .agent-row:last-child{border-bottom:none;}
+  .agent-icon{flex:0 0 auto;width:36px;height:36px;border-radius:8px;background:var(--accent-weak);color:var(--accent);display:flex;align-items:center;justify-content:center;}
+  .agent-info{flex:1;min-width:0;}
+  .agent-name{font-weight:600;font-size:14px;color:var(--text);}
+  .agent-desc{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .agent-actions{display:flex;gap:6px;flex:0 0 auto;}
+  .agent-actions .btn{padding:5px 12px;font-size:12px;}
   .skill-name{font-weight:600;font-size:14px;color:var(--text);}
   .skill-content{font-size:13px;color:var(--muted);line-height:1.6;white-space:pre-wrap;word-break:break-word;flex:1;}
   .skill-actions{display:flex;gap:8px;justify-content:flex-end;}
@@ -1050,8 +1068,12 @@ body{background:var(--bg);}
   background:linear-gradient(90deg,transparent,var(--border) 18%,var(--border) 82%,transparent);opacity:0;transition:opacity .18s ease;}
 .prompts-sticky.is-stuck::after{opacity:1;}
 @media (max-width:680px){.prompts-sticky{top:-18px;margin:-18px -20px 2px;padding:12px 16px 2px;}.prompts-wrap{padding:18px 16px 48px;}}
-.prompts-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
-.prompts-toolbar .search{flex:1 1 220px;min-width:180px;}
+ .prompts-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+ .prompts-toolbar .search{flex:1 1 320px;min-width:240px;height:42px;padding:0 16px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;}
+ .prompts-toolbar .search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+ .prompts-toolbar .search::placeholder{color:var(--muted2);}
+ .prompts-toolbar select{height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-size:14px;outline:none;cursor:pointer;}
+ .prompts-toolbar .btn{height:42px;display:inline-flex;align-items:center;padding:0 18px;font-size:14px;}
 .prompt-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
 .prompt-tab{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;white-space:nowrap;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);}
 .prompt-tab:hover{color:var(--text);border-color:var(--accent);}
@@ -1287,7 +1309,7 @@ body{background:var(--bg);}
         <div class="dash-tabs">
           <button class="dash-tab active" data-tab="overview" type="button" onclick="switchDashTab('overview')">总览</button>
           <button class="dash-tab" data-tab="accio" type="button" onclick="switchDashTab('accio')">AccioWork</button>
-          <button class="dash-tab" data-tab="skill" type="button" onclick="switchDashTab('skill')">Skill</button>
+          <button class="dash-tab" data-tab="skill" type="button" onclick="switchDashTab('skill')">Agent/Skill</button>
         </div>
 
         <!-- 标签：总览 -->
@@ -1371,11 +1393,28 @@ body{background:var(--bg);}
           </div>
         </div>
 
-        <!-- 标签：Skill -->
+        <!-- 标签：Agent/Skill -->
         <div id="paneSkill" class="dash-pane" style="display:none;">
+          <!-- 常用 Agent 模块 -->
+          <div class="panel" style="margin-bottom:16px;">
+            <div class="panel-head">
+              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>常用 Agent</h3>
+              <div class="panel-head-right">
+                <span class="muted" id="agentCount">共 0 个</span>
+              </div>
+            </div>
+            <div style="padding:12px 16px;">
+              <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+                <input type="text" id="agentUrlInput" placeholder="粘贴 Agent 链接（如 https://accio.ai/agent/xxx）" style="flex:1;min-width:280px;height:38px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;outline:none;">
+                <button class="btn primary" type="button" onclick="analyzeAgent()" id="btnAnalyzeAgent">分析并添加</button>
+              </div>
+              <div id="agentList"></div>
+            </div>
+          </div>
+          <!-- Skill 库模块 -->
           <div class="panel skill-board">
             <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"/></svg></span>Skill</h3>
+              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"/></svg></span>Skill 库</h3>
               <div class="panel-head-right">
                 <span class="muted">共 <span id="skillCount">0</span> 条</span>
                 <button class="btn primary" type="button" onclick="openSkillModal()">+ 添加</button>
@@ -2277,6 +2316,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     loadAccioMarks();
     loadSkillCats();
     loadSkills();
+    loadAgents();
     try{var s=JSON.parse(lsGet(SET_KEY));if(s)settings=Object.assign(settings,s);}catch(e){}
     if(!settings.provider){
       var _b=(settings.apiBase||"").toLowerCase();
@@ -2923,6 +2963,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     renderAccioBoard();
     renderSkillBoard();
+    renderAgentList();
   }
 
   // ---------- AccioWork 名前标记筛选 / 名称搜索 / 导出 ----------
@@ -3029,7 +3070,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var deliverer='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverer" value="'+esc(a.deliverer||"")+'" placeholder="-">';
       var deliver='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverables" value="'+esc(a.deliverables||"")+'" placeholder="-">';
       var time='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="time" value="'+esc(a.time||"")+'" placeholder="-">';
-      var block='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="blockReason" value="'+esc(a.blockReason||"")+'" placeholder="-">';
+      var block='<textarea class="inline-edit inline-edit-area" data-id="'+a.id+'" data-f="blockReason" placeholder="-" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">'+esc(a.blockReason||"")+'</textarea>';
       html+='<tr>'+
         '<td class="col-name"><span class="accio-name-cell">'+accioMarkDot(a.id)+avatar(a.name,true)+esc(a.name||"未命名")+'</span></td>'+
         '<td class="col-plan">'+(a.plan?'<span class="chip follow"><i class="dot"></i>'+plan+'</span>':plan)+'</td>'+
@@ -3200,7 +3241,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var rows=[];
     function row(k,v,full){
       if(v==null||String(v).trim()==="")return;
-      rows.push('<div class="row'+(full?' full':'')+'"><span class="k">'+k+'</span><span class="v">'+esc(v)+'</span></div>');
+      var val=esc(v);
+      // 如果是链接，自动转为可点击的 <a>
+      if(/^https?:\/\//i.test(String(v))){
+        val='<a href="'+esc(v)+'" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;word-break:break-all;">'+esc(v)+'</a>';
+      }
+      rows.push('<div class="row'+(full?' full':'')+'"><span class="k">'+k+'</span><span class="v">'+val+'</span></div>');
     }
     row("联系人",c.contactName);
     row("职位",c.position);
@@ -3532,16 +3578,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     box.innerHTML=list.map(function(s){
       var cat=s.category||"未分类";
       var content=s.content?esc(s.content):'<span class="empty-sm">（暂无说明）</span>';
-      var fileBadge=s.file?('<div class="skill-file"><span class="fname">'+esc(s.file.name)+'</span><span class="fsize">'+fmtSize(s.file.size)+'</span></div>'):'';
+      var fileBadge=s.file?('<div class="skill-row-file"><span class="fname">'+esc(s.file.name)+'</span><span class="fsize">'+fmtSize(s.file.size)+'</span></div>'):'';
       return '<div class="skill-card">'+
         '<div class="skill-card-head">'+
-          '<span class="skill-name">'+icon("doc",15)+esc(s.name||"未命名")+'</span>'+
+          '<span class="skill-name">'+icon("doc",14)+esc(s.name||"未命名")+'</span>'+
           '<span class="'+skillBadgeClass(cat)+'">'+esc(cat)+'</span>'+
         '</div>'+
         fileBadge+
         '<div class="skill-content">'+content+'</div>'+
         '<div class="skill-actions">'+
-          (s.file?'<button class="btn primary" onclick="downloadSkillFile(\''+s.id+'\')">取出文件</button>':'')+
+          (s.file?'<button class="btn primary" onclick="downloadSkillFile(\''+s.id+'\')">取出</button>':'')+
           '<button class="btn" onclick="copySkillContent(\''+s.id+'\')">复制</button>'+
           '<button class="btn" onclick="openSkillModal(\''+s.id+'\')">编辑</button>'+
           '<button class="btn danger" onclick="deleteSkill(\''+s.id+'\')">删除</button>'+
@@ -3699,6 +3745,65 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.clearSkillFile=clearSkillFile;
   window.downloadSkillFile=downloadSkillFile;
   window.copySkillContent=copySkillContent;
+
+  // ---------- 常用 Agent 模块 ----------
+  var AGENT_KEY="df_customer_workbench_agents_v1";
+  var accioAgents=[];
+  function loadAgents(){
+    try{var raw=lsGet(AGENT_KEY);accioAgents=raw?JSON.parse(raw):[];}catch(e){accioAgents=[];}
+  }
+  function saveAgents(){lsSet(AGENT_KEY,JSON.stringify(accioAgents));lsWarn();}
+  function renderAgentList(){
+    var box=$("agentList");if(!box)return;
+    var cnt=$("agentCount");if(cnt)cnt.textContent="共 "+accioAgents.length+" 个";
+    if(!accioAgents.length){box.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px;">还没有常用 Agent。在上方粘贴 Agent 链接，点击「分析并添加」。</div>';return;}
+    box.innerHTML=accioAgents.map(function(a){
+      var iconHtml=a.icon?'<span class="agent-icon">'+a.icon+'</span>':'';
+      return '<div class="agent-row">'+
+        iconHtml+
+        '<div class="agent-info">'+
+          '<div class="agent-name">'+esc(a.name||"未命名 Agent")+'</div>'+
+          '<div class="agent-desc">'+esc(a.summary||a.url||"")+'</div>'+
+        '</div>'+
+        '<div class="agent-actions">'+
+          '<a href="'+esc(a.url||"#")+'" target="_blank" rel="noopener" class="btn primary" style="text-decoration:none;">安装</a>'+
+          '<button class="btn" onclick="copyAgentUrl(\''+a.id+'\')">复制链接</button>'+
+          '<button class="btn danger" onclick="deleteAgent(\''+a.id+'\')">删除</button>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+  }
+  function analyzeAgent(){
+    var inp=$("agentUrlInput");
+    if(!inp||!inp.value.trim()){toast("请先粘贴 Agent 链接");return;}
+    var url=inp.value.trim();
+    // 从 URL 中提取 Agent 名称作为初始值
+    var nameMatch=url.match(/\/([^\/]+)\/?$/);
+    var autoName=nameMatch?decodeURIComponent(nameMatch[1]).replace(/[-_]/g," "):"Agent";
+    // 自动生成简要概括（基于 URL 路径分析）
+    var summary="等待手动补充描述（可从 Agent 页面获取核心能力）";
+    // 根据路径关键词推断类型
+    var lowerUrl=url.toLowerCase();
+    var iconSvg='<svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    accioAgents.push({id:uid(),url:url,name:autoName,summary:summary,icon:"",createdAt:Date.now()});
+    saveAgents();
+    inp.value="";
+    renderAgentList();
+    toast("已添加 Agent，可点击「编辑」补充描述");
+  }
+  function deleteAgent(id){
+    if(!confirm("确定删除这个 Agent？"))return;
+    accioAgents=accioAgents.filter(function(x){return x.id!==id;});
+    saveAgents();renderAgentList();toast("已删除");
+  }
+  function copyAgentUrl(id){
+    var a=accioAgents.find(function(x){return x.id===id;});
+    if(a){copyText(a.url);toast("链接已复制");}
+  }
+  window.analyzeAgent=analyzeAgent;
+  window.deleteAgent=deleteAgent;
+  window.copyAgentUrl=copyAgentUrl;
+  window.renderAgentList=renderAgentList;
 
   function render(){
     if(currentView==="dashboard"){editingId=null;renderDashboard();}
@@ -5213,7 +5318,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               "df_customer_workbench_reminders_v1","df_customer_workbench_accio_v1",
               "df_customer_workbench_accio_mark_v1","df_customer_workbench_accio_skill_v1",
               "df_customer_workbench_accio_skill_cats_v1","df_customer_workbench_plans_v1",
-              "df_customer_workbench_planlib_v1","df_customer_workbench_prompts_v1"
+              "df_customer_workbench_planlib_v1","df_customer_workbench_prompts_v1",
+              "df_customer_workbench_agents_v1"
             ];
             var restored=0;
             MIGRATE_KEYS.forEach(function(k){
