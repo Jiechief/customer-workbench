@@ -187,12 +187,58 @@
   .btn.success:hover{opacity:.92;color:#fff;}
   .btn svg{width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:4px;}
 
-  /* ---------- 统计卡片 ---------- */
-  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:24px;}
+  /* ---------- 统计卡片（B方案：仪表盘式） ---------- */
+  .stats{margin-bottom:24px;}
+  .dash-hero{background:var(--accent-grad);border-radius:var(--radius);padding:20px 24px;
+    display:flex;align-items:center;gap:24px;flex-wrap:wrap;position:relative;overflow:hidden;
+    box-shadow:var(--shadow-strong);margin-bottom:14px;}
+  .dash-hero::after{content:"";position:absolute;right:-30px;top:-50px;width:160px;height:160px;
+    border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%);pointer-events:none;}
+  .dash-hero-tabs{display:flex;gap:6px;position:relative;z-index:1;flex-shrink:0;}
+  .dash-hero-tab{appearance:none;border:none;background:rgba(255,255,255,.14);color:rgba(255,255,255,.75);
+    font-size:12px;font-weight:600;font-family:inherit;padding:7px 16px;border-radius:999px;cursor:pointer;
+    transition:background .15s,color .15s;}
+  .dash-hero-tab:hover{background:rgba(255,255,255,.26);color:#fff;}
+  .dash-hero-tab.active{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .dash-hero-num{margin-left:auto;text-align:right;position:relative;z-index:1;}
+  .dash-hero-num b{font-size:38px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px;}
+  .dash-hero-num span{display:block;font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;letter-spacing:.04em;}
+  /* 环形图 + 图例 */
+  .dash-chart-row{display:flex;gap:14px;align-items:stretch;margin-bottom:14px;}
+  .dash-donut-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;flex:0 0 auto;}
+  .dash-donut-card svg{flex:none;}
+  .dash-donut-legend{display:flex;flex-direction:column;gap:6px;}
+  .dash-donut-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);}
+  .dash-donut-item .dd-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .dash-donut-item .dd-num{font-weight:700;margin-left:auto;font-variant-numeric:tabular-nums;}
+  /* 次要指标横条 */
+  .dash-mini-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;flex:1;}
+  .dash-mini{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.04));transition:border-color .15s;}
+  .dash-mini:hover{border-color:var(--accent-soft);}
+  .dash-mini .dm-label{font-size:11px;color:var(--muted);font-weight:500;}
+  .dash-mini .dm-num{font-size:20px;font-weight:700;line-height:1;color:var(--text);}
+  .dash-mini.alert{background:rgba(214,51,108,.06);border-color:rgba(214,51,108,.2);}
+  .dash-mini.alert .dm-num{color:#d6336c;}
+  /* 待跟进提醒条 — 醒目横幅 */
+  .follow-alert{background:linear-gradient(135deg,rgba(214,51,108,.08),rgba(227,53,13,.06));
+    border:1px solid rgba(214,51,108,.2);border-left:4px solid #d6336c;border-radius:var(--radius-sm);
+    padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    animation:followPulse 3s ease-in-out infinite;}
+  @keyframes followPulse{0%,100%{box-shadow:0 0 0 0 rgba(214,51,108,0)}50%{box-shadow:0 0 0 4px rgba(214,51,108,.06)}}
+  @media (prefers-reduced-motion:reduce){.follow-alert{animation:none;}}
+  .follow-alert-icon{width:36px;height:36px;border-radius:10px;background:#d6336c;color:#fff;
+    display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;font-size:16px;}
+  .follow-alert-body{flex:1;min-width:0;}
+  .follow-alert-title{font-size:14px;font-weight:700;color:#d6336c;}
+  .follow-alert-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .follow-alert-btn{padding:8px 16px;border-radius:8px;background:#d6336c;color:#fff;border:none;
+    cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s;white-space:nowrap;}
+  .follow-alert-btn:hover{opacity:.88;}
 
-  /* ---------- 总览内标签切换 ---------- */
-  .dash-tabs{display:flex;gap:6px;align-items:center;margin-bottom:18px;
-    position:sticky;top:0;z-index:30;background:var(--bg);padding:6px 0;}
+  /* ---------- 总览内标签切换（旧样式保留兼容，隐藏） ---------- */
+  .dash-tabs{display:none;}
   .dash-tab{appearance:none;border:1px solid var(--border);background:var(--panel);
     color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;
     padding:8px 18px;border-radius:999px;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease,color .12s ease,border-color .12s ease;}
@@ -557,8 +603,9 @@
   .tr-item{align-items:flex-start;}
   .tr-item .dash-title{font-size:14px;}
   .tr-time{font-size:12px;color:var(--accent);font-weight:600;}
-  .tr-time.overdue{color:var(--over);}
+  .tr-time.overdue{color:var(--over);background:rgba(214,51,108,.08);padding:2px 8px;border-radius:6px;font-weight:700;}
   .tr-time.nodate{color:var(--muted);font-weight:400;}
+  .tr-item:has(.tr-time.overdue){background:rgba(214,51,108,.04);border-radius:var(--radius-sm);padding-left:8px;border-left:3px solid #d6336c;}
   .badge.b-manual{background:var(--panel2);color:var(--muted);}
   .reminder-form{display:none;margin-bottom:14px;padding:14px 16px;
     border:1px solid var(--border);border-radius:var(--radius);
@@ -1342,7 +1389,8 @@ body{background:var(--bg);}
 
       <!-- 视图：工作台总览 -->
       <div id="viewDashboard" class="view">
-        <div class="dash-tabs">
+        <div class="stats" id="stats"></div>
+        <div class="dash-tabs" style="display:none;">
           <button class="dash-tab active" data-tab="overview" type="button" onclick="switchDashTab('overview')">总览</button>
           <button class="dash-tab" data-tab="accio" type="button" onclick="switchDashTab('accio')">AccioWork</button>
           <button class="dash-tab" data-tab="skill" type="button" onclick="switchDashTab('skill')">Agent/Skill</button>
@@ -1350,7 +1398,6 @@ body{background:var(--bg);}
 
         <!-- 标签：总览 -->
         <div id="paneOverview" class="dash-pane">
-        <div class="stats" id="stats"></div>
         <div class="dashboard-grid">
           <div class="panel today">
             <div class="panel-head">
@@ -2653,29 +2700,66 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return list;
   }
 
-  // ---------- 渲染统计 ----------
+  // ---------- 渲染统计（B方案：仪表盘式） ----------
   function renderStats(){
     var total=customers.length,high=0,mid=0,low=0,done=0,broken=0,ecom=0,over=0;
     customers.forEach(function(c){if(c.intention==="高")high++;else if(c.intention==="低")low++;else if(c.intention==="已合作")done++;else if(c.intention==="断约")broken++;else mid++;if(c.ecomExp==="是")ecom++;if(c.inFollowList)over++;});
-    $("stats").innerHTML=
-      stat(total,"总客户","var(--accent)","user")+
-      stat(high,"高意向","var(--high)","star")+
-      stat(mid,"中意向","var(--mid)","trend")+
-      stat(low,"低意向","var(--low)","user")+
-      stat(done,"已合作","var(--done)","ball")+
-      stat(broken,"断约","var(--broken)","flag")+
-      stat(ecom,"有电商经验","var(--ok)","work")+
-      stat(over,"待跟进","var(--over)","bolt");
-    $("overdueCount").textContent=over;
     var rem=getTodayReminders().length;
+    var cHigh=statColor("#d6336c"),cMid=statColor("#e0a23a"),cLow=statColor("#9aa6b3");
+    var donut=renderDonut(high,mid,low,total);
+    var tabs='<div class="dash-hero-tabs">'+
+      '<button class="dash-hero-tab active" type="button" onclick="switchDashTab(\'overview\')">总览</button>'+
+      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'accio\')">AccioWork</button>'+
+      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'skill\')">Agent/Skill</button>'+
+      '</div>';
+    var heroNum='<div class="dash-hero-num"><b>'+total+'</b><span>总客户数</span></div>';
+    var hero='<div class="dash-hero">'+tabs+heroNum+'</div>';
+    var donutCard='<div class="dash-donut-card">'+
+      donut+
+      '<div class="dash-donut-legend">'+
+        '<div class="dash-donut-item"><span class="dd-dot" style="background:#d6336c"></span>高意向 <span class="dd-num">'+high+'</span></div>'+
+        '<div class="dash-donut-item"><span class="dd-dot" style="background:#e0a23a"></span>中意向 <span class="dd-num">'+mid+'</span></div>'+
+        '<div class="dash-donut-item"><span class="dd-dot" style="background:#9aa6b3"></span>低意向 <span class="dd-num">'+low+'</span></div>'+
+      '</div></div>';
+    var miniRow='<div class="dash-mini-row">'+
+      '<div class="dash-mini"><span class="dm-label">已合作</span><span class="dm-num" style="color:#3b8fd0">'+done+'</span></div>'+
+      '<div class="dash-mini"><span class="dm-label">断约</span><span class="dm-num" style="color:#8b8290">'+broken+'</span></div>'+
+      '<div class="dash-mini"><span class="dm-label">有电商经验</span><span class="dm-num" style="color:#2f9e6b">'+ecom+'</span></div>'+
+      '<div class="dash-mini alert"><span class="dm-label">待跟进</span><span class="dm-num">'+over+'</span></div>'+
+      '</div>';
+    var followAlert='';
+    if(over>0||rem>0){
+      var alertText=rem>0?(over>0?'今日 '+rem+' 项提醒 · '+over+' 位客户待跟进':'今日 '+rem+' 项提醒'):(over>0?over+' 位客户待跟进，请及时跟进':'');
+      followAlert='<div class="follow-alert">'+
+        '<div class="follow-alert-icon">'+icon("bolt",20)+'</div>'+
+        '<div class="follow-alert-body">'+
+          '<div class="follow-alert-title">'+alertText+'</div>'+
+          '<div class="follow-alert-sub">点击右侧按钮快速查看待跟进客户列表</div>'+
+        '</div>'+
+        '<button class="follow-alert-btn" onclick="switchView(\'customers\')">查看待跟进</button>'+
+      '</div>';
+    }
+    var chartRow='<div class="dash-chart-row">'+donutCard+miniRow+'</div>';
+    document.getElementById("stats").innerHTML=hero+followAlert+chartRow;
+    document.getElementById("overdueCount").textContent=over;
     var parts=['今日 <b>'+rem+'</b> 项提醒','共 <b>'+total+'</b> 位客户','<b>'+over+'</b> 位待跟进','高意向 <b>'+high+'</b> 位'];
-    var hs=$("headerStatus");
+    var hs=document.getElementById("headerStatus");
     if(hs)hs.innerHTML='<span class="hs-dot"></span>'+parts.join(' &nbsp;·&nbsp; ');
   }
-  function stat(n,label,color,ic,hero){
-    var icStyle=hero?'color:#fff;background:rgba(255,255,255,.16)':'color:'+color;
-    return '<div class="stat'+(hero?' hero':'')+'"><div class="stat-ic" style="'+icStyle+'">'+icon(ic||"user",17)+'</div>'+
-      '<div class="stat-label">'+label+'</div><b>'+n+'</b></div>';
+  function statColor(c){return c;}
+  function renderDonut(high,mid,low,total){
+    var r=40,circumference=2*Math.PI*r;
+    var hPct=total>0?high/total:0,mPct=total>0?mid/total:0,lPct=total>0?low/total:0;
+    var hLen=circumference*hPct,mLen=circumference*mPct,lLen=circumference*lPct;
+    var hOff=0,mOff=hLen,lOff=hLen+mLen;
+    return '<svg width="100" height="100" viewBox="0 0 100 100">'+
+      '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="10"/>'+
+      '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="#d6336c" stroke-width="10" stroke-dasharray="'+hLen+' '+(circumference-hLen)+'" stroke-dashoffset="'+(-hOff)+'" transform="rotate(-90 50 50)"/>'+
+      '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="#e0a23a" stroke-width="10" stroke-dasharray="'+mLen+' '+(circumference-mLen)+'" stroke-dashoffset="'+(-mOff)+'" transform="rotate(-90 50 50)"/>'+
+      '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="#9aa6b3" stroke-width="10" stroke-dasharray="'+lLen+' '+(circumference-lLen)+'" stroke-dashoffset="'+(-lOff)+'" transform="rotate(-90 50 50)"/>'+
+      '<text x="50" y="46" text-anchor="middle" dominant-baseline="central" font-size="22" font-weight="700" fill="var(--text)">'+total+'</text>'+
+      '<text x="50" y="62" text-anchor="middle" dominant-baseline="central" font-size="10" fill="var(--muted)">客户</text>'+
+      '</svg>';
   }
 
   // ---------- 客户卡片 ----------
@@ -3854,6 +3938,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("paneSkill").style.display=tab==="skill"?"block":"none";
     document.querySelectorAll(".dash-tab").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-tab")===tab);
+    });
+    document.querySelectorAll(".dash-hero-tab").forEach(function(el){
+      var t=el.textContent.trim();
+      var match=(tab==="overview"&&t==="总览")||(tab==="accio"&&t==="AccioWork")||(tab==="skill"&&t==="Agent/Skill");
+      el.classList.toggle("active",match);
     });
   }
   window.switchDashTab=switchDashTab;
