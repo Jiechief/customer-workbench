@@ -3909,6 +3909,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("paneOverview").style.display=tab==="overview"?"block":"none";
     $("paneAccio").style.display=tab==="accio"?"block":"none";
     $("paneSkill").style.display=tab==="skill"?"block":"none";
+    $("stats").style.display=tab==="overview"?"block":"none";
     document.querySelectorAll(".dash-tab").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-tab")===tab);
     });
