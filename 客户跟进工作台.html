@@ -204,7 +204,7 @@
   .dash-hero-num b{font-size:38px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px;}
   .dash-hero-num span{display:block;font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;letter-spacing:.04em;}
   /* 环形图 + 图例 */
-  .dash-chart-row{display:flex;gap:14px;align-items:stretch;margin-bottom:14px;}
+  .dash-chart-row{display:flex;gap:14px;align-items:stretch;}
   .dash-donut-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;flex:0 0 auto;}
   .dash-donut-card svg{flex:none;}
@@ -213,7 +213,7 @@
   .dash-donut-item .dd-dot{width:8px;height:8px;border-radius:50%;flex:none;}
   .dash-donut-item .dd-num{font-weight:700;margin-left:auto;font-variant-numeric:tabular-nums;}
   /* 次要指标横条 */
-  .dash-mini-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;flex:1;}
+  .dash-mini-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;flex:1;min-width:0;}
   .dash-mini{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
     display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.04));transition:border-color .15s;}
   .dash-mini:hover{border-color:var(--accent-soft);}
@@ -221,21 +221,6 @@
   .dash-mini .dm-num{font-size:20px;font-weight:700;line-height:1;color:var(--text);}
   .dash-mini.alert{background:rgba(214,51,108,.06);border-color:rgba(214,51,108,.2);}
   .dash-mini.alert .dm-num{color:#d6336c;}
-  /* 待跟进提醒条 — 醒目横幅 */
-  .follow-alert{background:linear-gradient(135deg,rgba(214,51,108,.08),rgba(227,53,13,.06));
-    border:1px solid rgba(214,51,108,.2);border-left:4px solid #d6336c;border-radius:var(--radius-sm);
-    padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    animation:followPulse 3s ease-in-out infinite;}
-  @keyframes followPulse{0%,100%{box-shadow:0 0 0 0 rgba(214,51,108,0)}50%{box-shadow:0 0 0 4px rgba(214,51,108,.06)}}
-  @media (prefers-reduced-motion:reduce){.follow-alert{animation:none;}}
-  .follow-alert-icon{width:36px;height:36px;border-radius:10px;background:#d6336c;color:#fff;
-    display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;font-size:16px;}
-  .follow-alert-body{flex:1;min-width:0;}
-  .follow-alert-title{font-size:14px;font-weight:700;color:#d6336c;}
-  .follow-alert-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-  .follow-alert-btn{padding:8px 16px;border-radius:8px;background:#d6336c;color:#fff;border:none;
-    cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s;white-space:nowrap;}
-  .follow-alert-btn:hover{opacity:.88;}
 
   /* ---------- 总览内标签切换（旧样式保留兼容，隐藏） ---------- */
   .dash-tabs{display:none;}
@@ -2727,20 +2712,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<div class="dash-mini"><span class="dm-label">有电商经验</span><span class="dm-num" style="color:#2f9e6b">'+ecom+'</span></div>'+
       '<div class="dash-mini alert"><span class="dm-label">待跟进</span><span class="dm-num">'+over+'</span></div>'+
       '</div>';
-    var followAlert='';
-    if(over>0||rem>0){
-      var alertText=rem>0?(over>0?'今日 '+rem+' 项提醒 · '+over+' 位客户待跟进':'今日 '+rem+' 项提醒'):(over>0?over+' 位客户待跟进，请及时跟进':'');
-      followAlert='<div class="follow-alert">'+
-        '<div class="follow-alert-icon">'+icon("bolt",20)+'</div>'+
-        '<div class="follow-alert-body">'+
-          '<div class="follow-alert-title">'+alertText+'</div>'+
-          '<div class="follow-alert-sub">点击右侧按钮快速查看待跟进客户列表</div>'+
-        '</div>'+
-        '<button class="follow-alert-btn" onclick="switchView(\'customers\')">查看待跟进</button>'+
-      '</div>';
-    }
     var chartRow='<div class="dash-chart-row">'+donutCard+miniRow+'</div>';
-    document.getElementById("stats").innerHTML=hero+followAlert+chartRow;
+    document.getElementById("stats").innerHTML=hero+chartRow;
     document.getElementById("overdueCount").textContent=over;
     var parts=['今日 <b>'+rem+'</b> 项提醒','共 <b>'+total+'</b> 位客户','<b>'+over+'</b> 位待跟进','高意向 <b>'+high+'</b> 位'];
     var hs=document.getElementById("headerStatus");
