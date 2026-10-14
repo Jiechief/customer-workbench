@@ -109,9 +109,11 @@
   .app{display:flex;height:100vh;overflow:hidden;}
 
   /* ---------- 左侧边栏 ---------- */
-  .sidebar{width:244px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);
-    display:flex;flex-direction:column;}
-  .brand{padding:22px 20px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;position:relative;}
+  .sidebar{width:220px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;transition:width .25s var(--ease);overflow:hidden;}
+  .sidebar.collapsed{width:56px;}
+  .brand{padding:18px 16px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;position:relative;}
+  .sidebar.collapsed .brand{padding:18px 14px 14px;justify-content:center;gap:0;}
   .brand:hover{background:var(--accent-weak);}
   .brand>div:nth-child(2){min-width:0;}
   .brand-edit{margin-left:auto;opacity:0;transition:opacity .15s;color:var(--muted);display:flex;align-items:center;}
@@ -119,30 +121,57 @@
   @media (hover:none){.brand-edit{opacity:1;}}
   .logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;
     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0;}
-  .brand-title{font-size:15px;font-weight:700;line-height:1.2;}
+  .brand-title{font-size:14px;font-weight:700;line-height:1.2;white-space:nowrap;}
+  .sidebar.collapsed .brand-title,.sidebar.collapsed .brand-sub{display:none;}
   .brand-sub{font-size:10px;color:var(--muted2);letter-spacing:.5px;margin-top:2px;}
+  .collapse-btn{margin-left:auto;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:var(--muted2);border:none;background:transparent;font-size:13px;transition:background .15s,color .15s;flex:none;}
+  .collapse-btn:hover{background:var(--panel2);color:var(--text);}
+  .sidebar.collapsed .collapse-btn{margin:0 auto;transform:rotate(180deg);}
+  .sidebar.collapsed .brand-edit{display:none;}
   .nav{flex:1;overflow:auto;padding:0 12px 12px;}
   .nav-sep{font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;
-    padding:18px 10px 8px;font-weight:600;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
-    cursor:pointer;color:var(--muted);margin-bottom:3px;transition:.15s;user-select:none;}
+    padding:16px 10px 6px;font-weight:600;}
+  .sidebar.collapsed .nav-sep{font-size:0;padding:10px 8px 4px;text-align:center;}
+  .sidebar.collapsed .nav-sep::before{content:"·";font-size:14px;color:var(--border2);}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+    cursor:pointer;color:var(--muted);margin-bottom:2px;transition:.15s;user-select:none;position:relative;}
   .nav-item:hover{background:var(--panel2);color:var(--text);}
-  .nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .nav-item.active{background:var(--accent-weak);color:var(--accent);font-weight:700;}
+  .nav-item.active::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:3px;
+    background:var(--accent);border-radius:0 3px 3px 0;}
   .nav-item svg{width:18px;height:18px;fill:currentColor;flex-shrink:0;}
-  .sidebar-foot{padding:14px 20px;font-size:11px;color:var(--muted2);border-top:1px solid var(--border);
-    line-height:1.5;}
-  /* ---------- 换肤色板 ---------- */
-  .skin-pick{padding:8px 0 4px;}
-  .skin-label{font-size:11px;color:var(--muted2);letter-spacing:.4px;padding:0 12px;margin-bottom:8px;}
-  .skin-row{display:flex;gap:10px;padding:0 12px;flex-wrap:wrap;}
-  .skin-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;
-    padding:0;transition:transform .15s,box-shadow .15s,outline-color .15s;outline:2px solid transparent;outline-offset:2px;}
-  .skin-dot:hover{transform:scale(1.14);}
-  .skin-dot.active{outline-color:var(--text);}
+  .nav-item span.nav-text{white-space:nowrap;overflow:hidden;}
+  .sidebar.collapsed .nav-item{justify-content:center;padding:9px 0;}
+  .sidebar.collapsed .nav-item span.nav-text{display:none;}
+  .sidebar.collapsed .nav-item::after{content:attr(data-tip);position:absolute;left:100%;top:50%;
+    transform:translateY(-50%);margin-left:10px;padding:4px 10px;border-radius:6px;background:var(--text);
+    color:var(--panel);font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;}
+  .sidebar.collapsed .nav-item:hover::after{opacity:1;}
+  /* 动作项降级样式（快捷操作/数据备份组） */
+  .nav-item.nav-action{font-size:12px;color:var(--muted2);padding-left:14px;border-left:2px dashed var(--border2);
+    border-radius:0 7px 7px 0;margin-left:6px;}
+  .nav-item.nav-action:hover{color:var(--text);border-left-color:var(--accent);}
+  .nav-item.nav-action.active{background:var(--accent-weak);color:var(--accent);border-left-style:solid;}
+  .sidebar.collapsed .nav-item.nav-action{border-left:none;padding-left:0;margin-left:0;border-radius:10px;}
+  .sidebar-foot{padding:10px 14px;font-size:11px;color:var(--muted2);border-top:1px solid var(--border);
+    line-height:1.5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .sidebar-foot .foot-txt{flex:1;min-width:0;}
+  .sidebar.collapsed .sidebar-foot{flex-direction:column;padding:8px 4px;gap:6px;}
+  .sidebar.collapsed .sidebar-foot .foot-txt{display:none;}
+  .sidebar.collapsed .sidebar-foot .skin-row{flex-wrap:wrap;justify-content:center;gap:4px;}
+  /* ---------- 换肤色板（已移至底栏） ---------- */
+  .skin-pick{padding:0;}
+  .skin-label{display:none;}
+  .skin-row{display:flex;gap:6px;padding:0;flex-wrap:nowrap;}
+  .skin-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border2);cursor:pointer;
+    padding:0;transition:transform .15s,outline-color .15s;outline:2px solid transparent;outline-offset:1px;flex:none;}
+  .skin-dot:hover{transform:scale(1.2);}
+  .skin-dot.active{outline-color:var(--text);border-color:transparent;}
 
   /* ---------- 右侧主内容 ---------- */
   .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  .main-scroll{flex:1;overflow:auto;padding:28px 32px 40px;}
+  .main-scroll{flex:1;overflow:auto;padding:28px 28px 40px;}
   .page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
     margin-bottom:24px;flex-wrap:wrap;}
   .crumb{font-size:12px;color:var(--muted);letter-spacing:.4px;margin-bottom:6px;}
@@ -1227,48 +1256,58 @@ body{background:var(--bg);}
         <div class="brand-title">客户跟进工作台</div>
         <div class="brand-sub">CUSTOMER WORKBENCH</div>
       </div>
+      <button class="collapse-btn" id="sidebarCollapse" type="button" title="折叠/展开侧栏" aria-label="折叠侧栏">&#9664;</button>
     </div>
     <nav class="nav">
-      <a class="nav-item active" data-view="dashboard">
+      <div class="nav-sep">主导航</div>
+      <a class="nav-item active" data-view="dashboard" data-tip="工作台总览">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-        工作台总览
+        <span class="nav-text">工作台总览</span>
       </a>
-      <a class="nav-item" data-view="customers">
+      <a class="nav-item" data-view="customers" data-tip="客户列表">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-        客户列表
+        <span class="nav-text">客户列表</span>
       </a>
-      <a class="nav-item" data-view="prompts">
+      <a class="nav-item" data-view="prompts" data-tip="指令提示词">
         <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
-        指令提示词
+        <span class="nav-text">指令提示词</span>
       </a>
-      <a class="nav-item" data-view="plans">
+      <a class="nav-item" data-view="plans" data-tip="合作方案">
         <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
-        合作方案
+        <span class="nav-text">合作方案</span>
       </a>
-      <a class="nav-item" id="navAdd">
+      <div class="nav-sep">快捷操作</div>
+      <a class="nav-item nav-action" id="navAdd" data-tip="新增客户">
         <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        新增客户
+        <span class="nav-text">新增客户</span>
       </a>
-      <a class="nav-item" id="navImport">
+      <a class="nav-item nav-action" id="navImport" data-tip="导入表格">
         <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-        导入表格
+        <span class="nav-text">导入表格</span>
       </a>
       <div class="nav-sep">数据备份</div>
-      <a class="nav-item" id="navExport">
+      <a class="nav-item nav-action" id="navExport" data-tip="导出 JSON">
         <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-        导出 JSON
+        <span class="nav-text">导出 JSON</span>
       </a>
-      <a class="nav-item" id="navImportJson">
+      <a class="nav-item nav-action" id="navImportJson" data-tip="导入 JSON">
         <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5v-2z"/></svg>
-        导入 JSON
+        <span class="nav-text">导入 JSON</span>
       </a>
       <div class="nav-sep">系统</div>
-      <a class="nav-item" id="navSettings">
+      <a class="nav-item" id="navSettings" data-tip="设置">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L3.16 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        设置
+        <span class="nav-text">设置</span>
       </a>
+      <a class="nav-item" id="navTheme" data-tip="切换深色">
+        <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        <span class="nav-text"><span id="themeLabel">切换深色</span></span>
+      </a>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="foot-txt">本地存储 · 定期导出</span>
       <div class="skin-pick">
-        <div class="skin-label">主题换肤（点一下切换）</div>
+        <div class="skin-label">主题换肤</div>
         <div class="skin-row" id="skinRow">
           <button class="skin-dot active" data-skin="purple" style="background:#7a6fc4" title="藕荷紫"></button>
           <button class="skin-dot" data-skin="blue" style="background:#4f86c6" title="淡雅蓝"></button>
@@ -1278,13 +1317,6 @@ body{background:var(--bg);}
           <button class="skin-dot" data-skin="teal" style="background:#3f97ab" title="静谧青"></button>
         </div>
       </div>
-      <a class="nav-item" id="navTheme">
-        <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
-        <span id="themeLabel">切换深色</span>
-      </a>
-    </nav>
-    <div class="sidebar-foot">
-      数据保存在本浏览器本地。<br>清缓存或换电脑会丢失，请定期导出 JSON 备份。
     </div>
   </aside>
 
@@ -5947,8 +5979,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     document.documentElement.setAttribute("data-theme",settings.theme);
     document.documentElement.setAttribute("data-skin",settings.skin);
     $("themeLabel").textContent=settings.theme==="dark"?"切换浅色":"切换深色";
+    var tt=settings.theme==="dark"?"切换浅色":"切换深色";
+    $("navTheme").setAttribute("data-tip",tt);
     var dots=document.querySelectorAll("#skinRow .skin-dot");
     dots.forEach(function(d){d.classList.toggle("active",d.getAttribute("data-skin")===settings.skin);});
+    document.querySelectorAll(".nav-item[data-view]").forEach(function(el){
+      el.setAttribute("data-tip",el.textContent.trim());
+    });
   }
   // ---------- 弹窗 ----------
   function openModal(id){$(id).classList.add("open");}
@@ -5957,7 +5994,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   document.querySelectorAll(".modal").forEach(function(m){m.addEventListener("click",function(e){if(e.target===m)closeModal(m.id);});});
 
   // ---------- 事件 ----------
-  $("navAdd").onclick=openAdd;
+  // 侧边栏折叠/展开
+  (function(){
+    var sidebar=document.querySelector(".sidebar");
+    var btn=$("sidebarCollapse");
+    if(!sidebar||!btn)return;
+    var key="df_sidebar_collapsed";
+    if(localStorage.getItem(key)==="1"){sidebar.classList.add("collapsed");}
+    btn.onclick=function(){
+      sidebar.classList.toggle("collapsed");
+      localStorage.setItem(key,sidebar.classList.contains("collapsed")?"1":"0");
+    };
+  })();
+  $(\"navAdd\").onclick=openAdd;
   $("navImport").onclick=function(){$("fileInput").value="";importData=null;$("mappingArea").innerHTML="";$("importPreview").style.display="none";$("btnDoImport").style.display="none";openModal("modalImport");};
   $("fileInput").onchange=handleFile;
   $("navExport").onclick=exportJSON;
