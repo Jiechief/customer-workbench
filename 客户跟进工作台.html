@@ -389,6 +389,10 @@
   .accio-table .col-block{min-width:200px;max-width:320px;white-space:normal;}
   .accio-table .col-block .inline-edit{white-space:normal;word-break:break-word;height:auto;line-height:1.5;}
   .inline-edit-area{min-height:36px;resize:vertical;width:100%;}
+  .block-display{white-space:normal;word-break:break-word;line-height:1.6;font-size:13px;color:var(--text);min-height:20px;border:1px solid transparent;border-radius:4px;padding:4px 8px;cursor:text;transition:border-color .15s,background .15s;}
+  .block-display:hover{border-color:var(--border);background:var(--panel2);}
+  .block-display:focus{border-color:var(--accent);background:var(--card-bg);outline:none;}
+  .block-display:empty::before{content:"-";color:var(--muted2);}
   .accio-table .col-actions{min-width:100px;white-space:nowrap;text-align:right;}
   .accio-table .btn{padding:5px 12px;font-size:13px;}
   /* AccioWork 名称前的自定义标记（低调小圆点） */
@@ -3070,7 +3074,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var deliverer='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverer" value="'+esc(a.deliverer||"")+'" placeholder="-">';
       var deliver='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="deliverables" value="'+esc(a.deliverables||"")+'" placeholder="-">';
       var time='<input type="text" class="inline-edit" data-id="'+a.id+'" data-f="time" value="'+esc(a.time||"")+'" placeholder="-">';
-      var block='<textarea class="inline-edit inline-edit-area" data-id="'+a.id+'" data-f="blockReason" placeholder="-" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">'+esc(a.blockReason||"")+'</textarea>';
+      var block='<div class="block-display" data-id="'+a.id+'" contenteditable="true" data-f="blockReason" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" onblur="inlineSaveAccio(this,\''+a.id+'\')">'+esc(a.blockReason||"")+'</div>';
       html+='<tr>'+
         '<td class="col-name"><span class="accio-name-cell">'+accioMarkDot(a.id)+avatar(a.name,true)+esc(a.name||"未命名")+'</span></td>'+
         '<td class="col-plan">'+(a.plan?'<span class="chip follow"><i class="dot"></i>'+plan+'</span>':plan)+'</td>'+
@@ -5158,6 +5162,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     saveCustomers();renderStats();toast("已更新");
   }
   window.inlineSaveCustomer=inlineSaveCustomer;
+
+  function inlineSaveAccio(el,id){
+    var f=el.getAttribute("data-f");
+    var v=(el.textContent||"").trim();
+    var a=accioCustomers.find(function(x){return x.id===id;});
+    if(!a)return;
+    if((a[f]||"")===v)return;
+    a[f]=v;a.updatedAt=Date.now();
+    saveAccio();toast("已更新");
+  }
+  window.inlineSaveAccio=inlineSaveAccio;
   function saveCardEdit(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
