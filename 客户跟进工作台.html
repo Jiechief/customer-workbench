@@ -1297,6 +1297,17 @@ body{background:var(--bg);}
   .ph-final-text{white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:480px;overflow:auto;}
   .ph-final-meta{font-size:11px;color:var(--muted);margin-top:8px;}
   .ph-empty{color:var(--muted);font-size:13px;padding:6px 0;line-height:1.6;}
+  .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);}
+  .ph-scene:hover{border-color:var(--accent);color:var(--accent);}
+  .ph-scene.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .ph-hitem{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel2);}
+  .ph-hitem.cur{border-color:var(--accent);}
+  .ph-hmeta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+  .ph-h-ts{font-size:11px;color:var(--muted);}
+  .ph-h-src{font-size:11px;color:var(--muted);border:1px solid var(--border2);border-radius:999px;padding:1px 7px;}
+  .ph-htitle{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;word-break:break-word;}
+  .ph-hact{display:flex;gap:6px;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -1595,9 +1606,13 @@ body{background:var(--bg);}
       </div>
       <div id="viewPromptHelper" class="view" style="display:none;">
         <div class="ph-wrap">
-          <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。</div>
+          <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。生成结果会自动存进「最近生成」，也能一键存进指令库。</div>
           <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">1</span><h3>原始需求</h3></div>
+            <div class="ph-card-head"><span class="ph-step">1</span><h3>场景预设（选一个起手）</h3></div>
+            <div id="phScenes"></div>
+          </section>
+          <section class="ph-card">
+            <div class="ph-card-head"><span class="ph-step">2</span><h3>原始需求</h3></div>
             <p class="ph-hint">写下你的核心目标、粗略想法或原始描述，先粗糙也没关系。</p>
             <textarea id="phRaw" class="ph-textarea" placeholder="例如：我想让 AI 帮我写一封开发新客户的英文邮件……" oninput="window.__ph.setRaw(this.value)"></textarea>
             <div class="ph-actions">
@@ -1607,12 +1622,27 @@ body{background:var(--bg);}
             <div class="ph-status" id="phAskStatus"></div>
           </section>
           <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">2</span><h3>协商补充的问题</h3></div>
+            <div class="ph-card-head"><span class="ph-step">3</span><h3>协商补充的问题</h3></div>
             <div id="phQuestions"></div>
           </section>
           <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">3</span><h3>最终专业 Prompt</h3></div>
+            <div class="ph-card-head"><span class="ph-step">4</span><h3>最终专业 Prompt</h3></div>
             <div id="phFinal"></div>
+            <div id="phLibPanel" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div class="ph-hint">存进「指令提示词」板块，之后可在那里继续编辑或删除。</div>
+              <div class="field" style="margin-bottom:8px;"><label>标题</label><input id="phLibTitle" placeholder="如：开发信·首次触达"></div>
+              <div class="field" style="margin-bottom:8px;"><label>分类（维度）</label><select id="phLibCat" onchange="window.__ph.libCatChg(this.value)"></select></div>
+              <div class="field" id="phLibCatWrap" style="display:none;margin-bottom:8px;"><label>新建分类名称</label><input id="phLibNew" placeholder="如：售后客服"></div>
+              <div class="field" style="margin-bottom:8px;"><label>Prompt 内容（可修改后存入）</label><textarea id="phLibText" style="min-height:170px;"></textarea></div>
+              <div class="ph-actions">
+                <button class="btn primary" type="button" onclick="window.__ph.saveToLib()">确认存入指令库</button>
+                <button class="btn" type="button" onclick="window.__ph.libCancel()">取消</button>
+              </div>
+            </div>
+          </section>
+          <section class="ph-card">
+            <div class="ph-card-head"><span class="ph-step">5</span><h3>最近生成</h3></div>
+            <div id="phHistory"></div>
           </section>
         </div>
       </div>
@@ -5257,19 +5287,75 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   // 暴露给自动化冒烟测试
   window.switchView=switchView;
-  // ---------- Prompt 助手：协商式生成专业 Prompt ----------
+  // ---------- Prompt 助手：协商式生成专业 Prompt + 历史 + 场景预设 + 存指令库 ----------
   var PH_KEY="df_prompt_helper_draft_v1";
-  var phRaw="",phQuestions=[],phAnswers={},phFinal="",phMode="",phLoaded=false;
+  var phRaw="",phQuestions=[],phAnswers={},phFinal="",phMode="",phScenario="",phLoaded=false;
+  var phSessions=[],phCurId="";
   var PH_DIMS=["使用场景","目标受众","输出格式","约束条件","成功标准"];
   var PH_ASK_SYS="你是资深 Prompt 工程师。用户会给出一个模糊的初步需求，请识别其中缺失或含糊的关键信息，围绕 5 个维度向用户追问：使用场景、目标受众、输出格式、约束条件、成功标准。只追问确实有必要澄清的维度，最多 5 个问题，问题要具体、好回答。严格只输出 JSON 数组，不要输出任何其他文字或代码块标记。格式：[{\"dim\":\"使用场景\",\"question\":\"你的问题\"}]，其中 dim 只能取这 5 个值之一：使用场景、目标受众、输出格式、约束条件、成功标准。";
   var PH_GEN_SYS="你是资深 Prompt 工程师。请根据用户给出的原始需求与补充回答，产出一条专业、结构化、可直接复制使用的 Prompt。要求：明确角色定位、说清任务目标、补全必要上下文、规定输出格式、列出约束条件、给出可验证的成功标准。用 Markdown 分段，语言与用户需求保持一致（中文需求用中文输出）。直接输出 Prompt 正文，不要解释，不要用代码块包裹。";
-  function phSaveDraft(){try{lsSet(PH_KEY,JSON.stringify({raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode}));}catch(e){}}
+  // 内置高频场景预设：点击即填入原始需求并直接给出该场景专属追问
+  var PH_SCENES=[
+    {key:"devmail",name:"开发信",raw:"帮我写一封开发新客户的邮件",qs:[
+      {dim:"使用场景",question:"这封信用于哪个渠道？（阿里国际站站内信 / 邮箱 / 领英 / 展会后跟进）"},
+      {dim:"目标受众",question:"对方是什么角色？（采购经理 / 创始人 / 设计师 / 贸易商）"},
+      {dim:"输出格式",question:"希望邮件怎么呈现？（主题+分段正文 / 3 句短平快 / 带价值点清单）"},
+      {dim:"约束条件",question:"有什么必须注意的？（字数、不能报价、不能承诺、语气）"},
+      {dim:"成功标准",question:"怎样算写得好？（让人愿意回信 / 愿意进一步聊 / 不引起反感）"}
+    ]},
+    {key:"followup",name:"跟进话术",raw:"帮我写一条跟进老客户的消息，推动他回复并进入下一步",qs:[
+      {dim:"使用场景",question:"在什么渠道跟进？（站内信 / WhatsApp / 邮件 / 电话后补一条）"},
+      {dim:"目标受众",question:"跟进谁？（询过价没回复 / 已报价等确认 / 长期没动的客户）"},
+      {dim:"输出格式",question:"形式？（一句话 / 3 句以内 / 带一个具体问题）"},
+      {dim:"约束条件",question:"避免什么？（不催太急、不重复已说过、不像群发）"},
+      {dim:"成功标准",question:"希望他做完什么？（回一句确认 / 给个时间点 / 约个电话）"}
+    ]},
+    {key:"quote",name:"报价说明",raw:"帮我写一份给客户看的报价说明，讲清楚价格和价值",qs:[
+      {dim:"使用场景",question:"用在哪？（邮件附件 / 在线文档 / 聊天里发）"},
+      {dim:"目标受众",question:"谁看？（客户老板 / 采购 / 终端买家）"},
+      {dim:"输出格式",question:"格式？（表格 / 分点 / 一段话）"},
+      {dim:"约束条件",question:"注意什么？（币种、含不含运费、有效期、不能承诺的）"},
+      {dim:"成功标准",question:"希望达成什么？（认可价值 / 尽快付款 / 进入谈判）"}
+    ]},
+    {key:"train",name:"客户培训",raw:"帮我写一份给客户的产品使用培训材料",qs:[
+      {dim:"使用场景",question:"怎么讲？（现场 1 小时 / 线上录屏 / 文档自助看）"},
+      {dim:"目标受众",question:"学员是谁？（完全新手 / 有基础 / 团队）"},
+      {dim:"输出格式",question:"形式？（PPT 大纲 / 分步骤文档 / 讲解逐字稿）"},
+      {dim:"约束条件",question:"有什么要求？（语言、篇幅、必须包含的操作）"},
+      {dim:"成功标准",question:"学完能做到什么？（独立建店 / 独立发品 / 会用某功能）"}
+    ]},
+    {key:"moments",name:"朋友圈文案",raw:"帮我写一条发朋友圈的专业内容，展示我的外贸业务",qs:[
+      {dim:"使用场景",question:"发在哪个平台？（微信朋友圈 / 视频号 / 小红书）"},
+      {dim:"目标受众",question:"想让谁看到？（潜在客户 / 老客户 / 同行）"},
+      {dim:"输出格式",question:"形式？（一句话+图 / 短段落 / 带话题标签）"},
+      {dim:"约束条件",question:"注意什么？（不夸大、不硬广、避开敏感词）"},
+      {dim:"成功标准",question:"希望读者做什么？（点赞 / 私信 / 记住你）"}
+    ]}
+  ];
+  function phStamp(){var d=new Date();function p(n){return n<10?"0"+n:""+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
+  function phNewId(){return "s"+Date.now()+Math.floor(Math.random()*999);}
+  function phFind(id){for(var i=0;i<phSessions.length;i++){if(phSessions[i].id===id)return phSessions[i];}return null;}
+  function phVisible(){return phSessions.filter(function(s){return !!(s.raw||s.final||(s.questions&&s.questions.length));});}
+  // 把当前工作区写回 phCurId 对应会话并持久化（多会话历史，上限 50 条）
+  function phSaveDraft(){
+    try{
+      var s=phFind(phCurId);
+      if(!s){if(!phCurId)phCurId=phNewId();s={id:phCurId,ts:phStamp(),raw:"",questions:[],answers:{},final:"",mode:"",scenario:""};phSessions.unshift(s);}
+      s.raw=phRaw;s.questions=phQuestions;s.answers=phAnswers;s.final=phFinal;s.mode=phMode;s.scenario=phScenario;s.ts=phStamp();
+      if(phSessions.length>50)phSessions=phSessions.slice(0,50);
+      lsSet(PH_KEY,JSON.stringify({curId:phCurId,sessions:phSessions}));
+    }catch(e){}
+  }
   function phLoadDraft(){
     phLoaded=true;
     try{
       var d=JSON.parse(lsGet(PH_KEY)||"null");
-      if(d){phRaw=d.raw||"";phQuestions=Array.isArray(d.questions)?d.questions:[];phAnswers=d.answers||{};phFinal=d.final||"";phMode=d.mode||"";}
+      if(d&&Array.isArray(d.sessions)){phSessions=d.sessions;phCurId=d.curId||"";}
+      else if(d&&(d.raw||d.final)){phSessions=[{id:phNewId(),ts:phStamp(),raw:d.raw||"",questions:d.questions||[],answers:d.answers||{},final:d.final||"",mode:d.mode||"",scenario:""}];phCurId=phSessions[0].id;}
     }catch(e){}
+    var s=phFind(phCurId);
+    if(!s&&phSessions.length){phCurId=phSessions[0].id;s=phSessions[0];}
+    if(s){phRaw=s.raw||"";phQuestions=Array.isArray(s.questions)?s.questions:[];phAnswers=s.answers||{};phFinal=s.final||"";phMode=s.mode||"";phScenario=s.scenario||"";}
   }
   function phLocalQuestions(){
     return [
@@ -5328,6 +5414,81 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     L.push(gv("成功标准")||"结果一次生成即可直接使用，无需大量返工。");
     return L.join("\n");
   }
+  // 场景预设：点一下填入需求并直接出题（跳过协商）；有旧内容则先归档为历史
+  function phUseScene(key){
+    var sc=null;for(var i=0;i<PH_SCENES.length;i++){if(PH_SCENES[i].key===key)sc=PH_SCENES[i];}
+    if(!sc)return;
+    if(phRaw||phFinal){phNewSession();}
+    phScenario=sc.name;phRaw=sc.raw;phFinal="";phMode="";
+    phQuestions=sc.qs.map(function(q){return {dim:q.dim,question:q.question};});
+    phAnswers={};phCurId=phCurId||phNewId();
+    phSaveDraft();phRender();
+    var st=$("phAskStatus");if(st){st.textContent="已套用「"+sc.name+"」场景并给出 "+phQuestions.length+" 个追问，回答后点「生成专业 Prompt」。";st.className="ph-status ph-ok";}
+  }
+  // 新建一条空白会话（清空工作区，历史保留）
+  function phNewSession(){
+    phSaveDraft();
+    phCurId=phNewId();phRaw="";phQuestions=[];phAnswers={};phFinal="";phMode="";phScenario="";
+    phSaveDraft();
+  }
+  function phLoadIdx(i){var v=phVisible()[i];if(!v)return;phCurId=v.id;phRaw=v.raw||"";phQuestions=Array.isArray(v.questions)?v.questions:[];phAnswers=v.answers||{};phFinal=v.final||"";phMode=v.mode||"";phScenario=v.scenario||"";phRender();toast("已载入该条");}
+  function phDelIdx(i){var v=phVisible()[i];if(!v)return;phSessions=phSessions.filter(function(x){return x.id!==v.id;});try{lsSet(PH_KEY,JSON.stringify({curId:phCurId,sessions:phSessions}));}catch(e){}if(phCurId===v.id){phCurId="";phRaw="";phQuestions=[];phAnswers={};phFinal="";phMode="";phScenario="";}phRender();toast("已删除该条");}
+  function phCopyIdx(i){var v=phVisible()[i];if(!v||!v.final){toast("这条还没有结果");return;}copyText(v.final);toast("已复制");}
+  // 存指令库：复用现有 promptGroups/savePrompts，可选/新建分类，标注来源，内容可改
+  var phLibId="";
+  function phToLib(id){
+    var s=phFind(id||phCurId);if(!s){toast("找不到该条");return;}
+    var txt=s.final||"";if(!txt){toast("还没有生成 Prompt，先点生成");return;}
+    phLibId=s.id;
+    $("phLibTitle").value=(s.scenario||"Prompt助手")+"·"+(txt.split("\n")[0].slice(0,18)||"新指令");
+    var cats=promptGroups.map(function(g){return g.cat;});
+    $("phLibCat").innerHTML=cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("")+'<option value="__new__">+ 新建分类</option>';
+    $("phLibNew").value="";$("phLibCatWrap").style.display="none";
+    $("phLibText").value=txt;
+    $("phLibPanel").style.display="block";
+  }
+  function phLibCancel(){phLibId="";$("phLibPanel").style.display="none";}
+  function phLibCatChg(v){$("phLibCatWrap").style.display=v==="__new__"?"block":"none";}
+  function phSaveToLib(){
+    var s=phFind(phLibId||phCurId);if(!s)return;
+    var title=($("phLibTitle").value||"").trim();
+    var txt=($("phLibText").value||"").trim()||s.final||"";
+    if(!title){toast("给这条指令起个标题");return;}
+    if(!txt){toast("Prompt 内容为空");return;}
+    var cat=$("phLibCat").value;
+    if(cat==="__new__"){cat=($("phLibNew").value||"").trim();if(!cat){toast("填写新分类名称");return;}}
+    var src=s.mode==="ai"?"AI生成":"本地模板";
+    var g=promptGroups.find(function(x){return x.cat===cat;});
+    if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
+    g.items.push({title:title,agents:["Prompt助手",src],prompts:[txt]});
+    savePrompts();
+    if(typeof renderPromptTabs==="function"){renderPromptTabs();renderPrompts();}
+    phLibCancel();
+    toast("已存入指令库「"+cat+"」");
+  }
+  function phRenderScenes(){
+    var box=$("phScenes");if(!box)return;
+    box.innerHTML=PH_SCENES.map(function(sc){return '<button type="button" class="ph-scene'+(sc.name===phScenario?" active":"")+'" onclick="window.__ph.scene(\''+sc.key+'\')">'+esc(sc.name)+'</button>';}).join("");
+  }
+  function phRenderHistory(){
+    var box=$("phHistory");if(!box)return;
+    var list=phVisible();
+    if(!list.length){box.innerHTML='<div class="ph-empty">还没有历史。生成过的 Prompt 会自动存在这里，方便下次找到。</div>';return;}
+    box.innerHTML=list.map(function(s,i){
+      var title=(s.final||s.raw||"").split("\n")[0].slice(0,50)||"（空）";
+      var badge=s.scenario?('<span class="ph-q-dim">'+esc(s.scenario)+'</span>'):"";
+      var src=s.mode==="ai"?"AI":"本地模板";
+      return '<div class="ph-hitem'+(s.id===phCurId?" cur":"")+'">'+
+        '<div class="ph-hmeta">'+badge+'<span class="ph-h-ts">'+esc(s.ts||"")+'</span><span class="ph-h-src">'+src+'</span></div>'+
+        '<div class="ph-htitle">'+esc(title)+'</div>'+
+        '<div class="ph-hact">'+
+          '<button type="button" class="btn" onclick="window.__ph.loadIdx('+i+')">载入</button>'+
+          (s.final?'<button type="button" class="btn" onclick="window.__ph.copyIdx('+i+')">复制</button>':"")+
+          '<button type="button" class="btn" onclick="window.__ph.toLib(\''+s.id+'\')">存入指令库</button>'+
+          '<button type="button" class="btn danger" onclick="window.__ph.delIdx('+i+')">删除</button>'+
+        '</div></div>';
+    }).join("");
+  }
   function phAsk(){
     var el=$("phRaw");var raw=(el&&el.value?el.value:"").trim();
     if(!raw){toast("先写下你的原始需求");if(el)el.focus();return;}
@@ -5364,12 +5525,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       piPost({model:settings.model||defaultTextModel(settings.provider),messages:[
         {role:"system",content:PH_GEN_SYS},{role:"user",content:phBuildGenInput(phAnswers)}
       ]}).then(function(txt){
-        phFinal=String(txt||"").trim()||phLocalPrompt(phAnswers);phMode="ai";phRenderFinal();phSaveDraft();
+        phFinal=String(txt||"").trim()||phLocalPrompt(phAnswers);phMode="ai";phRenderFinal();phSaveDraft();phRenderHistory();
       }).catch(function(e){
-        phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(true,(e&&e.message)||String(e));phSaveDraft();
+        phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(true,(e&&e.message)||String(e));phSaveDraft();phRenderHistory();
       });
     }else{
-      phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(false);phSaveDraft();
+      phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(false);phSaveDraft();phRenderHistory();
     }
   }
   function phRenderQuestions(){
@@ -5391,28 +5552,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(warn)meta+="；在线失败已回退本地（"+(errMsg||"")+"）";
     box.innerHTML='<div class="ph-final-text" id="phFinalText">'+esc(phFinal)+'</div>'+
       '<div class="ph-actions"><button class="btn primary" type="button" onclick="window.__ph.copy()">复制 Prompt</button>'+
-      '<button class="btn" type="button" onclick="window.__ph.generate()">重新生成</button></div>'+
+      '<button class="btn" type="button" onclick="window.__ph.generate()">重新生成</button>'+
+      '<button class="btn" type="button" onclick="window.__ph.toLib()">存入指令库</button></div>'+
       '<div class="ph-final-meta">'+esc(meta)+'</div>';
   }
   function phRender(){
     if(!phLoaded)phLoadDraft();
     var r=$("phRaw");if(r)r.value=phRaw||"";
-    phRenderQuestions();phRenderFinal();
+    phRenderScenes();phRenderQuestions();phRenderFinal();phRenderHistory();
   }
-  function phReset(){
-    phRaw="";phQuestions=[];phAnswers={};phFinal="";phMode="";phLoaded=true;
-    try{lsSet(PH_KEY,"");}catch(e){}
-    var r=$("phRaw");if(r)r.value="";
-    var st=$("phAskStatus");if(st){st.textContent="";st.className="ph-status";}
-    phRenderQuestions();phRenderFinal();
-    toast("已清空，可重新开始");
-  }
+  function phReset(){phNewSession();var r=$("phRaw");if(r)r.value="";var st=$("phAskStatus");if(st){st.textContent="";st.className="ph-status";}phLibCancel();phRender();toast("已新建，可重新开始");}
   window.__ph={ask:phAsk,generate:phGenerate,render:phRender,reset:phReset,
     copy:function(){if(!phFinal){toast("还没有可复制的 Prompt");return;}copyText(phFinal);},
     setRaw:function(v){phRaw=v;phSaveDraft();},
     answer:function(i,v){phAnswers[i]=v;phSaveDraft();},
-    getState:function(){return{raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode};},
-    localQuestions:phLocalQuestions,localPrompt:phLocalPrompt,parseQuestions:phParseQuestions,buildGenInput:phBuildGenInput};
+    getState:function(){return{raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode,scenario:phScenario,curId:phCurId,sessionCount:phVisible().length};},
+    localQuestions:phLocalQuestions,localPrompt:phLocalPrompt,parseQuestions:phParseQuestions,buildGenInput:phBuildGenInput,
+    scene:phUseScene,loadIdx:phLoadIdx,delIdx:phDelIdx,copyIdx:phCopyIdx,toLib:phToLib,saveToLib:phSaveToLib,libCancel:phLibCancel,libCatChg:phLibCatChg};
 
   window.getPromptGroups=function(){return promptGroups;};
   window.promptFilterTest=function(tab,kw){promptTab=tab||"all";promptKeyword=kw||"";return promptFilter();};
