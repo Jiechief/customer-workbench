@@ -1276,6 +1276,27 @@ body{background:var(--bg);}
 .plan-sec-h{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
 .plan-sec-h .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
 .prompt-form .row2 .field{flex:1 1 200px;}
+  /* ===== Prompt 助手 ===== */
+  .ph-wrap{max-width:860px;margin:0 auto;padding:18px 20px 48px;}
+  .ph-intro{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.5;}
+  .ph-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .ph-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .ph-step{flex-shrink:0;width:24px;height:24px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .ph-card-head h3{margin:0;font-size:15px;color:var(--text);}
+  .ph-hint{color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.5;}
+  .ph-textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;color:var(--text);font-family:inherit;}
+  .ph-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .ph-status{font-size:12px;margin-top:8px;min-height:16px;line-height:1.5;}
+  .ph-loading{color:var(--accent);}
+  .ph-ok{color:#4f9e6b;}
+  .ph-warn{color:#b58a3e;}
+  .ph-q{padding:12px 0;border-top:1px solid var(--border);}
+  .ph-q:first-child{border-top:none;padding-top:2px;}
+  .ph-q-dim{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--accent-weak);color:var(--accent);border:1px solid var(--accent-soft);margin-bottom:6px;}
+  .ph-q-text{font-size:13px;color:var(--text);margin:0 0 6px;line-height:1.5;}
+  .ph-final-text{white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:480px;overflow:auto;}
+  .ph-final-meta{font-size:11px;color:var(--muted);margin-top:8px;}
+  .ph-empty{color:var(--muted);font-size:13px;padding:6px 0;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -1303,6 +1324,10 @@ body{background:var(--bg);}
       <a class="nav-item" data-view="prompts" data-tip="指令提示词">
         <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
         <span class="nav-text">指令提示词</span>
+      </a>
+      <a class="nav-item" data-view="prompthelper" data-tip="Prompt 助手">
+        <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+        <span class="nav-text">Prompt 助手</span>
       </a>
       <a class="nav-item" data-view="plans" data-tip="合作方案">
         <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
@@ -1566,6 +1591,29 @@ body{background:var(--bg);}
             </div>
           </div>
           <div id="promptsRoot"></div>
+        </div>
+      </div>
+      <div id="viewPromptHelper" class="view" style="display:none;">
+        <div class="ph-wrap">
+          <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。</div>
+          <section class="ph-card">
+            <div class="ph-card-head"><span class="ph-step">1</span><h3>原始需求</h3></div>
+            <p class="ph-hint">写下你的核心目标、粗略想法或原始描述，先粗糙也没关系。</p>
+            <textarea id="phRaw" class="ph-textarea" placeholder="例如：我想让 AI 帮我写一封开发新客户的英文邮件……" oninput="window.__ph.setRaw(this.value)"></textarea>
+            <div class="ph-actions">
+              <button class="btn primary" type="button" onclick="window.__ph.ask()">开始协商</button>
+              <button class="btn" type="button" onclick="window.__ph.reset()">清空重来</button>
+            </div>
+            <div class="ph-status" id="phAskStatus"></div>
+          </section>
+          <section class="ph-card">
+            <div class="ph-card-head"><span class="ph-step">2</span><h3>协商补充的问题</h3></div>
+            <div id="phQuestions"></div>
+          </section>
+          <section class="ph-card">
+            <div class="ph-card-head"><span class="ph-step">3</span><h3>最终专业 Prompt</h3></div>
+            <div id="phFinal"></div>
+          </section>
         </div>
       </div>
       <div id="viewPlans" class="view" style="display:none;">
@@ -5084,8 +5132,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("viewDashboard").style.display=view==="dashboard"?"block":"none";
     $("viewCustomers").style.display=view==="customers"?"block":"none";
     if($("viewPrompts"))$("viewPrompts").style.display=view==="prompts"?"block":"none";
+    if($("viewPromptHelper"))$("viewPromptHelper").style.display=view==="prompthelper"?"block":"none";
     if($("viewPlans"))$("viewPlans").style.display=view==="plans"?"block":"none";
-    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="prompts"?"指令提示词":view==="plans"?"合作方案":"客户列表";
+    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":"客户列表";
     $("pageTitle").textContent=title;
     document.querySelectorAll(".nav-item[data-view]").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-view")===view);
@@ -5093,6 +5142,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(view==="dashboard")renderDashboard();
     else if(view==="customers"){renderStats();refreshList();}
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
+    else if(view==="prompthelper"){phRender();}
     else if(view==="plans"){renderPlans();}
   }
 
@@ -5207,6 +5257,163 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   // 暴露给自动化冒烟测试
   window.switchView=switchView;
+  // ---------- Prompt 助手：协商式生成专业 Prompt ----------
+  var PH_KEY="df_prompt_helper_draft_v1";
+  var phRaw="",phQuestions=[],phAnswers={},phFinal="",phMode="",phLoaded=false;
+  var PH_DIMS=["使用场景","目标受众","输出格式","约束条件","成功标准"];
+  var PH_ASK_SYS="你是资深 Prompt 工程师。用户会给出一个模糊的初步需求，请识别其中缺失或含糊的关键信息，围绕 5 个维度向用户追问：使用场景、目标受众、输出格式、约束条件、成功标准。只追问确实有必要澄清的维度，最多 5 个问题，问题要具体、好回答。严格只输出 JSON 数组，不要输出任何其他文字或代码块标记。格式：[{\"dim\":\"使用场景\",\"question\":\"你的问题\"}]，其中 dim 只能取这 5 个值之一：使用场景、目标受众、输出格式、约束条件、成功标准。";
+  var PH_GEN_SYS="你是资深 Prompt 工程师。请根据用户给出的原始需求与补充回答，产出一条专业、结构化、可直接复制使用的 Prompt。要求：明确角色定位、说清任务目标、补全必要上下文、规定输出格式、列出约束条件、给出可验证的成功标准。用 Markdown 分段，语言与用户需求保持一致（中文需求用中文输出）。直接输出 Prompt 正文，不要解释，不要用代码块包裹。";
+  function phSaveDraft(){try{lsSet(PH_KEY,JSON.stringify({raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode}));}catch(e){}}
+  function phLoadDraft(){
+    phLoaded=true;
+    try{
+      var d=JSON.parse(lsGet(PH_KEY)||"null");
+      if(d){phRaw=d.raw||"";phQuestions=Array.isArray(d.questions)?d.questions:[];phAnswers=d.answers||{};phFinal=d.final||"";phMode=d.mode||"";}
+    }catch(e){}
+  }
+  function phLocalQuestions(){
+    return [
+      {dim:"使用场景",question:"这条 Prompt 主要在什么场景下使用？（例如：日常办公、内容创作、数据分析、编程开发、客户沟通等）"},
+      {dim:"目标受众",question:"最终结果给谁看或给谁用？（例如：自己、客户、团队同事、终端用户）"},
+      {dim:"输出格式",question:"希望得到什么形式的输出？（例如：分点清单、表格、Markdown 文档、JSON、代码、一段话）"},
+      {dim:"约束条件",question:"有哪些必须遵守的限制？（例如：字数、语气风格、不能提及的信息、必须包含的要点）"},
+      {dim:"成功标准",question:"怎样算这条 Prompt 用得好？（例如：一次生成即可用、几乎不用修改、结果可直接交付）"}
+    ];
+  }
+  function phParseQuestions(txt){
+    if(!txt)return [];
+    var s=String(txt).replace(/```json/gi,"").replace(/```/g,"").trim();
+    var m=s.match(/\[[\s\S]*\]/);
+    var arr=null;
+    if(m){try{arr=JSON.parse(m[0]);}catch(e){arr=null;}}
+    if(!Array.isArray(arr))return [];
+    var out=[];
+    arr.forEach(function(x){
+      if(!x||typeof x!=="object")return;
+      var dim=String(x.dim||"").trim();
+      if(PH_DIMS.indexOf(dim)<0)dim=PH_DIMS[out.length%PH_DIMS.length]||"使用场景";
+      var q=String(x.question||x.q||"").trim();
+      if(q)out.push({dim:dim,question:q});
+    });
+    return out.slice(0,5);
+  }
+  function phBuildGenInput(answers){
+    var lines=["原始需求：",phRaw,"","补充回答："];
+    phQuestions.forEach(function(it,i){
+      var a=(answers&&answers[i])||"";
+      lines.push("· "+it.dim+"："+(String(a).trim()||"（用户未填写）"));
+    });
+    return lines.join("\n");
+  }
+  function phLocalPrompt(answers){
+    function gv(dim){var i=-1;for(var k=0;k<phQuestions.length;k++){if(phQuestions[k].dim===dim){i=k;break;}}return (i>=0&&answers)?String(answers[i]||"").trim():"";}
+    var L=[];
+    L.push("# 角色");
+    L.push("你是一位经验丰富的专家，擅长高效完成下述任务，输出专业、可直接使用的结果。");
+    L.push("");
+    L.push("# 任务目标");
+    L.push(phRaw);
+    L.push("");
+    L.push("# 上下文");
+    L.push("- 使用场景："+(gv("使用场景")||"请按最常见的使用场景处理"));
+    L.push("- 目标受众："+(gv("目标受众")||"通用读者"));
+    L.push("");
+    L.push("# 输出格式");
+    L.push(gv("输出格式")||"结构清晰、分点或分段呈现，重点突出。");
+    L.push("");
+    L.push("# 约束条件");
+    L.push(gv("约束条件")||"语言简洁专业，避免冗余，不偏离任务目标。");
+    L.push("");
+    L.push("# 成功标准");
+    L.push(gv("成功标准")||"结果一次生成即可直接使用，无需大量返工。");
+    return L.join("\n");
+  }
+  function phAsk(){
+    var el=$("phRaw");var raw=(el&&el.value?el.value:"").trim();
+    if(!raw){toast("先写下你的原始需求");if(el)el.focus();return;}
+    phRaw=raw;phSaveDraft();
+    var st=$("phAskStatus");
+    if(st){st.textContent="正在分析需求，生成追问问题…";st.className="ph-status ph-loading";}
+    if(settings.apiKey){
+      piPost({model:settings.model||defaultTextModel(settings.provider),messages:[
+        {role:"system",content:PH_ASK_SYS},{role:"user",content:raw}
+      ]}).then(function(txt){
+        var qs=phParseQuestions(txt);
+        if(!qs.length)qs=phLocalQuestions();
+        phQuestions=qs;phAnswers={};phMode="ai";phRenderQuestions();phSaveDraft();
+        if(st){st.textContent="已生成 "+qs.length+" 个追问问题，回答后点「生成专业 Prompt」。";st.className="ph-status ph-ok";}
+      }).catch(function(e){
+        phQuestions=phLocalQuestions();phAnswers={};phMode="local";phRenderQuestions();phSaveDraft();
+        if(st){st.textContent="在线生成失败（"+((e&&e.message)||e)+"），已改用本地模板追问。";st.className="ph-status ph-warn";}
+      });
+    }else{
+      phQuestions=phLocalQuestions();phAnswers={};phMode="local";phRenderQuestions();phSaveDraft();
+      if(st){st.textContent="未配置 API Key，先用本地模板追问；到「设置」填写 Key 后可获得更贴合的回答。";st.className="ph-status ph-warn";}
+    }
+  }
+  function phCollectAnswers(){
+    phQuestions.forEach(function(it,i){var el=$("phAns_"+i);if(el&&el.value)phAnswers[i]=el.value;});
+    return phAnswers;
+  }
+  function phGenerate(){
+    if(!phQuestions.length){toast("请先点「开始协商」");return;}
+    phCollectAnswers();phSaveDraft();
+    var box=$("phFinal");
+    if(box)box.innerHTML='<div class="ph-status ph-loading">正在生成专业 Prompt…</div>';
+    if(settings.apiKey){
+      piPost({model:settings.model||defaultTextModel(settings.provider),messages:[
+        {role:"system",content:PH_GEN_SYS},{role:"user",content:phBuildGenInput(phAnswers)}
+      ]}).then(function(txt){
+        phFinal=String(txt||"").trim()||phLocalPrompt(phAnswers);phMode="ai";phRenderFinal();phSaveDraft();
+      }).catch(function(e){
+        phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(true,(e&&e.message)||String(e));phSaveDraft();
+      });
+    }else{
+      phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(false);phSaveDraft();
+    }
+  }
+  function phRenderQuestions(){
+    var box=$("phQuestions");if(!box)return;
+    if(!phQuestions.length){box.innerHTML='<div class="ph-empty">先在上方「原始需求」写下你的想法，点「开始协商」，这里会出现针对性的追问问题。</div>';return;}
+    var html="";
+    phQuestions.forEach(function(it,i){
+      html+='<div class="ph-q"><span class="ph-q-dim">'+esc(it.dim)+'</span>'+
+        '<p class="ph-q-text">'+esc(it.question)+'</p>'+
+        '<textarea id="phAns_'+i+'" class="ph-textarea" placeholder="你的回答（可留空）" oninput="window.__ph.answer('+i+',this.value)">'+esc(phAnswers[i]||"")+'</textarea></div>';
+    });
+    html+='<div class="ph-actions"><button class="btn primary" type="button" onclick="window.__ph.generate()">生成专业 Prompt</button></div>';
+    box.innerHTML=html;
+  }
+  function phRenderFinal(warn,errMsg){
+    var box=$("phFinal");if(!box)return;
+    if(!phFinal){box.innerHTML='<div class="ph-empty">回答完「协商补充的问题」后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
+    var meta=phMode==="ai"?("由 AI 生成（"+(settings.provider||"qwen")+"）"):"由本地模板生成（未配置 API Key 或在线不可用）";
+    if(warn)meta+="；在线失败已回退本地（"+(errMsg||"")+"）";
+    box.innerHTML='<div class="ph-final-text" id="phFinalText">'+esc(phFinal)+'</div>'+
+      '<div class="ph-actions"><button class="btn primary" type="button" onclick="window.__ph.copy()">复制 Prompt</button>'+
+      '<button class="btn" type="button" onclick="window.__ph.generate()">重新生成</button></div>'+
+      '<div class="ph-final-meta">'+esc(meta)+'</div>';
+  }
+  function phRender(){
+    if(!phLoaded)phLoadDraft();
+    var r=$("phRaw");if(r)r.value=phRaw||"";
+    phRenderQuestions();phRenderFinal();
+  }
+  function phReset(){
+    phRaw="";phQuestions=[];phAnswers={};phFinal="";phMode="";phLoaded=true;
+    try{lsSet(PH_KEY,"");}catch(e){}
+    var r=$("phRaw");if(r)r.value="";
+    var st=$("phAskStatus");if(st){st.textContent="";st.className="ph-status";}
+    phRenderQuestions();phRenderFinal();
+    toast("已清空，可重新开始");
+  }
+  window.__ph={ask:phAsk,generate:phGenerate,render:phRender,reset:phReset,
+    copy:function(){if(!phFinal){toast("还没有可复制的 Prompt");return;}copyText(phFinal);},
+    setRaw:function(v){phRaw=v;phSaveDraft();},
+    answer:function(i,v){phAnswers[i]=v;phSaveDraft();},
+    getState:function(){return{raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode};},
+    localQuestions:phLocalQuestions,localPrompt:phLocalPrompt,parseQuestions:phParseQuestions,buildGenInput:phBuildGenInput};
+
   window.getPromptGroups=function(){return promptGroups;};
   window.promptFilterTest=function(tab,kw){promptTab=tab||"all";promptKeyword=kw||"";return promptFilter();};
 
