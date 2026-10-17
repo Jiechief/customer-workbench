@@ -1302,6 +1302,40 @@ body{background:var(--bg);}
   .ph-scene-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;border:1px solid var(--accent);}
   .ph-scene-x{cursor:pointer;font-size:14px;opacity:.6;transition:opacity .15s;}
   .ph-scene-x:hover{opacity:1;}
+  /* ===== 多供应商管理面板 ===== */
+  .ai-providers-panel{max-height:380px;overflow-y:auto;}
+  .ai-prov-card{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;}
+  .ai-prov-head{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;user-select:none;background:var(--panel2);transition:background .15s;}
+  .ai-prov-head:hover{background:var(--accent-weak);}
+  .ai-prov-toggle{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .ai-prov-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+  .ai-prov-status{font-size:10px;padding:2px 7px;border-radius:999px;}
+  .ai-prov-status.on{background:rgba(79,158,107,.12);color:#4f9e6b;}
+  .ai-prov-status.off{background:var(--panel2);color:var(--muted2);}
+  .ai-prov-body{padding:10px 12px;display:none;border-top:1px solid var(--border);}
+  .ai-prov-card.open .ai-prov-body{display:block;}
+  .ai-prov-card.open .ai-prov-arrow{transform:rotate(90deg);}
+  .ai-prov-arrow{transition:transform .15s;font-size:11px;color:var(--muted);}
+  .ai-prov-field{margin-bottom:8px;}
+  .ai-prov-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .ai-prov-field input{width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--panel);color:var(--text);}
+  .ai-scene-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);}
+  .ai-scene-row:first-child{border-top:none;}
+  .ai-scene-label{font-size:13px;color:var(--text);flex:1;}
+  .ai-scene-select{padding:5px 10px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--panel);color:var(--text);cursor:pointer;min-width:140px;}
+  /* ===== AI 用量统计面板 ===== */
+  .ai-stats-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow);flex:1;min-width:0;}
+  .ai-stats-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .ai-stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;}
+  .ai-stat-item{display:flex;flex-direction:column;gap:2px;}
+  .ai-stat-num{font-size:20px;font-weight:700;color:var(--text);}
+  .ai-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .ai-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;}
+  .ai-bar-name{width:70px;color:var(--text);font-weight:500;flex-shrink:0;}
+  .ai-bar-track{flex:1;height:16px;background:var(--panel2);border-radius:8px;overflow:hidden;position:relative;}
+  .ai-bar-fill{height:100%;border-radius:8px;transition:width .3s var(--ease);}
+  .ai-bar-num{width:50px;text-align:right;color:var(--muted);flex-shrink:0;}
+  .ai-model-select{padding:4px 8px;border:1px solid var(--border2);border-radius:8px;font-size:11px;background:var(--panel);color:var(--text);cursor:pointer;margin-left:auto;}
    .ph-hitem{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel2);}
    .ph-hitem.cur{border-color:var(--accent);}
    .ph-hmeta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
@@ -1915,6 +1949,7 @@ body{background:var(--bg);}
 <div class="modal" id="modalAI">
   <div class="sheet">
     <h3>AI 跟进分析 · <span id="aiCustName"></span></h3>
+    <select class="ai-model-select" id="aiModelSelect" onchange="sceneModels.customerAnalysis=this.value;aiSaveSceneModels();"></select>
     <div class="hint">点「复制提示词」后贴到任意 AI 网页（ChatGPT / DeepSeek / 千问等）即可拿到建议。若已在「设置」里填了 API Key，可点「调用 API 分析」自动获取。<span id="aiFileHint" style="color:var(--high);display:none;">当前是 file:// 本地打开，浏览器可能拦截 API 调用；失败时请关闭本页，双击「启动本地服务器.bat」后再试。</span></div>
     <textarea class="prompt" id="aiPrompt" readonly></textarea>
     <div class="foot">
@@ -1928,21 +1963,20 @@ body{background:var(--bg);}
 
 <!-- 设置 -->
 <div class="modal" id="modalSettings">
-  <div class="sheet">
+  <div class="sheet" style="max-width:680px;">
     <h3>设置</h3>
     <div class="field"><label>待跟进提醒天数（超过此天数未沟通标红）</label><input type="text" id="s_reminder" placeholder="7"></div>
-    <div class="field"><label>模型供应商</label>
-      <select id="s_provider"><!-- 选项由 PROVIDERS 注册表在初始化时生成 --></select>
-    </div>
-    <div class="field"><label>API 基地址（OpenAI 兼容，选供应商会自动填）</label><input type="text" id="s_apiBase" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"></div>
-    <div class="field"><label>API Key（留空则只用复制提示词）</label><input type="text" id="s_apiKey" placeholder="sk-..."></div>
-    <div class="field"><label>模型名称</label><input type="text" id="s_model" placeholder="deepseek-chat"></div>
-    <div class="field"><label>视觉模型（图片识别用，需支持图片的模型）</label><input type="text" id="s_visionModel" placeholder="qwen3-vl-plus"><div class="hint" style="margin-top:-4px;">2026年10月起百炼下线了旧模型 qwen-vl-plus，已更新为 qwen3-vl-plus。若设置里还显示旧名请手动改为 qwen3-vl-plus。</div></div>
-    <div class="hint" id="s_visionHint" style="display:none;margin-top:-4px;">该供应商无预设视觉模型，图片识别需手动填写一个支持图片的模型（如 qwen3-vl-plus）。</div>
-    <div class="field"><label>界面主题</label>
+
+    <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">AI 模型管理</div>
+    <div class="ai-providers-panel" id="aiProvidersPanel"></div>
+
+    <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">场景默认模型分配</div>
+    <div id="aiSceneModels"></div>
+
+    <div class="field" style="margin-top:16px;"><label>界面主题</label>
       <select id="s_theme"><option value="light">浅色</option><option value="dark">深色</option></select>
     </div>
-    <div class="hint">数据存在本浏览器本地，清缓存或换电脑会丢，记得定期「导出 JSON」备份。API 自动调用可能被浏览器跨域限制拦截，此时用「复制提示词」方式照样能分析。</div>
+    <div class="hint">数据存在本浏览器本地，清缓存或换电脑会丢，记得定期「导出 JSON」备份。启用多个供应商后，主模型失败会自动切换到备用模型。</div>
     <div class="foot">
       <button class="btn" onclick="closeModal('modalSettings')">取消</button>
       <button class="btn primary" onclick="saveSettings()">保存设置</button>
@@ -2911,6 +2945,46 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return list;
   }
 
+  function renderAiStats(){
+    var log=aiUsageLog||[];
+    var now=Date.now();
+    var todayStart=new Date();todayStart.setHours(0,0,0,0);todayStart=todayStart.getTime();
+    var weekAgo=now-7*86400000;
+    var todayCalls=log.filter(function(e){return e.ts>=todayStart;});
+    var weekCalls=log.filter(function(e){return e.ts>=weekAgo;});
+    var todayOk=todayCalls.filter(function(e){return e.success;}).length;
+    var todayRate=todayCalls.length?Math.round(todayOk/todayCalls.length*100):0;
+    var weekTokens=weekCalls.reduce(function(s,e){return s+(e.tokensIn||0)+(e.tokensOut||0);},0);
+    // By provider
+    var byProv={};
+    weekCalls.forEach(function(e){byProv[e.provider]=(byProv[e.provider]||0)+1;});
+    var maxProv=Math.max.apply(null,Object.values(byProv).concat([1]));
+    var provColors={qwen:"#7a6fc4",deepseek:"#4f86c6",openai:"#10a37f",moonshot:"#5a67d8",ollama:"#9aa6b3",zhipu:"#4f9e6b",tencent:"#5a8fd6",custom:"#d99a4e"};
+    var provBars=Object.entries(byProv).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
+      var pct=Math.round(kv[1]/maxProv*100);
+      return '<div class="ai-bar-row"><span class="ai-bar-name">'+esc(kv[0])+'</span><div class="ai-bar-track"><div class="ai-bar-fill" style="width:'+pct+'%;background:'+(provColors[kv[0]]||"#9aa6b3")+'"></div></div><span class="ai-bar-num">'+kv[1]+'次</span></div>';
+    }).join('')||'<div style="font-size:12px;color:var(--muted);">暂无调用记录</div>';
+    // By scene
+    var byScene={};
+    weekCalls.forEach(function(e){byScene[e.scene]=(byScene[e.scene]||0)+1;});
+    var sceneLabels={customerAnalysis:"客户分析",promptHelper:"Prompt助手",imageRecognition:"图片识别"};
+    var sceneBars=Object.entries(byScene).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
+      var pct=Math.round(kv[1]/Math.max.apply(null,Object.values(byScene).concat([1]))*100);
+      return '<div class="ai-bar-row"><span class="ai-bar-name">'+esc(sceneLabels[kv[0]]||kv[0])+'</span><div class="ai-bar-track"><div class="ai-bar-fill" style="width:'+pct+'%;background:var(--accent)'></div></div><span class="ai-bar-num">'+kv[1]+'次</span></div>';
+    }).join('')||'';
+    return '<div class="ai-stats-card"><div class="ai-stats-title">AI 调用统计</div>'+
+      '<div class="ai-stats-row">'+
+      '<div class="ai-stat-item"><span class="ai-stat-num">'+todayCalls.length+'</span><span class="ai-stat-label">今日调用</span></div>'+
+      '<div class="ai-stat-item"><span class="ai-stat-num">'+todayRate+'%</span><span class="ai-stat-label">成功率</span></div>'+
+      '<div class="ai-stat-item"><span class="ai-stat-num">'+weekCalls.length+'</span><span class="ai-stat-label">本周调用</span></div>'+
+      '<div class="ai-stat-item"><span class="ai-stat-num">'+(weekTokens>=1000?(weekTokens/1000).toFixed(1)+'K':weekTokens)+'</span><span class="ai-stat-label">Token估算</span></div>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">按模型</div>'+
+      provBars+
+      (sceneBars?'<div style="font-size:11px;font-weight:600;color:var(--muted);margin:8px 0 4px;">按场景</div>'+sceneBars:'')+
+      '</div>';
+  }
+
   // ---------- 渲染统计（B方案：仪表盘式） ----------
   function renderStats(){
     var total=customers.length,high=0,mid=0,low=0,done=0,broken=0,ecom=0,over=0;
@@ -2938,7 +3012,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<div class="dash-mini"><span class="dm-label">有电商经验</span><span class="dm-num" style="color:#2f9e6b">'+ecom+'</span></div>'+
       '<div class="dash-mini alert"><span class="dm-label">待跟进</span><span class="dm-num">'+over+'</span></div>'+
       '</div>';
-    var chartRow='<div class="dash-chart-row">'+donutCard+miniRow+'</div>';
+    var statsCard=renderAiStats();
+    var chartRow='<div class="dash-chart-row">'+donutCard+miniRow+statsCard+'</div>';
     document.getElementById("dashHero").innerHTML=hero;
     document.getElementById("stats").innerHTML=chartRow;
     document.getElementById("overdueCount").textContent=over;
@@ -6314,6 +6389,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("btnCallApi").style.display=(aiGetActiveProvider("customerAnalysis")||settings.apiKey)?"inline-block":"none";
     if($("aiFileHint"))$("aiFileHint").style.display=location.protocol==="file:"?"inline":"none";
     openModal("modalAI");
+    var sel=$("aiModelSelect");if(sel){sel.innerHTML=aiProviders.filter(function(p){return p.enabled&&p.apiKey;}).map(function(p){return '<option value="'+p.id+'"'+(sceneModels.customerAnalysis===p.id?' selected':'')+'>'+p.label+'</option>';}).join('')||'<option value="">请先配置</option>';}
   }
   window.openAI=openAI;
   function copyPrompt(){copyText($("aiPrompt").value);}
@@ -6649,18 +6725,62 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else{$("s_visionModel").value="";}
     updateVisionHint();
   }
-  function openSettings(){$("s_reminder").value=settings.reminderDays;$("s_provider").value=settings.provider||"qwen";$("s_apiBase").value=settings.apiBase;$("s_apiKey").value=settings.apiKey;$("s_model").value=settings.model;$("s_visionModel").value=settings.visionModel||"qwen3-vl-plus";$("s_theme").value=settings.theme;updateVisionHint();openModal("modalSettings");}
+  function renderProviderPanel(){
+    var box=$("aiProvidersPanel");if(!box)return;
+    box.innerHTML=aiProviders.map(function(p,idx){
+      var hasKey=!!p.apiKey;
+      return '<div class="ai-prov-card'+(idx===0?' open':'')+'">'+
+        '<div class="ai-prov-head" onclick="this.parentElement.classList.toggle('open')">'+
+        '<input type="checkbox" class="ai-prov-toggle" '+(p.enabled?'checked':'')+' onchange="aiProviders['+idx+'].enabled=this.checked;aiSaveProviders();aiUpdateStatus('+idx+');">'+
+        '<span class="ai-prov-name">'+esc(p.label)+'</span>'+
+        '<span class="ai-prov-status '+(hasKey&&p.enabled?'on':'off')+'" id="aiProvStatus_'+idx+'">'+(hasKey?'已配置':'未配置')+'</span>'+
+        '<span class="ai-prov-arrow">&#9654;</span>'+
+        '</div>'+
+        '<div class="ai-prov-body">'+
+        '<div class="ai-prov-field"><label>API Key</label><input type="text" value="'+esc(p.apiKey||'')+'" placeholder="sk-..." onchange="aiProviders['+idx+'].apiKey=this.value.trim();aiSaveProviders();aiUpdateStatus('+idx+');"></div>'+
+        '<div class="ai-prov-field"><label>API 基地址</label><input type="text" value="'+esc(p.apiBase||'')+'" onchange="aiProviders['+idx+'].apiBase=this.value.trim();aiSaveProviders();"></div>'+
+        '<div class="ai-prov-field"><label>文本模型</label><input type="text" value="'+esc(p.textModel||'')+'" onchange="aiProviders['+idx+'].textModel=this.value.trim();aiSaveProviders();"></div>'+
+        '<div class="ai-prov-field"><label>视觉模型（图片识别用）</label><input type="text" value="'+esc(p.visionModel||'')+'" placeholder="留空表示不支持视觉" onchange="aiProviders['+idx+'].visionModel=this.value.trim();aiSaveProviders();"></div>'+
+        '</div></div>';
+    }).join('');
+  }
+  function aiUpdateStatus(idx){
+    var p=aiProviders[idx];if(!p)return;
+    var s=$("aiProvStatus_"+idx);if(!s)return;
+    var hasKey=!!p.apiKey;
+    s.className='ai-prov-status '+(hasKey&&p.enabled?'on':'off');
+    s.textContent=hasKey?'已配置':'未配置';
+  }
+  function renderSceneModels(){
+    var box=$("aiSceneModels");if(!box)return;
+    var scenes=[
+      {key:"customerAnalysis",label:"客户 AI 分析"},
+      {key:"promptHelper",label:"Prompt 助手"},
+      {key:"imageRecognition",label:"名片/图片识别"}
+    ];
+    var opts=aiProviders.filter(function(p){return p.enabled&&p.apiKey;}).map(function(p){return '<option value="'+p.id+'"'+(sceneModels[p.id]?'':'')+'>'+esc(p.label)+'</option>';}).join('');
+    if(!opts)opts='<option value="">请先启用一个供应商</option>';
+    box.innerHTML=scenes.map(function(sc){
+      var cur=sceneModels[sc.key]||"";
+      var sel='<select class="ai-scene-select" onchange="sceneModels[\''+sc.key+'\']=this.value;aiSaveSceneModels();">'+opts.replace('value="'+cur+'"','value="'+cur+'" selected')+'</select>';
+      return '<div class="ai-scene-row"><span class="ai-scene-label">'+sc.label+'</span>'+sel+'</div>';
+    }).join('');
+  }
+  function openSettings(){
+    $("s_reminder").value=settings.reminderDays;
+    $("s_theme").value=settings.theme;
+    renderProviderPanel();
+    renderSceneModels();
+    openModal("modalSettings");
+  }
   window.openSettings=openSettings;
   initProviderSelect();
-  if($("s_provider"))$("s_provider").onchange=fillProviderDefaults;
   function saveSettings(){
-    settings.provider=$("s_provider").value;
     settings.reminderDays=parseInt($("s_reminder").value,10)||7;
-    settings.apiBase=$("s_apiBase").value.trim();
-    settings.apiKey=$("s_apiKey").value.trim();
-    settings.model=$("s_model").value.trim()||defaultTextModel(settings.provider);
-    settings.visionModel=$("s_visionModel").value.trim()||"qwen3-vl-plus";
     settings.theme=$("s_theme").value;
+    // Sync settings.apiKey with qwen provider for backward compat
+    var qwen=aiGetProvider("qwen");
+    if(qwen){settings.apiKey=qwen.apiKey;settings.apiBase=qwen.apiBase;settings.model=qwen.textModel;settings.visionModel=qwen.visionModel;settings.provider="qwen";}
     saveSettingsStore();applyTheme();render();toast("设置已保存");closeModal("modalSettings");
   }
   window.saveSettings=saveSettings;
