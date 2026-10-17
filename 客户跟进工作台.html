@@ -1299,6 +1299,9 @@ body{background:var(--bg);}
    .ph-scene:hover{border-color:var(--accent);color:var(--accent);}
    .ph-scene.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
    .ph-scene-cat{font-size:10px;color:var(--muted2);padding:0 4px;}
+  .ph-scene-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;border:1px solid var(--accent);}
+  .ph-scene-x{cursor:pointer;font-size:14px;opacity:.6;transition:opacity .15s;}
+  .ph-scene-x:hover{opacity:1;}
    .ph-hitem{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel2);}
    .ph-hitem.cur{border-color:var(--accent);}
    .ph-hmeta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
@@ -1621,8 +1624,8 @@ body{background:var(--bg);}
         <div class="ph-wrap">
           <div class="ph-main">
             <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。生成结果会自动存进「最近生成」，也能一键存进指令库。</div>
-            <section class="ph-card">
-              <div class="ph-card-head"><span class="ph-step">1</span><h3>场景预设（选一个起手）</h3></div>
+            <section class="ph-card" style="padding:12px 16px;">
+              <div class="ph-card-head" style="margin-bottom:6px;"><span class="ph-step">1</span><h3 style="font-size:14px;">场景预设</h3></div>
               <div id="phScenes"></div>
             </section>
             <section class="ph-card">
@@ -5555,6 +5558,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     phSaveDraft();phRender();
     var st=$("phAskStatus");if(st){st.textContent="已套用「"+sc.name+"」场景，点击「补充问题」回答 "+phQuestions.length+" 个追问后生成。";st.className="ph-status ph-ok";}
   }
+  function phClearScene(){
+    phScenario="";phRenderScenes();
+  }
+
   // 新建一条空白会话（清空工作区，历史保留）
   function phNewSession(){
     phSaveDraft();
@@ -5732,7 +5739,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     answer:function(i,v){phAnswers[i]=v;phSaveDraft();},
     getState:function(){return{raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode,scenario:phScenario,curId:phCurId,sessionCount:phVisible().length};},
     localQuestions:phLocalQuestions,localPrompt:phLocalPrompt,parseQuestions:phParseQuestions,buildGenInput:phBuildGenInput,
-    scene:phUseScene,loadIdx:phLoadIdx,delIdx:phDelIdx,copyIdx:phCopyIdx,toLib:phToLib,saveToLib:phSaveToLib,libCancel:phLibCancel,libCatChg:phLibCatChg,
+    scene:phUseScene,clearScene:phClearScene,loadIdx:phLoadIdx,delIdx:phDelIdx,copyIdx:phCopyIdx,toLib:phToLib,saveToLib:phSaveToLib,libCancel:phLibCancel,libCatChg:phLibCatChg,
     openDrawer:phOpenDrawer,closeDrawer:phCloseDrawer};
 
   window.getPromptGroups=function(){return promptGroups;};
