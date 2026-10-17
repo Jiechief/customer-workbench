@@ -1967,7 +1967,9 @@ body{background:var(--bg);}
     <h3>设置</h3>
     <div class="field"><label>待跟进提醒天数（超过此天数未沟通标红）</label><input type="text" id="s_reminder" placeholder="7"></div>
 
-    <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">AI 模型管理</div>
+    <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between;">AI 模型管理
+      <button class="btn primary" type="button" onclick="saveProvidersConfig()" style="font-size:12px;padding:4px 14px;">保存配置</button>
+    </div>
     <div class="ai-providers-panel" id="aiProvidersPanel"></div>
 
     <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">场景默认模型分配</div>
@@ -6751,6 +6753,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     s.className='ai-prov-status '+(hasKey&&p.enabled?'on':'off');
     s.textContent=hasKey?'已配置':'未配置';
   }
+  function saveProvidersConfig(){
+    var inputs=document.querySelectorAll("#aiProvidersPanel input[data-pidx]");
+    inputs.forEach(function(inp){
+      var idx=parseInt(inp.getAttribute("data-pidx"),10);
+      var field=inp.getAttribute("data-pfield");
+      if(aiProviders[idx])aiProviders[idx][field]=inp.value.trim();
+    });
+    aiSaveProviders();
+    var qwen=aiGetProvider("qwen");
+    if(qwen){settings.apiKey=qwen.apiKey;settings.apiBase=qwen.apiBase;settings.model=qwen.textModel;settings.visionModel=qwen.visionModel;}
+    saveSettingsStore();
+    renderProviderPanel();
+    renderSceneModels();
+    toast("供应商配置已保存");
+  }
+  window.saveProvidersConfig=saveProvidersConfig;
   function renderSceneModels(){
     var box=$("aiSceneModels");if(!box)return;
     var scenes=[
