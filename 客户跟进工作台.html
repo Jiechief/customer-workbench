@@ -2970,7 +2970,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var sceneLabels={customerAnalysis:"客户分析",promptHelper:"Prompt助手",imageRecognition:"图片识别"};
     var sceneBars=Object.entries(byScene).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
       var pct=Math.round(kv[1]/Math.max.apply(null,Object.values(byScene).concat([1]))*100);
-      return '<div class="ai-bar-row"><span class="ai-bar-name">'+esc(sceneLabels[kv[0]]||kv[0])+'</span><div class="ai-bar-track"><div class="ai-bar-fill" style="width:'+pct+'%;background:var(--accent)'></div></div><span class="ai-bar-num">'+kv[1]+'次</span></div>';
+      return '<div class="ai-bar-row"><span class="ai-bar-name">'+esc(sceneLabels[kv[0]]||kv[0])+'</span><div class="ai-bar-track"><div class="ai-bar-fill" style="width:'+pct+'%;background:var(--accent)"></div></div><span class="ai-bar-num">'+kv[1]+'次</span></div>';
     }).join('')||'';
     return '<div class="ai-stats-card"><div class="ai-stats-title">AI 调用统计</div>'+
       '<div class="ai-stats-row">'+
@@ -6730,7 +6730,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     box.innerHTML=aiProviders.map(function(p,idx){
       var hasKey=!!p.apiKey;
       return '<div class="ai-prov-card'+(idx===0?' open':'')+'">'+
-        '<div class="ai-prov-head" onclick="this.parentElement.classList.toggle('open')">'+
+        '<div class="ai-prov-head" onclick="this.parentElement.classList.toggle(&#39;open&#39;)">'+
         '<input type="checkbox" class="ai-prov-toggle" '+(p.enabled?'checked':'')+' onchange="aiProviders['+idx+'].enabled=this.checked;aiSaveProviders();aiUpdateStatus('+idx+');">'+
         '<span class="ai-prov-name">'+esc(p.label)+'</span>'+
         '<span class="ai-prov-status '+(hasKey&&p.enabled?'on':'off')+'" id="aiProvStatus_'+idx+'">'+(hasKey?'已配置':'未配置')+'</span>'+
@@ -6762,7 +6762,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!opts)opts='<option value="">请先启用一个供应商</option>';
     box.innerHTML=scenes.map(function(sc){
       var cur=sceneModels[sc.key]||"";
-      var sel='<select class="ai-scene-select" onchange="sceneModels[\''+sc.key+'\']=this.value;aiSaveSceneModels();">'+opts.replace('value="'+cur+'"','value="'+cur+'" selected')+'</select>';
+      var sel='<select class="ai-scene-select" onchange="sceneModels[&#39;'+sc.key+'&#39;]=this.value;aiSaveSceneModels();">'+opts.replace('value="'+cur+'"','value="'+cur+'" selected')+'</select>';
       return '<div class="ai-scene-row"><span class="ai-scene-label">'+sc.label+'</span>'+sel+'</div>';
     }).join('');
   }
