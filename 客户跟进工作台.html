@@ -5860,6 +5860,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     phCollectAnswers();phSaveDraft();
     var box=$("phFinal");
     if(box)box.innerHTML='<div class="ph-status ph-loading">正在生成专业 Prompt…</div>';
+    var st=$("phAskStatus");
     var phProvider=aiGetActiveProvider("promptHelper");
     if(phProvider){
       aiCall("promptHelper",{messages:[
