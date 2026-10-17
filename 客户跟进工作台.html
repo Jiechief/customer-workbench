@@ -2155,15 +2155,143 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     openai:{label:"OpenAI（GPT 兼容）",apiBase:"https://api.openai.com/v1/chat/completions",text:"gpt-4o-mini",vision:"gpt-4o-mini"},
     moonshot:{label:"Kimi（月之暗面）",apiBase:"https://api.moonshot.cn/v1/chat/completions",text:"moonshot-v1-8k",vision:null},
     ollama:{label:"Ollama（本地模型）",apiBase:"http://localhost:11434/v1/chat/completions",text:"llama3",vision:null},
-    custom:{label:"自定义（自己填接口地址）",apiBase:"",text:"",vision:""}
+    custom:{label:"自定义（自己填接口地址）",apiBase:"",text:"",vision:""},
+    zhipu:{label:"智谱AI（GLM-4）",apiBase:"https://open.bigmodel.cn/api/paas/v4/chat/completions",text:"glm-4-flash",vision:"glm-4v"},
+    tencent:{label:"腾讯混元",apiBase:"https://api.hunyuan.cloud.tencent.com/v1/chat/completions",text:"hunyuan-lite",vision:""}
   };
   function providerPreset(id){return PROVIDERS[id]||PROVIDERS.custom;}
+  // ---------- 多模型管理：数据模型 ----------
+  var AI_PROVIDERS_KEY="df_ai_providers_v1";
+  var AI_SCENE_MODELS_KEY="df_ai_scene_models_v1";
+  var AI_USAGE_LOG_KEY="df_ai_usage_log_v1";
+  var aiProviders=[];      // [{id,label,apiBase,apiKey,textModel,visionModel,enabled}]
+  var sceneModels={customerAnalysis:"qwen",promptHelper:"qwen",imageRecognition:"qwen"};
+  var aiUsageLog=[];      // [{ts,provider,model,scene,success,tokensIn,tokensOut,error,durationMs}]
+
+  function aiInitProviders(){
+    if(aiProviders.length)return;
+    var saved=null;
+    try{saved=JSON.parse(lsGet(AI_PROVIDERS_KEY)||"null");}catch(e){}
+    if(Array.isArray(saved)&&saved.length){aiProviders=saved;return;}
+    // Build from PROVIDERS registry
+    for(var k in PROVIDERS){
+      aiProviders.push({id:k,label:PROVIDERS[k].label,apiBase:PROVIDERS[k].apiBase,apiKey:"",textModel:PROVIDERS[k].text||"",visionModel:PROVIDERS[k].vision||"",enabled:(k==="qwen"||k==="custom")?true:false});
+    }
+    // Migrate old settings
+    if(settings.apiKey){
+      var q=aiProviders.find(function(p){return p.id==="qwen";});
+      if(q){q.apiKey=settings.apiKey;q.enabled=true;}
+    }
+    aiSaveProviders();
+  }
+  function aiSaveProviders(){try{lsSet(AI_PROVIDERS_KEY,JSON.stringify(aiProviders));}catch(e){}}
+  function aiLoadSceneModels(){
+    try{var d=JSON.parse(lsGet(AI_SCENE_MODELS_KEY)||"null");if(d&&typeof d==="object"){sceneModels=d;}}catch(e){}
+  }
+  function aiSaveSceneModels(){try{lsSet(AI_SCENE_MODELS_KEY,JSON.stringify(sceneModels));}catch(e){}}
+  function aiLoadUsageLog(){
+    try{var d=JSON.parse(lsGet(AI_USAGE_LOG_KEY)||"null");if(Array.isArray(d))aiUsageLog=d;}catch(e){}
+  }
+  function aiLogUsage(entry){
+    aiUsageLog.unshift(entry);
+    if(aiUsageLog.length>1000)aiUsageLog=aiUsageLog.slice(0,1000);
+    try{lsSet(AI_USAGE_LOG_KEY,JSON.stringify(aiUsageLog));}catch(e){}
+  }
+  function aiEstimateTokens(text){
+    if(!text)return 0;
+    var cn=(text.match(/[\u4e00-\u9fff]/g)||[]).length;
+    var en=text.length-cn;
+    return Math.round(cn/1.5+en/4);
+  }
+  function aiGetProvider(id){return aiProviders.find(function(p){return p.id===id;});}
+  function aiGetActiveProvider(scene){
+    var id=sceneModels[scene]||"qwen";
+    var p=aiGetProvider(id);
+    if(p&&p.enabled&&p.apiKey)return p;
+    // Fallback: first enabled with key
+    return aiProviders.find(function(x){return x.enabled&&x.apiKey;})||null;
+  }
+  function aiNextProvider(curId){
+    var idx=-1;
+    for(var i=0;i<aiProviders.length;i++){if(aiProviders[i].id===curId){idx=i;break;}}
+    for(var j=1;j<=aiProviders.length;j++){
+      var p=aiProviders[(idx+j)%aiProviders.length];
+      if(p.enabled&&p.apiKey)return p;
+    }
+    return null;
+  }
+  // ---------- 统一调用函数 aiCall ----------
+  function aiCall(scene,body,options){
+    options=options||{};
+    var isVision=options.isVision||false;
+    var timeout=options.timeout||90000;
+    return new Promise(function(resolve,reject){
+      var main=aiGetActiveProvider(scene);
+      if(!main){reject(new Error("没有已启用且配置了 Key 的供应商，请到「设置」配置"));return;}
+      var tried=[];
+      function attempt(provider,retryCount){
+        if(!provider){
+          reject(new Error("所有供应商均调用失败："+tried.join("; ")));
+          return;
+        }
+        var model=isVision?(provider.visionModel||provider.textModel):provider.textModel;
+        if(!model){model=provider.textModel;}
+        var sendBody=JSON.parse(JSON.stringify(body));
+        sendBody.model=model;
+        var ctrl=null,to=null;
+        if(typeof AbortController!=="undefined"){ctrl=new AbortController();to=setTimeout(function(){ctrl.abort();},timeout);}
+        var opt={method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+provider.apiKey},body:JSON.stringify(sendBody)};
+        if(ctrl)opt.signal=ctrl.signal;
+        var t0=Date.now();
+        function doFetch(url){
+          return fetch(url,opt).then(function(res){
+            if(!res.ok)return res.text().then(function(t){throw new Error("HTTP "+res.status+" "+String(t).slice(0,160));});
+            return res.json();
+          });
+        }
+        doFetch(provider.apiBase).catch(function(err){
+          if(location.protocol!=="file:"&&err&&err.name==="TypeError")return doFetch(apiProxyUrl(provider.apiBase));
+          throw err;
+        }).then(function(j){
+          if(to)clearTimeout(to);
+          var content=j&&j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:"";
+          var dur=Date.now()-t0;
+          aiLogUsage({ts:Date.now(),provider:provider.id,model:model,scene:scene,success:true,
+            tokensIn:aiEstimateTokens(JSON.stringify(body.messages||"")),
+            tokensOut:aiEstimateTokens(content),error:"",durationMs:dur});
+          resolve({content:content,provider:provider.id,model:model,fallbackUsed:retryCount>0});
+        }).catch(function(e){
+          if(to)clearTimeout(to);
+          var em=(e&&e.message)||String(e);
+          tried.push(provider.id+": "+em);
+          if(retryCount<2){
+            setTimeout(function(){attempt(provider,retryCount+1);},1000*(retryCount+1));
+          }else{
+            // Try fallback provider
+            var next=aiNextProvider(provider.id);
+            if(next&&tried.indexOf(next.id+": ")<0){
+              aiLogUsage({ts:Date.now(),provider:provider.id,model:model,scene:scene,success:false,
+                tokensIn:0,tokensOut:0,error:em,durationMs:Date.now()-t0});
+              attempt(next,0);
+            }else{
+              aiLogUsage({ts:Date.now(),provider:provider.id,model:model,scene:scene,success:false,
+                tokensIn:0,tokensOut:0,error:em,durationMs:Date.now()-t0});
+              reject(new Error("所有供应商均调用失败："+tried.join("; ")));
+            }
+          }
+        });
+      }
+      attempt(main,0);
+    });
+  }
+  window.aiCall=aiCall;
   // 本地服务器（启动本地服务器.bat）提供同源 /proxy 转发；直连被浏览器跨域拦截时自动改走代理
   function apiProxyUrl(base){return "/proxy?"+encodeURIComponent(base);}
   function isPresetModel(v){if(!v)return false;for(var k in PROVIDERS){if(PROVIDERS[k].text===v)return true;}return false;}
   function defaultTextModel(id){return providerPreset(id).text||"qwen-plus";}
   function defaultVisionModel(id){return providerPreset(id).vision||"";}
   function initProviderSelect(){var sel=$("s_provider");if(!sel)return;sel.innerHTML="";for(var k in PROVIDERS){var o=document.createElement("option");o.value=k;o.textContent=PROVIDERS[k].label;sel.appendChild(o);}}
+  function aiInitAll(){aiInitProviders();aiLoadSceneModels();aiLoadUsageLog();}
   var searchTerm="", intentionFilterSet=new Set(), regionFilterSet=new Set(), ageFilter="all", sortMode="intention";
   var PAGE_SIZE=60, listEnd=PAGE_SIZE;
   var currentCommCustId=null, currentAiCustId=null;
@@ -2459,6 +2587,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   // ---------- 存储 ----------
   function loadAll(){
+    aiInitAll();
     lsWarn();
     try{customers=JSON.parse(lsGet(STORE_KEY))||[];}catch(e){customers=[];}
     if(!Array.isArray(customers))customers=[];
@@ -4819,32 +4948,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     "5. 材料里找不到与上面五类相关的内容时，返回 {\"items\":[]}。"
   ].join("\n");
   function piPost(body){
-    return new Promise(function(resolve,reject){
-      if(!settings.apiKey){reject(new Error("未配置 API Key，请到「设置」填写"));return;}
-      var ctrl=null,to=null;
-      if(typeof AbortController!=="undefined"){ctrl=new AbortController();to=setTimeout(function(){ctrl.abort();},90000);}
-      var opt={method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.apiKey},body:JSON.stringify(body)};
-      if(ctrl)opt.signal=ctrl.signal;
-      function doFetch(url){
-        return fetch(url,opt).then(function(res){
-          if(!res.ok)return res.text().then(function(t){throw new Error("接口返回 HTTP "+res.status+" "+String(t).slice(0,160));});
-          return res.json();
-        });
-      }
-      doFetch(settings.apiBase).catch(function(err){
-        if(location.protocol!=="file:"&&err&&err.name==="TypeError")return doFetch(apiProxyUrl(settings.apiBase));
-        throw err;
-      }).then(function(j){
-        if(to)clearTimeout(to);
-        var c=j&&j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:"";
-        resolve(c);
-      }).catch(function(e){
-        if(to)clearTimeout(to);
-        var m=(e&&e.message)||String(e);
-        if(location.protocol==="file:")m+="（当前是 file:// 打开，浏览器禁止直接调用外部接口。请双击「启动本地服务器.bat」，从 http://localhost:8000 打开工作台再试）";
-        reject(new Error(m));
-      });
-    });
+    return aiCall("promptHelper",body).then(function(r){return r.content;});
   }
   function piNum(v){
     if(typeof v==="number")return isFinite(v)?Math.max(0,Math.round(v)):0;
@@ -5652,8 +5756,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     phRaw=raw;phSaveDraft();
     var st=$("phAskStatus");
     if(st){st.textContent="正在分析需求，生成追问问题…";st.className="ph-status ph-loading";}
-    if(settings.apiKey){
-      piPost({model:settings.model||defaultTextModel(settings.provider),messages:[
+    var phProvider=aiGetActiveProvider("promptHelper");
+    if(phProvider){
+      aiCall("promptHelper",{messages:[
         {role:"system",content:PH_ASK_SYS},{role:"user",content:raw}
       ]}).then(function(txt){
         var qs=phParseQuestions(txt);
@@ -5666,7 +5771,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
     }else{
       phQuestions=phLocalQuestions();phAnswers={};phMode="local";phRenderQuestions();phSaveDraft();
-      if(st){st.textContent="未配置 API Key，先用本地模板追问；到「设置」填写 Key 后可获得更贴合的回答。";st.className="ph-status ph-warn";}
+      if(st){st.textContent="未配置可用的 AI 供应商，先用本地模板追问；到「设置」启用一个供应商后可获得更贴合的回答。";st.className="ph-status ph-warn";}
     }
   }
   function phCollectAnswers(){
@@ -5678,8 +5783,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     phCollectAnswers();phSaveDraft();
     var box=$("phFinal");
     if(box)box.innerHTML='<div class="ph-status ph-loading">正在生成专业 Prompt…</div>';
-    if(settings.apiKey){
-      piPost({model:settings.model||defaultTextModel(settings.provider),messages:[
+    var phProvider=aiGetActiveProvider("promptHelper");
+    if(phProvider){
+      aiCall("promptHelper",{messages:[
         {role:"system",content:PH_GEN_SYS},{role:"user",content:phBuildGenInput(phAnswers)}
       ]}).then(function(txt){
         phFinal=String(txt||"").trim()||phLocalPrompt(phAnswers);phMode="ai";phRenderFinal();phSaveDraft();phRenderHistory();
@@ -5688,6 +5794,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
     }else{
       phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(false);phSaveDraft();phRenderHistory();
+      if(st){st.textContent="未配置可用的 AI 供应商，已用本地模板生成。";st.className="ph-status ph-warn";}
     }
   }
   function phRenderQuestions(){
@@ -5710,7 +5817,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function phRenderFinal(warn,errMsg){
     var box=$("phFinal");if(!box)return;
     if(!phFinal){box.innerHTML='<div class="ph-empty">回答完补充问题后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
-    var meta=phMode==="ai"?("由 AI 生成（"+(settings.provider||"qwen")+"）"):"由本地模板生成（未配置 API Key 或在线不可用）";
+    var meta=phMode==="ai"?("由 AI 生成"):"由本地模板生成（未配置可用的 AI 供应商）";
     if(warn)meta+="；在线失败已回退本地（"+(errMsg||"")+"）";
     box.innerHTML='<div class="ph-final-text" id="phFinalText">'+esc(phFinal)+'</div>'+
       '<div class="ph-actions"><button class="btn primary" type="button" onclick="window.__ph.copy()">复制 Prompt</button>'+
@@ -6204,7 +6311,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     currentAiCustId=id;$("aiCustName").textContent=c.name||"未命名";
     $("aiPrompt").value=buildPrompt(c);
     $("aiResult").value="";
-    $("btnCallApi").style.display=settings.apiKey?"inline-block":"none";
+    $("btnCallApi").style.display=(aiGetActiveProvider("customerAnalysis")||settings.apiKey)?"inline-block":"none";
     if($("aiFileHint"))$("aiFileHint").style.display=location.protocol==="file:"?"inline":"none";
     openModal("modalAI");
   }
@@ -6212,31 +6319,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function copyPrompt(){copyText($("aiPrompt").value);}
   window.copyPrompt=copyPrompt;
   function callApi(){
-    if(!settings.apiKey){toast("未填写 API Key");return;}
+    var sel=aiGetActiveProvider("customerAnalysis");
+    if(!sel){toast("请先在设置中配置并启用一个供应商");return;}
     if(!navigator.onLine){toast("当前离线，请用「复制提示词」方式");return;}
     $("aiResult").value="分析中...";
-    var body={model:settings.model||defaultTextModel(settings.provider),messages:[
+    var body={messages:[
       {role:"system",content:"你是一位资深销售跟进顾问。根据用户提供的客户资料与历史沟通记录，给出下一步跟进建议和推动合作的具体方法，要求简明、可落地，用分点列出。"},
       {role:"user",content:$("aiPrompt").value}
     ]};
-    var aiOpt={method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.apiKey},body:JSON.stringify(body)};
-    function aiFetch(url){
-      return fetch(url,aiOpt).then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error("HTTP "+res.status+" "+t);});return res.json();});
-    }
-    aiFetch(settings.apiBase).catch(function(err){
-      if(location.protocol!=="file:"&&err&&err.name==="TypeError")return aiFetch(apiProxyUrl(settings.apiBase));
-      throw err;
-    })
-      .then(function(j){var txt=j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:JSON.stringify(j);$("aiResult").value=txt;})
-      .catch(function(e){
-        var msg="调用失败："+e.message+"\n\n";
-        if(location.protocol==="file:"){
-          msg+="原因：当前是 file:// 协议打开，浏览器禁止从本地文件直接调用外部 API（CORS 跨域限制）。\n\n解决方案：\n1. 关闭本页，双击「启动本地服务器.bat」，从 http://localhost:8000 打开工作台后再点「调用 API 分析」；\n2. 或改用「复制提示词」，把提示词贴到千问/DeepSeek 网页中分析。";
-        }else{
-          msg+="多为浏览器跨域限制或 Key 无效。请改用「复制提示词」方式，把提示词贴到 AI 网页中分析。";
-        }
-        $("aiResult").value=msg;
-      });
+    aiCall("customerAnalysis",body).then(function(r){
+      $("aiResult").value=r.content;
+      if(r.fallbackUsed)toast("主模型失败，已自动切换到 "+r.provider);
+    }).catch(function(e){
+      $("aiResult").value="调用失败："+e.message+"\n\n请改用「复制提示词」方式，把提示词贴到 AI 网页中分析。";
+    });
   }
   window.callApi=callApi;
 
@@ -6465,28 +6561,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function recognizeByApi(file){
     return new Promise(function(resolve,reject){
       fileToBase64Scaled(file,function(b64){
-        var vmodel=settings.visionModel||defaultVisionModel(settings.provider);
-        if(!vmodel){reject(new Error("当前供应商未配置视觉模型，图片识别不可用。请在「设置」填写支持图片的视觉模型，或切换支持视觉的供应商（如千问 / OpenAI）。"));return;}
-        var body={model:vmodel,messages:[
+        var sel=aiGetActiveProvider("imageRecognition");
+        if(!sel||!sel.visionModel){reject(new Error("当前供应商未配置视觉模型，图片识别不可用。请在「设置」填写支持图片的视觉模型，或切换支持视觉的供应商（如千问 / OpenAI）。"));return;}
+        var body={messages:[
           {role:"system",content:"你是信息抽取助手。从图片中提取客户信息，只输出 JSON，不要任何解释或多余文字。字段：name=公司名称,contactName=联系人姓名,position=职位,phone=电话,address=地址,region=地区(如华东/华南/浙江),product=产品名称,shopLinks=电商店铺链接,intention=只能是 高/中/低/已合作/断约 之一(不确定留空字符串),ecomExp=只能是 是/否 之一(不确定留空字符串),relatedCompany=关联公司(多个用逗号),accioworkNote=AccioWork相关说明。无法确定就填空字符串。"},
           {role:"user",content:[
             {type:"image_url",image_url:{url:b64}},
             {type:"text",text:"请识别这张图片中的客户信息并输出 JSON。"}
           ]}
         ]};
-        var ctrl=null,to=null;
-        if(typeof AbortController!=="undefined"){ctrl=new AbortController();to=setTimeout(function(){ctrl.abort();},20000);}
-        var opt={method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+settings.apiKey},body:JSON.stringify(body)};
-        if(ctrl)opt.signal=ctrl.signal;
-        function doFetch(url){
-          return fetch(url,opt).then(function(res){if(!res.ok)return res.text().then(function(t){throw new Error("HTTP "+res.status+" "+t);});return res.json();});
-        }
-        doFetch(settings.apiBase).catch(function(err){
-          if(location.protocol!=="file:"&&err&&err.name==="TypeError")return doFetch(apiProxyUrl(settings.apiBase));
-          throw err;
-        })
-          .then(function(j){
-            var txt=j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:"";
+        aiCall("imageRecognition",body,{isVision:true,timeout:20000}).then(function(r){
+            var txt=r.content;
             var m=txt.match(/\{[\s\S]*\}/);
             if(!m){throw new Error("模型未返回可解析的 JSON");}
             var obj;try{obj=JSON.parse(m[0]);}catch(e){throw new Error("JSON 解析失败："+e.message);}
