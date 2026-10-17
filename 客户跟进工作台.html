@@ -1276,38 +1276,51 @@ body{background:var(--bg);}
 .plan-sec-h{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
 .plan-sec-h .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
 .prompt-form .row2 .field{flex:1 1 200px;}
-  /* ===== Prompt 助手 ===== */
-  .ph-wrap{max-width:860px;margin:0 auto;padding:18px 20px 48px;}
-  .ph-intro{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.5;}
-  .ph-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
-  .ph-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-  .ph-step{flex-shrink:0;width:24px;height:24px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-  .ph-card-head h3{margin:0;font-size:15px;color:var(--text);}
-  .ph-hint{color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.5;}
-  .ph-textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;color:var(--text);font-family:inherit;}
-  .ph-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-  .ph-status{font-size:12px;margin-top:8px;min-height:16px;line-height:1.5;}
-  .ph-loading{color:var(--accent);}
-  .ph-ok{color:#4f9e6b;}
-  .ph-warn{color:#b58a3e;}
-  .ph-q{padding:12px 0;border-top:1px solid var(--border);}
-  .ph-q:first-child{border-top:none;padding-top:2px;}
-  .ph-q-dim{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--accent-weak);color:var(--accent);border:1px solid var(--accent-soft);margin-bottom:6px;}
-  .ph-q-text{font-size:13px;color:var(--text);margin:0 0 6px;line-height:1.5;}
-  .ph-final-text{white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:480px;overflow:auto;}
-  .ph-final-meta{font-size:11px;color:var(--muted);margin-top:8px;}
-  .ph-empty{color:var(--muted);font-size:13px;padding:6px 0;line-height:1.6;}
-  .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-  .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);}
-  .ph-scene:hover{border-color:var(--accent);color:var(--accent);}
-  .ph-scene.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
-  .ph-hitem{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel2);}
-  .ph-hitem.cur{border-color:var(--accent);}
-  .ph-hmeta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
-  .ph-h-ts{font-size:11px;color:var(--muted);}
-  .ph-h-src{font-size:11px;color:var(--muted);border:1px solid var(--border2);border-radius:999px;padding:1px 7px;}
-  .ph-htitle{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;word-break:break-word;}
-  .ph-hact{display:flex;gap:6px;flex-wrap:wrap;}
+   /* ===== Prompt 助手 ===== */
+   .ph-wrap{max-width:100%;margin:0;padding:18px 24px 48px;display:flex;gap:20px;align-items:flex-start;}
+   .ph-main{flex:1;min-width:0;}
+   .ph-intro{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.5;}
+   .ph-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+   .ph-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+   .ph-step{flex-shrink:0;width:24px;height:24px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+   .ph-card-head h3{margin:0;font-size:15px;color:var(--text);}
+   .ph-hint{color:var(--muted);font-size:12px;margin:0 0 10px;line-height:1.5;}
+   .ph-textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;color:var(--text);font-family:inherit;}
+   .ph-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+   .ph-status{font-size:12px;margin-top:8px;min-height:16px;line-height:1.5;}
+   .ph-loading{color:var(--accent);}
+   .ph-ok{color:#4f9e6b;}
+   .ph-warn{color:#b58a3e;}
+   .ph-final-text{white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:480px;overflow:auto;}
+   .ph-final-meta{font-size:11px;color:var(--muted);margin-top:8px;}
+   .ph-empty{color:var(--muted);font-size:13px;padding:6px 0;line-height:1.6;}
+   .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+   .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);white-space:nowrap;}
+   .ph-scene:hover{border-color:var(--accent);color:var(--accent);}
+   .ph-scene.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
+   .ph-scene-cat{font-size:10px;color:var(--muted2);padding:0 4px;}
+   .ph-hitem{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--panel2);}
+   .ph-hitem.cur{border-color:var(--accent);}
+   .ph-hmeta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+   .ph-h-ts{font-size:11px;color:var(--muted);}
+   .ph-h-src{font-size:11px;color:var(--muted);border:1px solid var(--border2);border-radius:999px;padding:1px 7px;}
+   .ph-htitle{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;word-break:break-word;}
+   .ph-hact{display:flex;gap:6px;flex-wrap:wrap;}
+   /* 侧滑面板 */
+   .ph-drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s var(--ease);}
+   .ph-drawer-backdrop.open{opacity:1;pointer-events:auto;}
+   .ph-drawer{position:fixed;top:0;right:0;height:100vh;width:460px;max-width:90vw;background:var(--panel);border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(0,0,0,.1);z-index:41;transform:translateX(100%);transition:transform .25s var(--ease);display:flex;flex-direction:column;overflow:hidden;}
+   .ph-drawer.open{transform:translateX(0);}
+   .ph-drawer-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;}
+   .ph-drawer-head h3{margin:0;font-size:15px;color:var(--text);flex:1;}
+   .ph-drawer-close{width:30px;height:30px;border-radius:8px;border:none;background:transparent;cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+   .ph-drawer-close:hover{background:var(--panel2);}
+   .ph-drawer-body{flex:1;overflow-y:auto;padding:16px 20px;}
+   .ph-drawer-foot{padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;justify-content:flex-end;}
+   .ph-q{padding:12px 0;border-top:1px solid var(--border);}
+   .ph-q:first-child{border-top:none;padding-top:2px;}
+   .ph-q-dim{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--accent-weak);color:var(--accent);border:1px solid var(--accent-soft);margin-bottom:6px;}
+   .ph-q-text{font-size:13px;color:var(--text);margin:0 0 6px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -1606,44 +1619,46 @@ body{background:var(--bg);}
       </div>
       <div id="viewPromptHelper" class="view" style="display:none;">
         <div class="ph-wrap">
-          <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。生成结果会自动存进「最近生成」，也能一键存进指令库。</div>
-          <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">1</span><h3>场景预设（选一个起手）</h3></div>
-            <div id="phScenes"></div>
-          </section>
-          <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">2</span><h3>原始需求</h3></div>
-            <p class="ph-hint">写下你的核心目标、粗略想法或原始描述，先粗糙也没关系。</p>
-            <textarea id="phRaw" class="ph-textarea" placeholder="例如：我想让 AI 帮我写一封开发新客户的英文邮件……" oninput="window.__ph.setRaw(this.value)"></textarea>
-            <div class="ph-actions">
-              <button class="btn primary" type="button" onclick="window.__ph.ask()">开始协商</button>
-              <button class="btn" type="button" onclick="window.__ph.reset()">清空重来</button>
-            </div>
-            <div class="ph-status" id="phAskStatus"></div>
-          </section>
-          <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">3</span><h3>协商补充的问题</h3></div>
-            <div id="phQuestions"></div>
-          </section>
-          <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">4</span><h3>最终专业 Prompt</h3></div>
-            <div id="phFinal"></div>
-            <div id="phLibPanel" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-              <div class="ph-hint">存进「指令提示词」板块，之后可在那里继续编辑或删除。</div>
-              <div class="field" style="margin-bottom:8px;"><label>标题</label><input id="phLibTitle" placeholder="如：开发信·首次触达"></div>
-              <div class="field" style="margin-bottom:8px;"><label>分类（维度）</label><select id="phLibCat" onchange="window.__ph.libCatChg(this.value)"></select></div>
-              <div class="field" id="phLibCatWrap" style="display:none;margin-bottom:8px;"><label>新建分类名称</label><input id="phLibNew" placeholder="如：售后客服"></div>
-              <div class="field" style="margin-bottom:8px;"><label>Prompt 内容（可修改后存入）</label><textarea id="phLibText" style="min-height:170px;"></textarea></div>
+          <div class="ph-main">
+            <div class="ph-intro">把模糊的想法说个大概，我会先追问关键信息，再帮你写成专业 Prompt。生成结果会自动存进「最近生成」，也能一键存进指令库。</div>
+            <section class="ph-card">
+              <div class="ph-card-head"><span class="ph-step">1</span><h3>场景预设（选一个起手）</h3></div>
+              <div id="phScenes"></div>
+            </section>
+            <section class="ph-card">
+              <div class="ph-card-head"><span class="ph-step">2</span><h3>原始需求</h3></div>
+              <p class="ph-hint">写下你的核心目标、粗略想法或原始描述，先粗糙也没关系。</p>
+              <textarea id="phRaw" class="ph-textarea" placeholder="例如：我想让 AI 帮我写一封开发新客户的英文邮件……" oninput="window.__ph.setRaw(this.value)"></textarea>
               <div class="ph-actions">
-                <button class="btn primary" type="button" onclick="window.__ph.saveToLib()">确认存入指令库</button>
-                <button class="btn" type="button" onclick="window.__ph.libCancel()">取消</button>
+                <button class="btn primary" type="button" onclick="window.__ph.ask()">开始协商</button>
+                <button class="btn" type="button" onclick="window.__ph.openDrawer()">补充问题 <span id="phQBadge" style="display:none;background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-left:2px;"></span></button>
+                <button class="btn" type="button" onclick="window.__ph.reset()">清空重来</button>
               </div>
-            </div>
-          </section>
-          <section class="ph-card">
-            <div class="ph-card-head"><span class="ph-step">5</span><h3>最近生成</h3></div>
-            <div id="phHistory"></div>
-          </section>
+              <div class="ph-status" id="phAskStatus"></div>
+            </section>
+            <section class="ph-card">
+              <div class="ph-card-head"><span class="ph-step">3</span><h3>最终专业 Prompt</h3></div>
+              <div id="phFinal"></div>
+            </section>
+            <section class="ph-card">
+              <div class="ph-card-head"><span class="ph-step">4</span><h3>最近生成</h3></div>
+              <div id="phHistory"></div>
+            </section>
+          </div>
+        </div>
+        <!-- 侧滑面板：补充问题 + 存指令库 -->
+        <div class="ph-drawer-backdrop" id="phDrawerBg" onclick="window.__ph.closeDrawer()"></div>
+        <div class="ph-drawer" id="phDrawer">
+          <div class="ph-drawer-head">
+            <h3 id="phDrawerTitle">补充问题</h3>
+            <button class="ph-drawer-close" type="button" onclick="window.__ph.closeDrawer()">&times;</button>
+          </div>
+          <div class="ph-drawer-body" id="phDrawerBody">
+            <div id="phQuestions"></div>
+          </div>
+          <div class="ph-drawer-foot" id="phDrawerFoot">
+            <button class="btn primary" type="button" onclick="window.__ph.generate()">生成专业 Prompt</button>
+          </div>
         </div>
       </div>
       <div id="viewPlans" class="view" style="display:none;">
@@ -5296,40 +5311,91 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var PH_GEN_SYS="你是资深 Prompt 工程师。请根据用户给出的原始需求与补充回答，产出一条专业、结构化、可直接复制使用的 Prompt。要求：明确角色定位、说清任务目标、补全必要上下文、规定输出格式、列出约束条件、给出可验证的成功标准。用 Markdown 分段，语言与用户需求保持一致（中文需求用中文输出）。直接输出 Prompt 正文，不要解释，不要用代码块包裹。";
   // 内置高频场景预设：点击即填入原始需求并直接给出该场景专属追问
   var PH_SCENES=[
-    {key:"devmail",name:"开发信",raw:"帮我写一封开发新客户的邮件",qs:[
+    // --- 跨境/国外电商 ---
+    {key:"devmail",name:"开发信",cat:"跨境电商",raw:"帮我写一封开发新客户的邮件",qs:[
       {dim:"使用场景",question:"这封信用于哪个渠道？（阿里国际站站内信 / 邮箱 / 领英 / 展会后跟进）"},
       {dim:"目标受众",question:"对方是什么角色？（采购经理 / 创始人 / 设计师 / 贸易商）"},
       {dim:"输出格式",question:"希望邮件怎么呈现？（主题+分段正文 / 3 句短平快 / 带价值点清单）"},
       {dim:"约束条件",question:"有什么必须注意的？（字数、不能报价、不能承诺、语气）"},
       {dim:"成功标准",question:"怎样算写得好？（让人愿意回信 / 愿意进一步聊 / 不引起反感）"}
     ]},
-    {key:"followup",name:"跟进话术",raw:"帮我写一条跟进老客户的消息，推动他回复并进入下一步",qs:[
+    {key:"followup",name:"跟进话术",cat:"跨境电商",raw:"帮我写一条跟进老客户的消息，推动他回复并进入下一步",qs:[
       {dim:"使用场景",question:"在什么渠道跟进？（站内信 / WhatsApp / 邮件 / 电话后补一条）"},
       {dim:"目标受众",question:"跟进谁？（询过价没回复 / 已报价等确认 / 长期没动的客户）"},
       {dim:"输出格式",question:"形式？（一句话 / 3 句以内 / 带一个具体问题）"},
       {dim:"约束条件",question:"避免什么？（不催太急、不重复已说过、不像群发）"},
       {dim:"成功标准",question:"希望他做完什么？（回一句确认 / 给个时间点 / 约个电话）"}
     ]},
-    {key:"quote",name:"报价说明",raw:"帮我写一份给客户看的报价说明，讲清楚价格和价值",qs:[
+    {key:"quote",name:"报价说明",cat:"跨境电商",raw:"帮我写一份给客户看的报价说明，讲清楚价格和价值",qs:[
       {dim:"使用场景",question:"用在哪？（邮件附件 / 在线文档 / 聊天里发）"},
       {dim:"目标受众",question:"谁看？（客户老板 / 采购 / 终端买家）"},
       {dim:"输出格式",question:"格式？（表格 / 分点 / 一段话）"},
       {dim:"约束条件",question:"注意什么？（币种、含不含运费、有效期、不能承诺的）"},
       {dim:"成功标准",question:"希望达成什么？（认可价值 / 尽快付款 / 进入谈判）"}
     ]},
-    {key:"train",name:"客户培训",raw:"帮我写一份给客户的产品使用培训材料",qs:[
+    {key:"train",name:"客户培训",cat:"跨境电商",raw:"帮我写一份给客户的产品使用培训材料",qs:[
       {dim:"使用场景",question:"怎么讲？（现场 1 小时 / 线上录屏 / 文档自助看）"},
       {dim:"目标受众",question:"学员是谁？（完全新手 / 有基础 / 团队）"},
       {dim:"输出格式",question:"形式？（PPT 大纲 / 分步骤文档 / 讲解逐字稿）"},
       {dim:"约束条件",question:"有什么要求？（语言、篇幅、必须包含的操作）"},
       {dim:"成功标准",question:"学完能做到什么？（独立建店 / 独立发品 / 会用某功能）"}
     ]},
-    {key:"moments",name:"朋友圈文案",raw:"帮我写一条发朋友圈的专业内容，展示我的外贸业务",qs:[
+    {key:"moments",name:"朋友圈文案",cat:"跨境电商",raw:"帮我写一条发朋友圈的专业内容，展示我的外贸业务",qs:[
       {dim:"使用场景",question:"发在哪个平台？（微信朋友圈 / 视频号 / 小红书）"},
       {dim:"目标受众",question:"想让谁看到？（潜在客户 / 老客户 / 同行）"},
       {dim:"输出格式",question:"形式？（一句话+图 / 短段落 / 带话题标签）"},
       {dim:"约束条件",question:"注意什么？（不夸大、不硬广、避开敏感词）"},
       {dim:"成功标准",question:"希望读者做什么？（点赞 / 私信 / 记住你）"}
+    ]},
+    // --- 国内电商 ---
+    {key:"taobao_detail",name:"淘宝详情页",cat:"国内电商",raw:"帮我写一份淘宝商品详情页文案，突出卖点和转化",qs:[
+      {dim:"使用场景",question:"用于什么？（新品上架 / 详情页优化 / 活动页）"},
+      {dim:"目标受众",question:"买家画像？（价格敏感 / 品质导向 / 冲动消费）"},
+      {dim:"输出格式",question:"形式？（图文长图文案 / 分段卖点 / 卖点+规格表）"},
+      {dim:"约束条件",question:"注意什么？（违禁词、字数、必须包含的核心卖点）"},
+      {dim:"成功标准",question:"怎样算好？（提升转化率 / 降低客服咨询 / 提高停留时长）"}
+    ]},
+    {key:"live_script",name:"直播脚本",cat:"国内电商",raw:"帮我写一份直播带货脚本，从开场到逼单全程覆盖",qs:[
+      {dim:"使用场景",question:"什么直播？（抖音 / 淘宝直播 / 视频号 / 快手）"},
+      {dim:"目标受众",question:"观众是谁？（老粉 / 路人 / 已加购未付款）"},
+      {dim:"输出格式",question:"形式？（逐分钟脚本 / 话术要点 / 开场+产品+逼单+收尾）"},
+      {dim:"约束条件",question:"时长？产品数量？有没有促销机制？（满减/秒杀/赠品）"},
+      {dim:"成功标准",question:"目标？（GMV / 在线人数 / 转化率 / 粉丝增长）"}
+    ]},
+    {key:"xhs_note",name:"小红书笔记",cat:"国内电商",raw:"帮我写一篇小红书种草笔记，软植入产品不硬广",qs:[
+      {dim:"使用场景",question:"什么类型？（产品测评 / 教程 / 日常分享 / 对比评测）"},
+      {dim:"目标受众",question:"给谁看？（学生党 / 宝妈 / 职场新人 / 精致生活党）"},
+      {dim:"输出格式",question:"形式？（图文笔记 / 标题+正文+标签 / 短句+emoji）"},
+      {dim:"约束条件",question:"注意？（不要硬广感、不要违禁词、植入要自然）"},
+      {dim:"成功标准",question:"目标？（点赞收藏 / 引流到店 / 品牌曝光）"}
+    ]},
+    {key:"cs_reply",name:"客服回复",cat:"国内电商",raw:"帮我写一套电商客服话术，覆盖售前售后常见问题",qs:[
+      {dim:"使用场景",question:"哪个环节？（售前咨询 / 售后退换 / 中差评处理 / 物流催件）"},
+      {dim:"目标受众",question:"客户状态？（已下单 / 犹豫中 / 已退款 / 投诉中）"},
+      {dim:"输出格式",question:"形式？（标准话术模板 / 场景对话 / 快捷回复短语）"},
+      {dim:"约束条件",question:"注意？（语气态度、响应时长、不能承诺的、平台规则）"},
+      {dim:"成功标准",question:"目标？（提升满意度 / 降低退款率 / 提高转化 / 减少投诉）"}
+    ]},
+    {key:"event_promo",name:"活动促销",cat:"国内电商",raw:"帮我写一份电商活动促销文案，大促期间吸引下单",qs:[
+      {dim:"使用场景",question:"什么活动？（双11/618 / 日常秒杀 / 新品首发 / 清仓）"},
+      {dim:"目标受众",question:"针对谁？（老客复购 / 新客拉新 / 沉睡用户唤醒）"},
+      {dim:"输出格式",question:"形式？（主图文案 / 详情页活动版块 / 短信推送 / 直播预告）"},
+      {dim:"约束条件",question:"促销机制？（满减/折扣/赠品/限时），字数限制？"},
+      {dim:"成功标准",question:"目标？（GMV / 转化率 / 客单价 / 新客数）"}
+    ]},
+    {key:"amazon_listing",name:"Amazon Listing",cat:"跨境电商",raw:"Help me write an Amazon product listing with SEO-optimized title, bullets, and description",qs:[
+      {dim:"使用场景",question:"Which marketplace? (US/UK/JP/DE) and category?"},
+      {dim:"目标受众",question:"Who is the target buyer? (price-sensitive / premium / prime member)"},
+      {dim:"输出格式",question:"Format? (title <200 chars / 5 bullet points / A+ description)"},
+      {dim:"约束条件",question:"Any keywords to include? Competitor ASINs? Restricted words?"},
+      {dim:"成功标准",question:"Goal? (improve search ranking / increase CTR / higher conversion)"}
+    ]},
+    {key:"rfq_reply",name:"RFQ 回复",cat:"跨境电商",raw:"帮我写一封阿里国际站 RFQ 报价回复，专业且有竞争力",qs:[
+      {dim:"使用场景",question:"买家来源？（阿里RFQ / 询盘 / 展会名片 / 主动开发）"},
+      {dim:"目标受众",question:"买家类型？（批发商 / 零售商 / 品牌方 / 代采）"},
+      {dim:"输出格式",question:"形式？（邮件正文 / 站内信 / 报价单+说明）"},
+      {dim:"约束条件",question:"注意？（FOB/MOQ/交期/认证/付款方式，不能裸报价格）"},
+      {dim:"成功标准",question:"目标？（让买家回复 / 索样 / 下试单 / 进入深度谈判）"}
     ]}
   ];
   function phStamp(){var d=new Date();function p(n){return n<10?"0"+n:""+n;}return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
@@ -5423,7 +5489,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     phQuestions=sc.qs.map(function(q){return {dim:q.dim,question:q.question};});
     phAnswers={};phCurId=phCurId||phNewId();
     phSaveDraft();phRender();
-    var st=$("phAskStatus");if(st){st.textContent="已套用「"+sc.name+"」场景并给出 "+phQuestions.length+" 个追问，回答后点「生成专业 Prompt」。";st.className="ph-status ph-ok";}
+    var st=$("phAskStatus");if(st){st.textContent="已套用「"+sc.name+"」场景，点击「补充问题」回答 "+phQuestions.length+" 个追问后生成。";st.className="ph-status ph-ok";}
   }
   // 新建一条空白会话（清空工作区，历史保留）
   function phNewSession(){
@@ -5440,14 +5506,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var s=phFind(id||phCurId);if(!s){toast("找不到该条");return;}
     var txt=s.final||"";if(!txt){toast("还没有生成 Prompt，先点生成");return;}
     phLibId=s.id;
-    $("phLibTitle").value=(s.scenario||"Prompt助手")+"·"+(txt.split("\n")[0].slice(0,18)||"新指令");
+    var titleVal=(s.scenario||"Prompt助手")+"·"+(txt.split("\n")[0].slice(0,18)||"新指令");
     var cats=promptGroups.map(function(g){return g.cat;});
-    $("phLibCat").innerHTML=cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("")+'<option value="__new__">+ 新建分类</option>';
-    $("phLibNew").value="";$("phLibCatWrap").style.display="none";
-    $("phLibText").value=txt;
-    $("phLibPanel").style.display="block";
+    var catOpts=cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("")+'<option value="__new__">+ 新建分类</option>';
+    phOpenDrawer('存入指令库',
+      '<div class="ph-hint">存进「指令提示词」板块，之后可在那里继续编辑或删除。</div>'+
+      '<div class="field" style="margin-bottom:8px;"><label>标题</label><input id="phLibTitle" value="'+esc(titleVal)+'" placeholder="如：开发信·首次触达"></div>'+
+      '<div class="field" style="margin-bottom:8px;"><label>分类（维度）</label><select id="phLibCat" onchange="window.__ph.libCatChg(this.value)">'+catOpts+'</select></div>'+
+      '<div class="field" id="phLibCatWrap" style="display:none;margin-bottom:8px;"><label>新建分类名称</label><input id="phLibNew" placeholder="如：售后客服"></div>'+
+      '<div class="field" style="margin-bottom:8px;"><label>Prompt 内容（可修改后存入）</label><textarea id="phLibText" style="min-height:170px;">'+esc(txt)+'</textarea></div>',
+      '<button class="btn primary" type="button" onclick="window.__ph.saveToLib()">确认存入指令库</button>'+
+      '<button class="btn" type="button" onclick="window.__ph.libCancel()">取消</button>'
+    );
   }
-  function phLibCancel(){phLibId="";$("phLibPanel").style.display="none";}
+  function phLibCancel(){phLibId="";phCloseDrawer();}
   function phLibCatChg(v){$("phLibCatWrap").style.display=v==="__new__"?"block":"none";}
   function phSaveToLib(){
     var s=phFind(phLibId||phCurId);if(!s)return;
@@ -5468,7 +5540,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function phRenderScenes(){
     var box=$("phScenes");if(!box)return;
-    box.innerHTML=PH_SCENES.map(function(sc){return '<button type="button" class="ph-scene'+(sc.name===phScenario?" active":"")+'" onclick="window.__ph.scene(\''+sc.key+'\')">'+esc(sc.name)+'</button>';}).join("");
+    var cats=[];
+    PH_SCENES.forEach(function(sc){if(cats.indexOf(sc.cat)<0)cats.push(sc.cat);});
+    var html="";
+    cats.forEach(function(cat){
+      html+='<div style="margin-bottom:6px;"><div class="ph-scene-cat">'+esc(cat)+'</div><div class="ph-scenes">';
+      PH_SCENES.filter(function(sc){return sc.cat===cat;}).forEach(function(sc){
+        html+='<button type="button" class="ph-scene'+(sc.name===phScenario?" active":"")+'" onclick="window.__ph.scene(\''+sc.key+'\')">'+esc(sc.name)+'</button>';
+      });
+      html+='</div></div>';
+    });
+    box.innerHTML=html;
   }
   function phRenderHistory(){
     var box=$("phHistory");if(!box)return;
@@ -5502,7 +5584,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var qs=phParseQuestions(txt);
         if(!qs.length)qs=phLocalQuestions();
         phQuestions=qs;phAnswers={};phMode="ai";phRenderQuestions();phSaveDraft();
-        if(st){st.textContent="已生成 "+qs.length+" 个追问问题，回答后点「生成专业 Prompt」。";st.className="ph-status ph-ok";}
+        if(st){st.textContent="已生成 "+qs.length+" 个追问，点击「补充问题」填写回答。";st.className="ph-status ph-ok";}
       }).catch(function(e){
         phQuestions=phLocalQuestions();phAnswers={};phMode="local";phRenderQuestions();phSaveDraft();
         if(st){st.textContent="在线生成失败（"+((e&&e.message)||e)+"），已改用本地模板追问。";st.className="ph-status ph-warn";}
@@ -5535,19 +5617,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function phRenderQuestions(){
     var box=$("phQuestions");if(!box)return;
-    if(!phQuestions.length){box.innerHTML='<div class="ph-empty">先在上方「原始需求」写下你的想法，点「开始协商」，这里会出现针对性的追问问题。</div>';return;}
+    var badge=$("phQBadge");
+    if(!phQuestions.length){
+      box.innerHTML='<div class="ph-empty">先在上方「原始需求」写下你的想法，点「开始协商」，这里会出现针对性的追问问题。</div>';
+      if(badge){badge.style.display="none";}
+      return;
+    }
+    if(badge){badge.style.display="inline";badge.textContent=phQuestions.length;}
     var html="";
     phQuestions.forEach(function(it,i){
       html+='<div class="ph-q"><span class="ph-q-dim">'+esc(it.dim)+'</span>'+
         '<p class="ph-q-text">'+esc(it.question)+'</p>'+
         '<textarea id="phAns_'+i+'" class="ph-textarea" placeholder="你的回答（可留空）" oninput="window.__ph.answer('+i+',this.value)">'+esc(phAnswers[i]||"")+'</textarea></div>';
     });
-    html+='<div class="ph-actions"><button class="btn primary" type="button" onclick="window.__ph.generate()">生成专业 Prompt</button></div>';
     box.innerHTML=html;
   }
   function phRenderFinal(warn,errMsg){
     var box=$("phFinal");if(!box)return;
-    if(!phFinal){box.innerHTML='<div class="ph-empty">回答完「协商补充的问题」后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
+    if(!phFinal){box.innerHTML='<div class="ph-empty">回答完补充问题后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
     var meta=phMode==="ai"?("由 AI 生成（"+(settings.provider||"qwen")+"）"):"由本地模板生成（未配置 API Key 或在线不可用）";
     if(warn)meta+="；在线失败已回退本地（"+(errMsg||"")+"）";
     box.innerHTML='<div class="ph-final-text" id="phFinalText">'+esc(phFinal)+'</div>'+
@@ -5561,6 +5648,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var r=$("phRaw");if(r)r.value=phRaw||"";
     phRenderScenes();phRenderQuestions();phRenderFinal();phRenderHistory();
   }
+  function phOpenDrawer(title,bodyHtml,footHtml){
+    var bg=$("phDrawerBg"),dw=$("phDrawer");
+    if(!bg||!dw)return;
+    if(title)$("phDrawerTitle").textContent=title;
+    if(bodyHtml)$("phDrawerBody").innerHTML=bodyHtml;
+    if(footHtml!==undefined)$("phDrawerFoot").innerHTML=footHtml;
+    bg.classList.add("open");dw.classList.add("open");
+  }
+  function phCloseDrawer(){
+    var bg=$("phDrawerBg"),dw=$("phDrawer");
+    if(bg)bg.classList.remove("open");
+    if(dw)dw.classList.remove("open");
+  }
   function phReset(){phNewSession();var r=$("phRaw");if(r)r.value="";var st=$("phAskStatus");if(st){st.textContent="";st.className="ph-status";}phLibCancel();phRender();toast("已新建，可重新开始");}
   window.__ph={ask:phAsk,generate:phGenerate,render:phRender,reset:phReset,
     copy:function(){if(!phFinal){toast("还没有可复制的 Prompt");return;}copyText(phFinal);},
@@ -5568,7 +5668,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     answer:function(i,v){phAnswers[i]=v;phSaveDraft();},
     getState:function(){return{raw:phRaw,questions:phQuestions,answers:phAnswers,final:phFinal,mode:phMode,scenario:phScenario,curId:phCurId,sessionCount:phVisible().length};},
     localQuestions:phLocalQuestions,localPrompt:phLocalPrompt,parseQuestions:phParseQuestions,buildGenInput:phBuildGenInput,
-    scene:phUseScene,loadIdx:phLoadIdx,delIdx:phDelIdx,copyIdx:phCopyIdx,toLib:phToLib,saveToLib:phSaveToLib,libCancel:phLibCancel,libCatChg:phLibCatChg};
+    scene:phUseScene,loadIdx:phLoadIdx,delIdx:phDelIdx,copyIdx:phCopyIdx,toLib:phToLib,saveToLib:phSaveToLib,libCancel:phLibCancel,libCatChg:phLibCatChg,
+    openDrawer:phOpenDrawer,closeDrawer:phCloseDrawer};
 
   window.getPromptGroups=function(){return promptGroups;};
   window.promptFilterTest=function(tab,kw){promptTab=tab||"all";promptKeyword=kw||"";return promptFilter();};
