@@ -6737,10 +6737,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         '<span class="ai-prov-arrow">&#9654;</span>'+
         '</div>'+
         '<div class="ai-prov-body">'+
-        '<div class="ai-prov-field"><label>API Key</label><input type="text" value="'+esc(p.apiKey||'')+'" placeholder="sk-..." onchange="aiProviders['+idx+'].apiKey=this.value.trim();aiSaveProviders();aiUpdateStatus('+idx+');"></div>'+
-        '<div class="ai-prov-field"><label>API 基地址</label><input type="text" value="'+esc(p.apiBase||'')+'" onchange="aiProviders['+idx+'].apiBase=this.value.trim();aiSaveProviders();"></div>'+
-        '<div class="ai-prov-field"><label>文本模型</label><input type="text" value="'+esc(p.textModel||'')+'" onchange="aiProviders['+idx+'].textModel=this.value.trim();aiSaveProviders();"></div>'+
-        '<div class="ai-prov-field"><label>视觉模型（图片识别用）</label><input type="text" value="'+esc(p.visionModel||'')+'" placeholder="留空表示不支持视觉" onchange="aiProviders['+idx+'].visionModel=this.value.trim();aiSaveProviders();"></div>'+
+        '<div class="ai-prov-field"><label>API Key</label><input type="text" data-pidx="'+idx+'" data-pfield="apiKey" value="'+esc(p.apiKey||'')+'" placeholder="sk-..."></div>'+
+        '<div class="ai-prov-field"><label>API 基地址</label><input type="text" data-pidx="'+idx+'" data-pfield="apiBase" value="'+esc(p.apiBase||'')+'"></div>'+
+        '<div class="ai-prov-field"><label>文本模型</label><input type="text" data-pidx="'+idx+'" data-pfield="textModel" value="'+esc(p.textModel||'')+'"></div>'+
+        '<div class="ai-prov-field"><label>视觉模型（图片识别用）</label><input type="text" data-pidx="'+idx+'" data-pfield="visionModel" value="'+esc(p.visionModel||'')+'" placeholder="留空表示不支持视觉"></div>'+
         '</div></div>';
     }).join('');
   }
@@ -6778,6 +6778,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveSettings(){
     settings.reminderDays=parseInt($("s_reminder").value,10)||7;
     settings.theme=$("s_theme").value;
+    // Read all provider inputs from DOM
+    var inputs=document.querySelectorAll("#aiProvidersPanel input[data-pidx]");
+    inputs.forEach(function(inp){
+      var idx=parseInt(inp.getAttribute("data-pidx"),10);
+      var field=inp.getAttribute("data-pfield");
+      if(aiProviders[idx])aiProviders[idx][field]=inp.value.trim();
+    });
+    aiSaveProviders();
     // Sync settings.apiKey with qwen provider for backward compat
     var qwen=aiGetProvider("qwen");
     if(qwen){settings.apiKey=qwen.apiKey;settings.apiBase=qwen.apiBase;settings.model=qwen.textModel;settings.visionModel=qwen.visionModel;settings.provider="qwen";}
