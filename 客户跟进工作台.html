@@ -5611,18 +5611,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function phRenderScenes(){
     var box=$("phScenes");if(!box)return;
-    var cats=[];
-    PH_SCENES.forEach(function(sc){if(cats.indexOf(sc.cat)<0)cats.push(sc.cat);});
-    var html="";
+    var cats=[];var curCat="";
+    PH_SCENES.forEach(function(sc){if(cats.indexOf(sc.cat)<0){cats.push(sc.cat);if(sc.name===phScenario)curCat=sc.cat;}});
+    var sel='<select id="phSceneSelect" onchange="window.__ph.scene(this.value)" style="padding:8px 14px;border:1px solid var(--border2);border-radius:10px;background:var(--panel2);color:var(--text);font-size:13px;cursor:pointer;max-width:260px;">';
+    sel+='<option value="">选择场景…</option>';
     cats.forEach(function(cat){
-      html+='<div style="margin-bottom:6px;"><div class="ph-scene-cat">'+esc(cat)+'</div><div class="ph-scenes">';
+      sel+='<optgroup label="'+esc(cat)+'">';
       PH_SCENES.filter(function(sc){return sc.cat===cat;}).forEach(function(sc){
-        html+='<button type="button" class="ph-scene'+(sc.name===phScenario?" active":"")+'" onclick="window.__ph.scene(\''+sc.key+'\')">'+esc(sc.name)+'</button>';
+        sel+='<option value="'+sc.key+'"'+(sc.name===phScenario?" selected":"")+'>'+esc(sc.name)+'</option>';
       });
-      html+='</div></div>';
+      sel+='</optgroup>';
     });
-    box.innerHTML=html;
+    sel+='</select>';
+    var chip=phScenario?'<span class="ph-scene-chip">'+esc(phScenario)+'<span class="ph-scene-x" onclick="window.__ph.clearScene()">&times;</span></span>':'';
+    box.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+sel+chip+'</div>';
   }
+
   function phRenderHistory(){
     var box=$("phHistory");if(!box)return;
     var list=phVisible();
