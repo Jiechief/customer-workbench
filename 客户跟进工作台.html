@@ -1821,7 +1821,7 @@ body{background:var(--bg);}
     </div>
     <div class="row2">
       <div class="field"><label>联系人电话</label><input type="text" id="f_phone" placeholder="手机号"></div>
-      <div class="field"><label>真实地址</label><input type="text" id="f_address" placeholder="客户地址"></div>
+      <div class="field"><label>真实地址</label><input type="text" id="f_address" placeholder="详细地址，如 XX市XX区XX路XX号（地图定位用，不要填备注）"></div>
     </div>
     <div class="row2">
       <div class="field"><label>客户所属地区</label><input type="text" id="f_region" placeholder="如：华东 / 华南 / 浙江"></div>
@@ -6062,8 +6062,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     s.onerror=function(){mapSdkLoading=false;cb&&cb(null,"loadfail");};
     (document.head||document.documentElement).appendChild(s);
   }
-  function mapGeocode(addr,cb){
-    if(!mapAMap||!addr){cb(null);return;}
+  // 高德 2.0 的 Geocoder / MarkerCluster 属于按需插件，必须显式加载后才能 new
+  function mapLoadPlugins(list,cb){
+    if(!mapAMap){cb(false);return;}
+    try{
+      mapAMap.plugin(list,function(){cb(true);});
+    }catch(e){cb(false);}
+  }
+  function mapGeocodeNow(addr,cb){
     try{
       var g=new mapAMap.Geocoder();
       g.getLocation(String(addr),function(status,result){
@@ -6076,6 +6082,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         }catch(e){cb(null);}
       });
     }catch(e){cb(null);}
+  }
+  function mapGeocode(addr,cb){
+    if(!mapAMap||!addr){cb(null);return;}
+    if(typeof mapAMap.Geocoder!=="function"){
+      mapLoadPlugins(["AMap.Geocoder"],function(ok){ if(ok)mapGeocodeNow(addr,cb);else cb(null); });
+      return;
+    }
+    mapGeocodeNow(addr,cb);
   }
   function mapHasGeo(c){return !!(c&&c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat));}
   function mapEnqueue(list,force){
@@ -6127,12 +6141,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       m.on("click",function(){mapFocus(c.id);});
       ms.push(m);
     });
-    try{mapCluster.clearMarkers();}catch(e){}
-    try{mapCluster.addMarkers(ms);}catch(e){}
+    mapAddMarkers(ms);
     var pend=list.length-ok;
     mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
     if(ok>0){try{mapInst.setFitView();}catch(e){}}
     mapRenderPending(list);
+  }
+  function mapAddMarkers(ms){
+    if(mapCluster){
+      try{mapCluster.clearMarkers();mapCluster.addMarkers(ms);return;}catch(e){}
+    }
+    // 聚合插件不可用时降级：直接挂到地图上，保证标记可见
+    try{
+      if(mapInst){
+        var olds=mapInst.getAllOverlays("marker");
+        if(olds&&olds.length)mapInst.remove(olds);
+        ms.forEach(function(m){mapInst.add(m);});
+      }
+    }catch(e){}
   }
   function mapRenderPending(list){
     var box=$("mapPendingList");if(!box)return;
@@ -6159,9 +6185,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(err==="loading"){mapSetStat("地图加载中…");return;}
       if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
       if(!mapInst){
-        mapInst=new A.Map("mapCanvas",{zoom:5,center:[110,32],resizeEnable:true});
-        mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});
-        window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
+        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder"],function(){
+          try{
+            mapInst=new A.Map("mapCanvas",{zoom:5,center:[110,32],resizeEnable:true});
+            if(typeof A.MarkerCluster==="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
+            window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
+          }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
+          mapSetStat("地图已就绪");
+          mapPump();
+          mapRefresh();
+        });
+        return;
       }
       mapSetStat("地图已就绪");
       mapPump();
@@ -6179,7 +6213,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapBatchResolve(){
     if(!mapHasKey()){toast("请先在设置里填写高德地图 Key");openSettings();return;}
     if(!mapOpened)mapOpen();
-    var n=mapEnqueue(getFiltered(),true);
+    var n=mapEnqueue(getFiltered(),false);
     toast(n>0?("已开始解析 "+n+" 个地址"):"没有需要解析的地址");
   }
   function mapFocus(id){
