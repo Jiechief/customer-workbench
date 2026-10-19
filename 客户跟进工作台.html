@@ -6006,16 +6006,45 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var mapAMap=null,mapInst=null,mapCluster=null,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapOpened=false,mapSdkLoading=false;
   function mapHasKey(){return !!(settings&&settings.mapKey&&String(settings.mapKey).trim());}
   function mapSetStat(t){var el=$("mapStat");if(el)el.textContent=t;}
+  // 捕获高德鉴权/渲染错误，映射成用户能看懂的原因（否则只白屏无提示）
+  var mapAmapErr="";
+  function mapHookAmapError(){
+    if(console.__amapHooked)return;
+    console.__amapHooked=true;
+    var oldErr=console.error;
+    console.error=function(){
+      try{
+        var s=Array.prototype.slice.call(arguments).map(function(a){return String(a);}).join(" ");
+        if(/INVALID_USER_KEY|USERKEY_PLAT_NOMATCH|userkey/i.test(s))mapAmapErr="Key 无效或平台类型不匹配，请在高德开放平台把类型选为「Web端(JS API)」";
+        else if(/SCODE|scode/i.test(s))mapAmapErr="安全密钥 securityJsCode 缺失或不正确，请在设置里补填";
+      }catch(e){}
+      return oldErr.apply(console,arguments);
+    };
+  }
+  // 底图渲染检测：加载后 3 秒仍无画布则说明鉴权或网络问题
+  function mapVerifyRender(){
+    var c=$("mapCanvas");
+    if(!c||!mapInst)return;
+    var box=null;
+    try{box=c.querySelector(".amap-container");}catch(e){}
+    var drew=box&&(box.querySelector("canvas")||box.querySelector(".amap-layer"));
+    if(!drew){
+      var tip=mapAmapErr||"高德底图未渲染：请确认 Key 类型为「Web端(JS API)」、已填安全密钥，且本机能访问高德服务器";
+      mapSetStat(tip);
+      toast(tip);
+    }
+  }
   function mapLoadSdk(cb){
     if(mapAMap){cb&&cb(mapAMap,null);return;}
     if(!mapHasKey()){cb&&cb(null,"nokey");return;}
     if(mapSdkLoading){cb&&cb(null,"loading");return;}
     mapSdkLoading=true;
     // 合规：Key 由用户在高德开放平台申请（Web端 JS API），不在代码中硬编码；坐标为 GCJ-02
+    mapHookAmapError();
     window._AMapSecurityConfig={securityJsCode:String(settings.mapSecret||"").trim()};
     var s=document.createElement("script");
     s.src="https://webapi.amap.com/maps?v=2.0&key="+encodeURIComponent(String(settings.mapKey).trim())+"&plugin=AMap.MarkerCluster";
-    s.onload=function(){mapSdkLoading=false;mapAMap=window.AMap||null;cb&&cb(mapAMap,mapAMap?null:"loadfail");};
+    s.onload=function(){mapSdkLoading=false;mapAMap=window.AMap||null;cb&&cb(mapAMap,mapAMap?null:"loadfail");if(mapAMap)setTimeout(mapVerifyRender,3000);};
     s.onerror=function(){mapSdkLoading=false;cb&&cb(null,"loadfail");};
     (document.head||document.documentElement).appendChild(s);
   }
