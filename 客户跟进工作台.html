@@ -6037,7 +6037,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!c||!mapInst)return;
     var box=null;
     try{box=c.querySelector(".amap-container");}catch(e){}
-    var drew=box&&(box.querySelector("canvas")||box.querySelector(".amap-layer"));
+    var drew=box&&(box.querySelector("canvas")||box.querySelector(".amap-layer")||box.innerHTML||"").length>20;
     if(!drew){
       if(mapAmapErr){mapSetStat(mapAmapErr);toast(mapAmapErr);return;}
       mapProbeTile(function(reach){
@@ -6058,7 +6058,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     window._AMapSecurityConfig={securityJsCode:String(settings.mapSecret||"").trim()};
     var s=document.createElement("script");
     s.src="https://webapi.amap.com/maps?v=2.0&key="+encodeURIComponent(String(settings.mapKey).trim())+"&plugin=AMap.MarkerCluster";
-    s.onload=function(){mapSdkLoading=false;mapAMap=window.AMap||null;cb&&cb(mapAMap,mapAMap?null:"loadfail");if(mapAMap)setTimeout(mapVerifyRender,3000);};
+    s.onload=function(){mapSdkLoading=false;mapAMap=window.AMap||null;cb&&cb(mapAMap,mapAMap?null:"loadfail");if(mapAMap)setTimeout(mapVerifyRender,7000);};
     s.onerror=function(){mapSdkLoading=false;cb&&cb(null,"loadfail");};
     (document.head||document.documentElement).appendChild(s);
   }
@@ -6070,18 +6070,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }catch(e){cb(false);}
   }
   function mapGeocodeNow(addr,cb){
+    // 加超时与单次结算保护：外部接口不回调时不能让队列永久卡住
+    var settled=false;
+    var fin=function(v){if(settled)return;settled=true;try{if(timer)clearTimeout(timer);}catch(e){}cb(v);};
+    var timer=null;
     try{
       var g=new mapAMap.Geocoder();
+      timer=setTimeout(function(){fin(null);},6000);
       g.getLocation(String(addr),function(status,result){
         try{
           if(status==="complete"&&result&&result.geocodes&&result.geocodes.length){
             var p=result.geocodes[0].location;
-            if(p&&isFinite(p.lng)&&isFinite(p.lat)){cb({lng:p.lng,lat:p.lat});return;}
+            if(p&&isFinite(p.lng)&&isFinite(p.lat)){fin({lng:p.lng,lat:p.lat});return;}
           }
-          cb(null);
-        }catch(e){cb(null);}
+          fin(null);
+        }catch(e){fin(null);}
       });
-    }catch(e){cb(null);}
+    }catch(e){fin(null);}
   }
   function mapGeocode(addr,cb){
     if(!mapAMap||!addr){cb(null);return;}
@@ -6091,13 +6096,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     mapGeocodeNow(addr,cb);
   }
+  // 判断文本是否像详细地址：含省市县区路街号村等特征字，且长度合理
+  function mapLooksLikeAddress(s){
+    s=String(s==null?"":s).trim();
+    if(s.length<5)return false;
+    return /(省|市|县|区|路|街|道|号|村|镇|乡|弄|巷|园|大道|广场|大厦|室|栋|幢|组|座|层|苑|港|街坊|小区|园区|开发区)/.test(s);
+  }
   function mapHasGeo(c){return !!(c&&c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat));}
   function mapEnqueue(list,force){
     var arr=[];
     (list||[]).forEach(function(c){
       if(!c)return;
       if(mapHasGeo(c)&&!force)return;
-      if(!String(c.address||"").trim()&&!String(c.region||"").trim())return;
+      if(!mapLooksLikeAddress(c.address))return;
       if(force){mapGeoQueue=mapGeoQueue.filter(function(x){return !x||x.id!==c.id;});}
       else{var inQ=false;for(var i=0;i<mapGeoQueue.length;i++){if(mapGeoQueue[i]&&mapGeoQueue[i].id===c.id){inQ=true;break;}}if(inQ)return;}
       arr.push(c);
@@ -6108,27 +6119,34 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return arr.length;
   }
   // 串行解析：一次一个，避免并发刷额度
+  var mapGeoRunning=0,MAP_CONCURRENCY=3;
   function mapPump(){
-    if(mapGeoBusy||!mapGeoQueue.length||!mapAMap)return;
-    var c=mapGeoQueue.shift();
-    mapGeoBusy=true;
-    mapSetStat("正在解析地址（剩余 "+mapGeoQueue.length+"）");
-    var done=function(){
-      mapGeoBusy=false;
-      try{saveCustomers();}catch(e){}
-      mapRefresh();
-      mapPump();
-    };
-    mapGeocode(String(c.address||"").trim(),function(geo){
-      if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
-      // 城市级兜底：用「客户所属地区」再试一次
-      var rg=String(c.region||"").trim();
-      if(!rg){done();return;}
-      mapGeocode(rg,function(geo2){
-        if(geo2){c.geo={lng:geo2.lng,lat:geo2.lat,src:"region",at:Date.now()};}
-        done();
-      });
-    });
+    if(!mapAMap)return;
+    while(mapGeoRunning<MAP_CONCURRENCY&&mapGeoQueue.length){
+      mapGeoRunning++;
+      var cur=mapGeoQueue.shift();
+      mapSetStat("正在解析地址（剩余 "+(mapGeoQueue.length+mapGeoRunning)+"）");
+      (function(c){
+        var settled=false;
+        var done=function(){
+          if(settled)return;settled=true;
+          mapGeoRunning--;
+          try{saveCustomers();}catch(e){}
+          mapRefresh();
+          mapPump();
+        };
+        mapGeocode(String(c.address||"").trim(),function(geo){
+          if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
+          // 城市级兜底：用「客户所属地区」再试一次
+          var rg=String(c.region||"").trim();
+          if(!rg){done();return;}
+          mapGeocode(rg,function(geo2){
+            if(geo2){c.geo={lng:geo2.lng,lat:geo2.lat,src:"region",at:Date.now()};}
+            done();
+          });
+        });
+      })(cur);
+    }
   }
   function mapRefresh(){
     if(!mapInst)return;
