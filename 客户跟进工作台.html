@@ -6021,6 +6021,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return oldErr.apply(console,arguments);
     };
   }
+  // 瓦片连通性探测：用于区分「Key/白名单问题」与「网络访问不了高德底图服务器」
+  function mapProbeTile(cb){
+    try{
+      var img=new Image();img.crossOrigin="anonymous";var done=false;
+      img.onload=function(){if(!done){done=true;cb(true);}};
+      img.onerror=function(){if(!done){done=true;cb(false);}};
+      setTimeout(function(){if(!done){done=true;cb(null);}},6000);
+      img.src="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x=5373&y=3070&z=12&t="+Date.now();
+    }catch(e){cb(null);}
+  }
   // 底图渲染检测：加载后 3 秒仍无画布则说明鉴权或网络问题
   function mapVerifyRender(){
     var c=$("mapCanvas");
@@ -6029,9 +6039,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{box=c.querySelector(".amap-container");}catch(e){}
     var drew=box&&(box.querySelector("canvas")||box.querySelector(".amap-layer"));
     if(!drew){
-      var tip=mapAmapErr||"高德底图未渲染：请确认 Key 类型为「Web端(JS API)」、已填安全密钥，且本机能访问高德服务器";
-      mapSetStat(tip);
-      toast(tip);
+      if(mapAmapErr){mapSetStat(mapAmapErr);toast(mapAmapErr);return;}
+      mapProbeTile(function(reach){
+        var tip=(reach===false)
+          ?"高德底图服务器连不上（网络问题）：请开启代理或关闭代理后重试，当前网络无法访问高德瓦片"
+          :"底图加载失败但瓦片网络可达：请到高德控制台检查 Key 的 Referer 域名白名单（本地打开需包含 * 或当前域名），并确认平台类型为 Web端(JS API)";
+        mapSetStat(tip);toast(tip);
+      });
     }
   }
   function mapLoadSdk(cb){
