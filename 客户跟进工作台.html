@@ -1294,6 +1294,21 @@ body{background:var(--bg);}
    .ph-final-text{white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:480px;overflow:auto;}
    .ph-final-meta{font-size:11px;color:var(--muted);margin-top:8px;}
    .ph-empty{color:var(--muted);font-size:13px;padding:6px 0;line-height:1.6;}
+  .map-panel{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;}
+  .map-panel-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .map-panel-title{font-size:14px;font-weight:700;color:var(--text);}
+  .map-head-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .map-body{display:flex;height:420px;}
+  .map-canvas{flex:1 1 auto;min-width:0;height:100%;background:var(--panel2);}
+  .map-side{width:240px;flex:0 0 240px;border-left:1px solid var(--border);overflow:auto;padding:10px 12px;background:var(--panel);}
+  .map-side-head{font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .map-hint{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;}
+  .map-pend-item{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .map-pend-name{font-size:13px;color:var(--text);font-weight:600;}
+  .map-pend-addr{font-size:11px;color:var(--muted);word-break:break-all;}
+  .card.map-flash{animation:mapFlashAnim 2.2s ease;}
+  @keyframes mapFlashAnim{0%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:var(--shadow);}}
+  @media (max-width:680px){.map-body{flex-direction:column;height:auto;}.map-canvas{height:300px;}.map-side{width:auto;flex:none;border-left:none;border-top:1px solid var(--border);max-height:190px;}}
    .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
    .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);white-space:nowrap;}
    .ph-scene:hover{border-color:var(--accent);color:var(--accent);}
@@ -1640,6 +1655,26 @@ body{background:var(--bg);}
           <button class="btn" onclick="toggleBatch()">退出批量</button>
         </div>
         <div class="list" id="list"></div>
+        <div class="map-panel" id="mapPanel">
+          <div class="map-panel-head">
+            <span class="map-panel-title">客户地图</span>
+            <span class="muted" id="mapStat">未加载</span>
+            <span class="map-head-btns">
+              <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
+              <button class="btn" type="button" onclick="window.__map.batchResolve()">批量补解析</button>
+              <button class="btn primary" id="btnMapToggle" type="button" onclick="window.__map.toggle()">展开地图</button>
+            </span>
+          </div>
+          <div class="map-body" id="mapBody" style="display:none;">
+            <div class="map-canvas" id="mapCanvas"></div>
+            <div class="map-side" id="mapSide">
+              <div class="map-side-head">待定位 <b id="mapPendingCount">0</b> 家</div>
+              <div class="map-hint">这些客户还没有坐标。点「批量补解析」自动尝试，失败可在地图上手动点选。</div>
+              <div id="mapPendingList"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
       <div id="viewPrompts" class="view" style="display:none;">
         <div class="prompts-wrap">
@@ -1975,6 +2010,11 @@ body{background:var(--bg);}
     <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">场景默认模型分配</div>
     <div id="aiSceneModels"></div>
 
+    <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">地图服务（客户地图用）</div>
+    <div class="field"><label>高德地图 Key</label><input type="text" id="s_mapKey" placeholder="高德开放平台创建 Key 时，平台类型选「Web端(JS API)」"></div>
+    <div class="field"><label>安全密钥 securityJsCode</label><input type="text" id="s_mapSecret" placeholder="创建 Key 成功后页面下方那块，2.0 必填，否则地图白屏"></div>
+    <div class="hint">地址解析会把「真实地址」文本发送至高德地图服务用于换算坐标；解析失败或未配置 Key 均不影响客户保存。</div>
+
     <div class="field" style="margin-top:16px;"><label>界面主题</label>
       <select id="s_theme"><option value="light">浅色</option><option value="dark">深色</option></select>
     </div>
@@ -2182,7 +2222,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var MARK_LABELS={red:"红",orange:"橙",amber:"黄",green:"绿",blue:"蓝",purple:"紫",gray:"灰"};
   var skillCats=["开通配置","交付SOP","故障排查","销售话术","进阶玩法"];
   var pendingSkillFile=null; // 暂存待存入的文件（base64）
-  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",reminderDays:7,theme:"light",skin:"purple"};
+  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",mapKey:"",mapSecret:"",reminderDays:7,theme:"light",skin:"purple"};
   // ---------- 模型供应商注册表（单一数据源：新增供应商只改这里） ----------
   // 每个供应商给出默认 apiBase / 文本模型 / 视觉模型；vision 为 null/"" 表示该供应商无预设视觉模型
   var PROVIDERS={
@@ -3266,6 +3306,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+='<button class="btn" onclick="openComms(\''+c.id+'\')">沟通记录</button>';
         html+='<button class="btn" onclick="openAI(\''+c.id+'\')">AI分析</button>';
         html+='<button class="btn'+(c.inFollowList?' success':'')+'" onclick="toggleFollowList(\''+c.id+'\')">'+(c.inFollowList?'已待跟进':'待跟进')+'</button>';
+        html+='<button class="btn" onclick="window.__map.locate(\''+c.id+'\')">地图定位</button>';
         html+='<span class="sep"></span>';
         html+='<button class="btn danger" onclick="delCustomer(\''+c.id+'\')">删除</button>';
       }
@@ -3292,7 +3333,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
   // 筛选条件变化时重置分页，从头展示
-  function refreshList(){listEnd=PAGE_SIZE;renderList();}
+  function refreshList(){listEnd=PAGE_SIZE;renderList();if(mapOpened&&mapInst)mapRefresh();}
 
   // ---------- 总览视图 ----------
   function renderDashboard(){
@@ -5369,7 +5410,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       el.classList.toggle("active",el.getAttribute("data-view")===view);
     });
     if(view==="dashboard")renderDashboard();
-    else if(view==="customers"){renderStats();refreshList();}
+    else if(view==="customers"){renderStats();refreshList();if(mapOpened&&mapInst)mapRefresh();}
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
     else if(view==="prompthelper"){phRender();}
     else if(view==="plans"){renderPlans();}
@@ -5956,8 +5997,195 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       customers.push(data);
     }
     saveCustomers();closeModal("modalCustomer");render();toast("已保存");
+    var _mapSaved=id?customers.find(function(x){return x.id===id;}):data;
+    if(_mapSaved)mapEnqueue([_mapSaved]);
   }
   window.saveCustomer=saveCustomer;
+
+  // ---------- 客户地图（高德地图 JS API 2.0，懒加载） ----------
+  var mapAMap=null,mapInst=null,mapCluster=null,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapOpened=false,mapSdkLoading=false;
+  function mapHasKey(){return !!(settings&&settings.mapKey&&String(settings.mapKey).trim());}
+  function mapSetStat(t){var el=$("mapStat");if(el)el.textContent=t;}
+  function mapLoadSdk(cb){
+    if(mapAMap){cb&&cb(mapAMap,null);return;}
+    if(!mapHasKey()){cb&&cb(null,"nokey");return;}
+    if(mapSdkLoading){cb&&cb(null,"loading");return;}
+    mapSdkLoading=true;
+    // 合规：Key 由用户在高德开放平台申请（Web端 JS API），不在代码中硬编码；坐标为 GCJ-02
+    window._AMapSecurityConfig={securityJsCode:String(settings.mapSecret||"").trim()};
+    var s=document.createElement("script");
+    s.src="https://webapi.amap.com/maps?v=2.0&key="+encodeURIComponent(String(settings.mapKey).trim())+"&plugin=AMap.MarkerCluster";
+    s.onload=function(){mapSdkLoading=false;mapAMap=window.AMap||null;cb&&cb(mapAMap,mapAMap?null:"loadfail");};
+    s.onerror=function(){mapSdkLoading=false;cb&&cb(null,"loadfail");};
+    (document.head||document.documentElement).appendChild(s);
+  }
+  function mapGeocode(addr,cb){
+    if(!mapAMap||!addr){cb(null);return;}
+    try{
+      var g=new mapAMap.Geocoder();
+      g.getLocation(String(addr),function(status,result){
+        try{
+          if(status==="complete"&&result&&result.geocodes&&result.geocodes.length){
+            var p=result.geocodes[0].location;
+            if(p&&isFinite(p.lng)&&isFinite(p.lat)){cb({lng:p.lng,lat:p.lat});return;}
+          }
+          cb(null);
+        }catch(e){cb(null);}
+      });
+    }catch(e){cb(null);}
+  }
+  function mapHasGeo(c){return !!(c&&c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat));}
+  function mapEnqueue(list,force){
+    var arr=[];
+    (list||[]).forEach(function(c){
+      if(!c)return;
+      if(mapHasGeo(c)&&!force)return;
+      if(!String(c.address||"").trim()&&!String(c.region||"").trim())return;
+      if(force){mapGeoQueue=mapGeoQueue.filter(function(x){return !x||x.id!==c.id;});}
+      else{var inQ=false;for(var i=0;i<mapGeoQueue.length;i++){if(mapGeoQueue[i]&&mapGeoQueue[i].id===c.id){inQ=true;break;}}if(inQ)return;}
+      arr.push(c);
+    });
+    if(!arr.length)return 0;
+    mapGeoQueue=mapGeoQueue.concat(arr);
+    mapPump();
+    return arr.length;
+  }
+  // 串行解析：一次一个，避免并发刷额度
+  function mapPump(){
+    if(mapGeoBusy||!mapGeoQueue.length||!mapAMap)return;
+    var c=mapGeoQueue.shift();
+    mapGeoBusy=true;
+    mapSetStat("正在解析地址（剩余 "+mapGeoQueue.length+"）");
+    var done=function(){
+      mapGeoBusy=false;
+      try{saveCustomers();}catch(e){}
+      mapRefresh();
+      mapPump();
+    };
+    mapGeocode(String(c.address||"").trim(),function(geo){
+      if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
+      // 城市级兜底：用「客户所属地区」再试一次
+      var rg=String(c.region||"").trim();
+      if(!rg){done();return;}
+      mapGeocode(rg,function(geo2){
+        if(geo2){c.geo={lng:geo2.lng,lat:geo2.lat,src:"region",at:Date.now()};}
+        done();
+      });
+    });
+  }
+  function mapRefresh(){
+    if(!mapInst)return;
+    var list=getFiltered();
+    var ms=[],ok=0;
+    list.forEach(function(c){
+      if(!mapHasGeo(c))return;
+      ok++;
+      var m=new mapAMap.Marker({position:[c.geo.lng,c.geo.lat],title:c.name||"客户",extData:{id:c.id}});
+      m.on("click",function(){mapFocus(c.id);});
+      ms.push(m);
+    });
+    try{mapCluster.clearMarkers();}catch(e){}
+    try{mapCluster.addMarkers(ms);}catch(e){}
+    var pend=list.length-ok;
+    mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
+    if(ok>0){try{mapInst.setFitView();}catch(e){}}
+    mapRenderPending(list);
+  }
+  function mapRenderPending(list){
+    var box=$("mapPendingList");if(!box)return;
+    list=list||getFiltered();
+    var pend=list.filter(function(c){return !mapHasGeo(c);});
+    var cnt=$("mapPendingCount");if(cnt)cnt.textContent=pend.length;
+    if(!pend.length){box.innerHTML='<div class="map-hint">当前筛选下所有客户都有位置。</div>';return;}
+    var html="";
+    pend.slice(0,50).forEach(function(c){
+      html+='<div class="map-pend-item"><span class="map-pend-name">'+esc(c.name||"未命名")+'</span>'+
+        '<span class="map-pend-addr">'+esc(c.address||c.region||"无地址")+'</span>'+
+        '<span><button class="btn" type="button" onclick="window.__map.pick(\''+c.id+'\')">地图选点</button></span></div>';
+    });
+    if(pend.length>50)html+='<div class="map-hint">仅显示前 50 家</div>';
+    box.innerHTML=html;
+  }
+  function mapInit(){
+    var body=$("mapBody");if(!body)return;
+    body.style.display="flex";
+    var tg=$("btnMapToggle");if(tg)tg.textContent="收起地图";
+    if(!mapHasKey()){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");mapRenderPending(getFiltered());return;}
+    mapLoadSdk(function(A,err){
+      if(err==="nokey"){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");return;}
+      if(err==="loading"){mapSetStat("地图加载中…");return;}
+      if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
+      if(!mapInst){
+        mapInst=new A.Map("mapCanvas",{zoom:5,center:[110,32],resizeEnable:true});
+        mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});
+        window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
+      }
+      mapSetStat("地图已就绪");
+      mapPump();
+      mapRefresh();
+    });
+  }
+  function mapOpen(){mapOpened=true;mapInit();}
+  function mapToggle(){
+    mapOpened=!mapOpened;
+    var b=$("mapBody");if(!b)return;
+    if(mapOpened){b.style.display="flex";mapInit();}
+    else{b.style.display="none";var tg=$("btnMapToggle");if(tg)tg.textContent="展开地图";}
+  }
+  function mapOpenKeySetting(){openSettings();}
+  function mapBatchResolve(){
+    if(!mapHasKey()){toast("请先在设置里填写高德地图 Key");openSettings();return;}
+    if(!mapOpened)mapOpen();
+    var n=mapEnqueue(getFiltered(),true);
+    toast(n>0?("已开始解析 "+n+" 个地址"):"没有需要解析的地址");
+  }
+  function mapFocus(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    var list=getFiltered();
+    var idx=-1;
+    for(var i=0;i<list.length;i++){if(list[i].id===id){idx=i;break;}}
+    if(idx<0){toast("该客户不在当前筛选条件内");return;}
+    if(idx>=listEnd){listEnd=Math.min(list.length,idx+1);renderList();}
+    var el=$("card_"+id);
+    if(!el){toast("请先加载更多");return;}
+    try{el.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){try{el.scrollIntoView();}catch(e2){}}
+    el.classList.remove("map-flash");
+    try{void el.offsetWidth;}catch(e){}
+    el.classList.add("map-flash");
+    setTimeout(function(){el.classList.remove("map-flash");},2400);
+  }
+  function mapLocate(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    if(!mapOpened)mapOpen();
+    if(!mapHasGeo(c)){mapEnqueue([c],true);toast("正在解析地址，解析完成后自动定位");return;}
+    var fly=function(){if(mapInst){try{mapInst.setZoomAndCenter(14,[c.geo.lng,c.geo.lat]);}catch(e){}}};
+    if(mapInst)fly();else setTimeout(fly,1600);
+  }
+  function mapPick(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    if(!mapOpened)mapOpen();
+    mapPickId=id;
+    toast("请在地图上点击「"+(c.name||"该客户")+"」所在位置");
+    setTimeout(function(){
+      if(!mapInst){toast("地图尚未加载完成，请稍后再试");return;}
+      try{
+        mapInst.off("click");
+        mapInst.on("click",function(e){
+          var pid=mapPickId;if(!pid||!e.lnglat)return;
+          var t=customers.find(function(x){return x.id===pid;});
+          if(t){t.geo={lng:e.lnglat.lng,lat:e.lnglat.lat,src:"manual",at:Date.now()};try{saveCustomers();}catch(err){}mapRefresh();toast("已为「"+(t.name||"该客户")+"」设置位置");}
+          mapPickId="";
+          try{mapInst.off("click");}catch(err){}
+        });
+      }catch(err){toast("选点失败，请重试");}
+    },1400);
+  }
+  window.__map={toggle:mapToggle,open:mapOpen,init:mapInit,refresh:mapRefresh,batchResolve:mapBatchResolve,pick:mapPick,locate:mapLocate,focus:mapFocus,openKeySetting:mapOpenKeySetting,hasKey:mapHasKey,enqueue:mapEnqueue,hasGeo:mapHasGeo,geocode:mapGeocode,renderPending:mapRenderPending,
+    state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,queue:mapGeoQueue.length};}};
+
   function delCustomer(id){
     if(!confirm("确定删除该客户？此操作不可恢复。"))return;
     customers=customers.filter(function(x){return x.id!==id;});
@@ -6788,6 +7016,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function openSettings(){
     $("s_reminder").value=settings.reminderDays;
     $("s_theme").value=settings.theme;
+    if($("s_mapKey"))$("s_mapKey").value=settings.mapKey||"";
+    if($("s_mapSecret"))$("s_mapSecret").value=settings.mapSecret||"";
     renderProviderPanel();
     renderSceneModels();
     openModal("modalSettings");
@@ -6797,6 +7027,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveSettings(){
     settings.reminderDays=parseInt($("s_reminder").value,10)||7;
     settings.theme=$("s_theme").value;
+    if($("s_mapKey"))settings.mapKey=$("s_mapKey").value.trim();
+    if($("s_mapSecret"))settings.mapSecret=$("s_mapSecret").value.trim();
     // Read all provider inputs from DOM
     var inputs=document.querySelectorAll("#aiProvidersPanel input[data-pidx]");
     inputs.forEach(function(inp){
