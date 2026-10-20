@@ -6279,6 +6279,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapInWz(lng,lat){
     return lng>=MAP_WZ_BOUNDS.minLng&&lng<=MAP_WZ_BOUNDS.maxLng&&lat>=MAP_WZ_BOUNDS.minLat&&lat<=MAP_WZ_BOUNDS.maxLat;
   }
+  // 区域锚点：同名地名歧义时（如「塘下」在瑞安/永嘉都有），给该区域锚定一个已知正确的坐标。
+  // 解析结果必须离锚点足够近才采信，否则判定为同名歧义、直接落到锚点。可继续补充其它区域。
+  var MAP_REGION_ANCHORS={
+    "塘下":{lng:120.6938,lat:27.8212,name:"瑞安市塘下镇"}
+  };
+  var MAP_ANCHOR_NEAR_M=15000; // 锚点15km内视为同一区域
+  function mapRegionAnchor(rg){return (rg&&MAP_REGION_ANCHORS[rg])||null;}
+  // 两点间球面距离（米）
+  function mapDistMeters(lng1,lat1,lng2,lat2){
+    var R=6371000,rad=Math.PI/180;
+    var dLat=(lat2-lat1)*rad,dLng=(lng2-lng1)*rad;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return 2*R*Math.asin(Math.sqrt(a));
+  }
   function mapPump(){
     if(!mapAMap)return;
     while(mapGeoRunning<MAP_CONCURRENCY&&mapGeoQueue.length){
@@ -6297,16 +6311,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var rawAddr=String(c.address||"").trim();
         var rg=String(c.region||"").trim();
         var isAddr=mapIsAddressText(rawAddr);
-        // 接受坐标：必须落在温州辖区内，否则判为失败继续兜底——杜绝标记飞出温州
+        var anchor=mapRegionAnchor(rg); // 区域锚点（同名地名歧义时最可靠）
+        function setGeo(g,src){c.geo={lng:g.lng,lat:g.lat,src:src,at:Date.now()};done();}
+        // 接受坐标：必须落在温州辖区；有锚点时还必须离锚点够近（离得远=同名歧义，落到锚点）
         function accept(g,src){
           if(!g)return false;
           if(!mapInWz(g.lng,g.lat))return false;
-          c.geo={lng:g.lng,lat:g.lat,src:src||"auto",at:Date.now()};
-          done();
-          return true;
+          if(anchor){
+            var d=mapDistMeters(g.lng,g.lat,anchor.lng,anchor.lat);
+            if(d>MAP_ANCHOR_NEAR_M){setGeo(anchor,"anchor");return true;}
+          }
+          setGeo(g,src);return true;
+        }
+        // 有锚点时直接用锚点（区域级定位最可靠）
+        function useAnchor(){
+          if(anchor){setGeo(anchor,"anchor");return true;}
+          return false;
         }
         // 逐级兜底：region+地址 → region → 主城市中心/省中心
         function fallback(){
+          if(useAnchor())return;
           if(rg&&rawAddr){
             mapGeocode(rg+rawAddr,function(g2){
               if(accept(g2,"auto"))return;
@@ -6357,10 +6381,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!mapAMap)return;
     var bad=[];
     customers.forEach(function(c){
-      if(c&&mapHasGeo(c)&&c.geo.src!=="manual"&&!mapInWz(c.geo.lng,c.geo.lat))bad.push(c);
+      if(!c||!mapHasGeo(c)||c.geo.src==="manual")return;
+      // ① 出温州辖区 → 纠正
+      if(!mapInWz(c.geo.lng,c.geo.lat)){bad.push(c);return;}
+      // ② 离区域锚点太远（同名地名歧义，如「塘下」被解析到永嘉）→ 纠正
+      var an=mapRegionAnchor(c.region);
+      if(an){
+        var d=mapDistMeters(c.geo.lng,c.geo.lat,an.lng,an.lat);
+        if(d>MAP_ANCHOR_NEAR_M)bad.push(c);
+      }
     });
     if(!bad.length)return;
-    mapSetStat("检测到 "+bad.length+" 家客户坐标在温州辖区外，自动重新定位…");
+    mapSetStat("检测到 "+bad.length+" 家客户位置异常（出辖区或偏离区域锚点），自动重新定位…");
     bad.forEach(function(c){c.geo=null;});
     try{saveCustomers();}catch(e){}
     mapRefresh();
@@ -6612,25 +6644,31 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapFitToRegion(list){
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
-        // 1) 优先手动标记（src=manual，人工修正最可靠），其次精确地址（src=auto）
-        var manualPts=[],autoPts=[];
+        var rg=mapFilterState.region;
+        // 1) 人工修正标记最优先
+        var manualPts=[];
         (list||[]).forEach(function(c){
-          if(!mapHasGeo(c))return;
-          if(c.geo.src==="manual")manualPts.push([c.geo.lng,c.geo.lat]);
-          else if(c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
+          if(mapHasGeo(c)&&c.geo.src==="manual")manualPts.push([c.geo.lng,c.geo.lat]);
         });
-        // 人工修正过的坐标优先：只要有一个 manual 点，就跳过去，绝不再 geocode 覆盖
-        var prefer=manualPts.length?manualPts:autoPts;
-        if(prefer.length>=1){
-          if(prefer.length===1){
-            try{mapInst.setZoomAndCenter(13,prefer[0]);}catch(e){}
-          }else{
-            try{mapInst.setFitView(prefer.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
-          }
+        if(manualPts.length>=1){
+          if(manualPts.length===1){try{mapInst.setZoomAndCenter(13,manualPts[0]);}catch(e){}}
+          else{try{mapInst.setFitView(manualPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}}
           return;
         }
-        // 2) 无手动/精确坐标：从所有该区域客户的真实地址里挑一条最完整的去 geocode，避免短词歧义
-        var rg=mapFilterState.region;
+        // 2) 区域锚点（同名地名歧义时的已知正确位置，如「塘下」=瑞安市塘下镇）
+        var an=mapRegionAnchor(rg);
+        if(an){try{mapInst.setZoomAndCenter(12,[an.lng,an.lat]);}catch(e){}return;}
+        // 3) 精确地址坐标
+        var autoPts=[];
+        (list||[]).forEach(function(c){
+          if(mapHasGeo(c)&&c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
+        });
+        if(autoPts.length>=1){
+          if(autoPts.length===1){try{mapInst.setZoomAndCenter(13,autoPts[0]);}catch(e){}}
+          else{try{mapInst.setFitView(autoPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}}
+          return;
+        }
+        // 4) 都没有：geocode 该区域最完整的客户地址
         var bestAddr="";
         customers.forEach(function(c){
           if((c.region||"")!==rg)return;
