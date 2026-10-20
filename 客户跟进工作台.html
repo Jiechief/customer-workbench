@@ -6441,19 +6441,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         position:[c.geo.lng,c.geo.lat],
         title:c.name||"客户",
         extData:{id:c.id},
-        label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6,-22)}:null,
+        // 经典水滴形标记：SVG path 绘制，按意向着色，白色内孔
         content:(function(){
-          var size=isSel?20:14;
-          // 去掉白色外环：用深色描边 + 投影，让彩色实心圆在浅色/深色底图上都清晰
-          var ringStyle=isApprox?('border:2px dashed #333;opacity:.85;'):
-            (isRegion?('border:2px dotted #333;opacity:.95;'):
-            ('border:2px solid #fff;'));
-          var shadow='box-shadow:0 1px 4px rgba(0,0,0,.45);';
-          // 外圈半透明深色描边再叠彩色，确保任何底图都可见
-          var outer='box-shadow:0 0 0 2px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.5);';
-          return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';'+ringStyle+outer+'"></div>'+
-            (isApprox?'<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid '+col+';color:'+col+';font-size:10px;font-weight:700;text-align:center;line-height:13px;">?</div>':'');
-        })()
+          var size=isSel?34:26;
+          var innerSize=isSel?12:9;
+          // 水滴 path（顶点在上、圆头在下）
+          var path='M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z';
+          return '<svg width="'+size+'" height="'+(size*1.4)+'" viewBox="0 0 24 32" style="display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));">'+
+            '<path d="'+path+'" fill="'+col+'"/>'+
+            '<circle cx="12" cy="12" r="'+(isApprox?3:5)+'" fill="#fff"/>'+
+            '</svg>';
+        })(),
+        offset:new mapAMap.Pixel(-(isSel?17:13),-(isSel?34:26)),
+        label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6,-30)}:null
       });
       m.on("click",function(){mapShowPopover(c,{lng:c.geo.lng,lat:c.geo.lat});});
       ms.push(m);
