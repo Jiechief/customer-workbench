@@ -6442,18 +6442,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     mapRenderStats();
     mapRenderSelBar();
   }
-  // 区域筛选自动定位：若筛选了特定地区，缩放到该区域所有客户；否则 fitView 全部
+  // 区域筛选自动定位：选具体地区时直接解析该地区名到中心点并缩放
   function mapFitToRegion(list){
     try{
       var pts=[];
       list.forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
-      if(!pts.length)return;
-      // 若选了具体地区，且该地区客户数<=3，单独缩放；否则全量 fitView
-      if(mapFilterState.region!=="all"&&pts.length<=30){
-        mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[60,60,60,60]);
-      }else{
-        mapInst.setFitView();
+      if(mapFilterState.region!=="all"){
+        var rg=mapFilterState.region;
+        // 先尝试用该区域客户坐标 fitView（如有 2+ 个点）
+        if(pts.length>=2){
+          mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);
+          return;
+        }
+        // 否则直接 geocode 地区名定位
+        mapGeocode(rg,function(geo){
+          if(geo&&mapInst){
+            try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}
+          }else if(pts.length===1&&mapInst){
+            try{mapInst.setZoomAndCenter(12,pts[0]);}catch(e){}
+          }
+        });
+        return;
       }
+      // 未选地区：fitView 全部已定位客户
+      if(pts.length>0)mapInst.setFitView();
     }catch(e){}
   }
   function mapAddMarkers(ms){
