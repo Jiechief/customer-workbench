@@ -783,6 +783,7 @@
   .drop-mini:hover{border-color:var(--accent-soft);color:var(--accent);background:var(--accent-weak);}
   .drop-mini:focus-visible{outline:none;border-color:var(--accent);background:var(--accent-weak);}
   .drop-mini.dragover{border-color:var(--accent);color:var(--accent);background:var(--accent-weak);transform:scale(1.02);}
+  .card.loc-drop{outline:3px dashed var(--accent);outline-offset:-3px;background:var(--accent-weak);}
   @media (max-width:860px){
     .sidebar{display:none;}
     .main-scroll{padding:18px;}
@@ -3367,6 +3368,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       html+='<div class="load-more-wrap"><button type="button" class="btn" id="loadMoreBtn">加载更多（还有 '+(list.length-listEnd)+' 条）</button></div>';
     }
     box.innerHTML=html;
+    bindCardImageDrop(box);
     var lb=$("loadMoreBtn");
     if(lb)lb.onclick=function(){listEnd=Math.min(list.length,listEnd+PAGE_SIZE);renderList();};
     if(batchMode)updateBatchUI();
@@ -6246,6 +6248,85 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     mapPoiSearchNow(name,cb,city);
+  }
+  // 把解析好的坐标落到某客户并刷新（src=loc，与手动定位同级，不受自动纠正影响）
+  function applyLocToCustomer(c,g,locText){
+    if(!c||!g)return;
+    c.loc=String(locText||"").trim();
+    c.geo={lng:g.lng,lat:g.lat,src:"loc",at:Date.now()};
+    c.updatedAt=Date.now();
+    saveCustomers();
+    if(typeof renderList==="function")renderList();
+    if(mapInst)mapRefresh();
+  }
+  // 拖入/选择位置截图：视觉模型识别图中地址+公司名 → 高德 POI/Geocode 落点
+  function mapLocateFromImage(file,cb,err){
+    if(typeof fileToBase64Scaled!=="function"){ if(err)err(new Error("图片读取不可用")); return; }
+    fileToBase64Scaled(file,function(b64){
+      var sel=aiGetActiveProvider("imageRecognition");
+      if(!sel||!sel.visionModel){ if(err)err(new Error("未配置视觉模型，无法识别位置截图。请在「设置」配置支持图片的视觉模型（如千问 qwen3-vl-plus）；或改用「填入定位」粘贴经纬度/链接。")); return; }
+      var body={messages:[
+        {role:"system",content:"你是地图位置信息抽取助手。从这张位置截图/位置卡片中只提取两类信息：address=图中出现的详细地址(尽量完整,如 浙江省温州市平阳县万全镇郑楼工业区…), company=公司或店铺名称(如 平阳申华印刷机械有限公司)。只输出 JSON：{\"address\":\"...\",\"company\":\"...\"}，没有的字段填空字符串，不要任何解释或多余文字。"},
+        {role:"user",content:[{type:"image_url",image_url:{url:b64}},{type:"text",text:"请识别这张位置截图并输出 JSON。"}]}
+      ]};
+      aiCall("imageRecognition",body,{isVision:true,timeout:30000}).then(function(r){
+        var m=String((r&&r.content)||"").match(/\{[\s\S]*\}/);
+        if(!m){ if(err)err(new Error("模型未返回可解析的 JSON")); return; }
+        var o; try{o=JSON.parse(m[0]);}catch(e){ if(err)err(new Error("JSON 解析失败："+e.message)); return; }
+        var addr=String(o.address||"").trim();
+        var comp=String(o.company||"").trim();
+        if(!addr&&!comp){ if(err)err(new Error("未从图中识别到地址或公司名称")); return; }
+        function ok(g){ if(g&&g.lng!=null&&g.lat!=null){ cb({lng:g.lng,lat:g.lat},{address:addr,company:comp}); } else { if(err)err(new Error("未能定位：公司「"+comp+"」地址「"+addr+"」")); } }
+        if(comp){
+          mapPoiSearch(comp,function(g){ if(g&&g.lng!=null){ok(g);} else if(addr){mapGeocode(addr,ok);} else {ok(null);} });
+        } else {
+          mapGeocode(addr,ok);
+        }
+      }).catch(function(e){ if(err)err(e&&e.message?e.message:e); });
+    });
+  }
+  // 客户列表：把位置截图/经纬度/链接 拖到某客户卡片上 → 识别并落点到该客户
+  function bindCardImageDrop(box){
+    if(!box||box.__locDropBound)return; box.__locDropBound=true;
+    function findCard(el){ while(el&&el!==box){ if(el.id&&/^card_/.test(el.id))return el; el=el.parentNode; } return null; }
+    function hasFiles(e){ var t=e.dataTransfer&&e.dataTransfer.types;if(!t)return false; for(var i=0;i<t.length;i++){if(t[i]==="Files")return true;} return false; }
+    box.addEventListener("dragover",function(e){
+      if(!hasFiles(e))return;
+      var card=findCard(e.target); if(!card)return;
+      e.preventDefault();e.stopPropagation();
+      if(e.dataTransfer.dropEffect)e.dataTransfer.dropEffect="copy";
+      card.classList.add("loc-drop");
+    });
+    box.addEventListener("dragleave",function(e){ var card=findCard(e.target); if(card)card.classList.remove("loc-drop"); });
+    box.addEventListener("drop",function(e){
+      var card=findCard(e.target); if(!card)return;
+      e.preventDefault();e.stopPropagation(); card.classList.remove("loc-drop");
+      var id=card.id.replace(/^card_/,"");
+      var c=customers.find(function(x){return x.id===id;});
+      if(!c)return;
+      var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+      if(file&&/^image\//.test(file.type||"")){
+        toast("正在识别位置截图…");
+        mapLocateFromImage(file,function(g,info){
+          applyLocToCustomer(c,g,(info.company||"")+" "+(info.address||""));
+          toast("已为「"+(c.name||"该客户")+"」定位："+(info.company||info.address||"（截图识别）"));
+        },function(err){ toast("位置识别失败："+(err&&err.message?err.message:err)); });
+      } else {
+        var txt=String((e.dataTransfer&&e.dataTransfer.getData("text"))||"").trim();
+        if(!txt){ toast("请拖入位置截图（图片）或经纬度/链接"); return; }
+        var p=mapParseLocInput(txt);
+        if(p){
+          if(!mapInWz(p.lng,p.lat)){ toast("该定位不在温州辖区，已忽略"); return; }
+          applyLocToCustomer(c,p,txt);
+          toast("已为「"+(c.name||"该客户")+"」定位");
+        } else if(mapLooksLikeAddress(txt)){
+          mapGeocode(txt,function(g){
+            if(g&&g.lng!=null){ applyLocToCustomer(c,g,txt); toast("已为「"+(c.name||"该客户")+"」定位："+txt); }
+            else { toast("地址「"+txt+"」未能定位"); }
+          });
+        } else { toast("无法识别拖入的内容（需位置截图 / 经纬度 / 链接 / 地址）"); }
+      }
+    });
   }
   function mapPoiSearchNow(name,cb,city){
     var settled=false;
