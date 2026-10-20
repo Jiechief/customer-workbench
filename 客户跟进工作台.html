@@ -6461,26 +6461,38 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     mapRenderStats();
     mapRenderSelBar();
   }
-  // 区域筛选自动定位：选具体地区时直接 geocode 地区名跳转过去，与客户坐标无关
+  // 区域筛选自动定位：优先用该区域精确坐标客户定位；无精确坐标时才 geocode 地区名
   function mapFitToRegion(list){
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
+        // 1) 先看该区域内是否有精确坐标客户（src=auto），有就 fitView 这些点
+        var autoPts=[];
+        (list||[]).forEach(function(c){
+          if(mapHasGeo(c)&&c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
+        });
+        if(autoPts.length>=1){
+          if(autoPts.length===1){
+            try{mapInst.setZoomAndCenter(13,autoPts[0]);}catch(e){}
+          }else{
+            try{mapInst.setFitView(autoPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
+          }
+          return;
+        }
+        // 2) 没有精确客户：再退一步用所有已定位客户（含 approx/region 兜底）
+        var anyPts=[];
+        (list||[]).forEach(function(c){if(mapHasGeo(c))anyPts.push([c.geo.lng,c.geo.lat]);});
+        if(anyPts.length>=1){
+          if(anyPts.length===1){
+            try{mapInst.setZoomAndCenter(13,anyPts[0]);}catch(e){}
+          }else{
+            try{mapInst.setFitView(anyPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
+          }
+          return;
+        }
+        // 3) 一个已定位客户都没有：geocode 地区名定位
         var rg=mapFilterState.region;
-        // 主城市约束由 mapGeocode 内部通过 city 参数传入
         mapGeocode(rg,function(geo){
-          if(!mapInst)return;
-          if(geo){
-            try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}
-            return;
-          }
-          // geocode 失败：若该区域有精确坐标客户（排除 approx/region 兜底），fitView 这些点
-          var pts=[];
-          (list||[]).forEach(function(c){
-            if(mapHasGeo(c)&&c.geo.src==="auto")pts.push([c.geo.lng,c.geo.lat]);
-          });
-          if(pts.length>=1){
-            try{mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
-          }
+          if(geo&&mapInst){try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}}
         });
         return;
       }
