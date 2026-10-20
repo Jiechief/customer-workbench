@@ -6055,7 +6055,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.saveCustomer=saveCustomer;
 
   // ---------- 客户地图（高德地图 JS API 2.0，懒加载） ----------
-  var mapAMap=null,mapInst=null,mapCluster=null,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapPickMode="",mapOpened=false,mapSdkLoading=false;
+  var mapAMap=null,mapInst=null,mapCluster=null,mapClusterOn=true,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapPickMode="",mapOpened=false,mapSdkLoading=false;
   function mapHasKey(){return !!(settings&&settings.mapKey&&String(settings.mapKey).trim());}
   // 主城市前缀：筛选区域定位、地址解析时自动拼到地区/地址前面，避免同名地区跳错
   function mapCityPrefix(){var c=String(settings&&settings.mapCity||"").trim();return c;}
@@ -6443,11 +6443,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         extData:{id:c.id},
         label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6,-22)}:null,
         content:(function(){
-          var size=isSel?18:12,borderW=isSel?3:2;
-          var ringStyle=isApprox?'border:2px dashed '+col+';opacity:.85;':
-            (isRegion?'border:2px dotted '+col+';opacity:.95;':
-            'border:'+borderW+'px solid #fff;');
-          return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';'+ringStyle+'box-shadow:0 0 0 2px #fff;"></div>'+
+          var size=isSel?20:14;
+          // 去掉白色外环：用深色描边 + 投影，让彩色实心圆在浅色/深色底图上都清晰
+          var ringStyle=isApprox?('border:2px dashed #333;opacity:.85;'):
+            (isRegion?('border:2px dotted #333;opacity:.95;'):
+            ('border:2px solid #fff;'));
+          var shadow='box-shadow:0 1px 4px rgba(0,0,0,.45);';
+          // 外圈半透明深色描边再叠彩色，确保任何底图都可见
+          var outer='box-shadow:0 0 0 2px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.5);';
+          return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';'+ringStyle+outer+'"></div>'+
             (isApprox?'<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid '+col+';color:'+col+';font-size:10px;font-weight:700;text-align:center;line-height:13px;">?</div>':'');
         })()
       });
