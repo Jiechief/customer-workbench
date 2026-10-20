@@ -6442,30 +6442,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     mapRenderStats();
     mapRenderSelBar();
   }
-  // 区域筛选自动定位：选具体地区时直接解析该地区名到中心点并缩放
+  // 区域筛选自动定位：选具体地区时直接 geocode 地区名跳转过去，与客户坐标无关
   function mapFitToRegion(list){
     try{
-      var pts=[];
-      list.forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
-      if(mapFilterState.region!=="all"){
+      if(mapFilterState.region!=="all"&&mapFilterState.region){
         var rg=mapFilterState.region;
-        // 先尝试用该区域客户坐标 fitView（如有 2+ 个点）
-        if(pts.length>=2){
-          mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);
-          return;
-        }
-        // 否则直接 geocode 地区名定位
         mapGeocode(rg,function(geo){
-          if(geo&&mapInst){
+          if(!mapInst)return;
+          if(geo){
             try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}
-          }else if(pts.length===1&&mapInst){
-            try{mapInst.setZoomAndCenter(12,pts[0]);}catch(e){}
+            return;
+          }
+          // geocode 失败：若该区域有精确坐标客户（排除 approx/region 兜底），fitView 这些点
+          var pts=[];
+          (list||[]).forEach(function(c){
+            if(mapHasGeo(c)&&c.geo.src==="auto")pts.push([c.geo.lng,c.geo.lat]);
+          });
+          if(pts.length>=1){
+            try{mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
           }
         });
         return;
       }
       // 未选地区：fitView 全部已定位客户
-      if(pts.length>0)mapInst.setFitView();
+      var pts2=[];
+      (list||[]).forEach(function(c){if(mapHasGeo(c))pts2.push([c.geo.lng,c.geo.lat]);});
+      if(pts2.length>0)mapInst.setFitView();
     }catch(e){}
   }
   function mapAddMarkers(ms){
