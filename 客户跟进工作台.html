@@ -6166,8 +6166,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function mapGeocode(addr,cb,city){
     if(!mapAMap||!addr){cb(null);return;}
-    // 若未显式传 city，用设置里的主城市
-    if(!city){city=mapCityPrefix();}
+    // 若未显式传 city，用有效城市（主城市，未设时默认温州），杜绝全国搜索把标记撒到省外
+    if(!city){city=mapEffectiveCity();}
     if(typeof mapAMap.Geocoder!=="function"){
       mapLoadPlugins(["AMap.Geocoder"],function(ok){ if(ok)mapGeocodeNow(addr,cb,city);else cb(null); });
       return;
@@ -6215,6 +6215,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     return null;
   }
+  // 有效城市：所有地理编码必须限定在有效城市内。未设主城市时默认温州（客户都在温州管辖内），避免全国搜索把标记撒到省外
+  function mapEffectiveCity(){return mapCityPrefix()||"温州市";}
+  // 主城市中心点：解析彻底失败时兜底，确保标记落在主城市（温州）范围内
+  var MAP_CITY_CENTERS={
+    "温州市":[120.65,27.99],"杭州市":[120.15,30.28],"上海市":[121.47,31.23],"北京市":[116.4,39.9],
+    "宁波市":[121.55,29.87],"苏州市":[120.58,31.30],"广州市":[113.27,23.13],"深圳市":[114.06,22.55],
+    "金华市":[119.65,29.08],"台州市":[121.42,28.66],"丽水市":[119.92,28.45],"泉州市":[118.68,24.87],
+    "福州市":[119.30,26.08],"南昌市":[115.90,28.68],"嘉兴市":[120.76,30.77]
+  };
+  function mapApproxCenter(){
+    var city=mapEffectiveCity();
+    for(var k in MAP_CITY_CENTERS){
+      if(k.indexOf(city)>=0||city.indexOf(k.replace(/市$/,""))>=0){
+        return {lng:MAP_CITY_CENTERS[k][0],lat:MAP_CITY_CENTERS[k][1]};
+      }
+    }
+    return null;
+  }
   function mapPump(){
     if(!mapAMap)return;
     while(mapGeoRunning<MAP_CONCURRENCY&&mapGeoQueue.length){
@@ -6240,23 +6258,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             var combined=rg+rawAddr;
             mapGeocode(combined,function(geo2){
               if(geo2){c.geo={lng:geo2.lng,lat:geo2.lat,src:"auto",at:Date.now()};done();return;}
-              // 第三级：单独用 region 解析，但用 region 作为 city 约束（更精确）
+              // 第三级：单独用 region 解析，city 用有效城市（温州）约束——不能拿「塘下」这种镇名当 city，否则高德忽略约束全国搜索
               mapGeocode(rg,function(geo3){
                 if(geo3){c.geo={lng:geo3.lng,lat:geo3.lat,src:"region",at:Date.now()};done();return;}
-                // 大致范围兜底：按省名匹配中心点
-                var ap=mapProvCenter(rg);
+                // 大致范围兜底：优先主城市中心（客户都在温州），再退省中心，避免跳到省外
+                var ap=mapApproxCenter()||mapProvCenter(rg);
                 if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
                 done();
-              },rg);
+              });
             });
           }else if(rg){
-            // 没有地址只有 region：直接用 region 解析，region 本身作为 city 约束
+            // 没有地址只有 region：用 region 解析，city 用有效城市（温州）约束
             mapGeocode(rg,function(geo3){
               if(geo3){c.geo={lng:geo3.lng,lat:geo3.lat,src:"region",at:Date.now()};done();return;}
-              var ap=mapProvCenter(rg);
+              var ap=mapApproxCenter()||mapProvCenter(rg);
               if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
               done();
-            },rg);
+            });
           }else{
             done();
           }
