@@ -6227,7 +6227,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     (list||[]).forEach(function(c){
       if(!c)return;
       if(mapHasGeo(c)&&!force)return;
-      if(!mapLooksLikeAddress(c.address))return;
+      // 有可解析的真实地址，或有地区名（可用地区/锚点定位），其中之一即可
+      var addrOK=!!(c.address&&mapLooksLikeAddress(c.address));
+      var regionOK=!!(c.region&&String(c.region).trim());
+      if(!addrOK&&!regionOK)return;
       if(force){mapGeoQueue=mapGeoQueue.filter(function(x){return !x||x.id!==c.id;});}
       else{var inQ=false;for(var i=0;i<mapGeoQueue.length;i++){if(mapGeoQueue[i]&&mapGeoQueue[i].id===c.id){inQ=true;break;}}if(inQ)return;}
       arr.push(c);
@@ -6382,6 +6385,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var bad=[];
     customers.forEach(function(c){
       if(!c||!mapHasGeo(c)||c.geo.src==="manual")return;
+      // 无法重新解析（无地址且无地区）的客户，保留原坐标，避免清空后丢失标记
+      var canRe=(c.address&&mapLooksLikeAddress(c.address))||(c.region&&String(c.region).trim());
+      if(!canRe)return;
       // ① 出温州辖区 → 纠正
       if(!mapInWz(c.geo.lng,c.geo.lat)){bad.push(c);return;}
       // ② 离区域锚点太远（同名地名歧义，如「塘下」被解析到永嘉）→ 纠正
@@ -6630,7 +6636,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     mapAddMarkers(ms);
     var pend=list.length-ok;
-    mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
+    if(ok===0&&list.length>0){
+      mapSetStat("共 "+list.length+" 家客户，均未定位 → 点「批量补解析」按地址/地区生成标记");
+    }else{
+      mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
+    }
     if(!mapHeatOn){mapFitToRegion(list);}
     mapRenderPending(list);
     mapRenderStats();
