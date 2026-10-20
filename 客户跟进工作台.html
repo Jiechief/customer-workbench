@@ -6548,6 +6548,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         '<button class="btn primary" onclick="window.__map.locate(&#39;'+c.id+'&#39;)">飞到</button>'+
         '<button class="btn" onclick="window.__map.toggleSelect(&#39;'+c.id+'&#39;)">'+(mapSelection[c.id]?"取消选择":"选中")+'</button>'+
         '<button class="btn" onclick="window.__map.moveMarker(&#39;'+c.id+'&#39;)">移动位置</button>'+
+        '<button class="btn" onclick="window.__map.setLoc(&#39;'+c.id+'&#39;)">填入定位</button>'+
         '<button class="btn" onclick="window.__map.deleteMarker(&#39;'+c.id+'&#39;)">删除标记</button>'+
         '<button class="btn" onclick="window.__map.gotoCustomer(&#39;'+c.id+'&#39;)">查看客户</button>'+
       '</div>'+
@@ -6563,6 +6564,45 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapGotoCustomer(id){
     switchView("customers");
     setTimeout(function(){mapFocus(id);},200);
+  }
+  // 地图弹层内直接填入客户定位（经纬度/高德链接/微信位置），解析后落点并刷新
+  function mapSetLoc(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c||!mapInst||!mapAMap)return;
+    var pt=(c.geo)?{lng:c.geo.lng,lat:c.geo.lat}:{lng:120.65,lat:27.99};
+    mapClosePopover();
+    var html='<div class="map-popover" id="mapPop" style="width:236px">'+
+      '<div class="mp-name">'+esc(c.name||"未命名")+'</div>'+
+      '<div class="mp-row" style="margin:6px 0 4px;color:#666;font-size:12px">粘贴客户发来的定位（经纬度 / 高德链接 / 微信位置）</div>'+
+      '<input type="text" id="mapLocInput" value="'+esc(c.loc||"")+'" placeholder="如 120.65,27.99 或高德/微信链接" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;outline:none">'+
+      '<div class="mp-actions" style="margin-top:8px;display:flex;gap:6px">'+
+        '<button class="btn primary" style="flex:1" onclick="window.__map.applyLoc(&#39;'+id+'&#39;)">应用定位</button>'+
+        '<button class="btn" onclick="window.__map.closeLoc(&#39;'+id+'&#39;)">取消</button>'+
+      '</div></div>';
+    mapPopover=new mapAMap.InfoWindow({content:html,offset:new mapAMap.Pixel(0,-10),isCustom:true});
+    mapPopover.open(mapInst,[pt.lng,pt.lat]);
+    setTimeout(function(){var el=document.getElementById("mapLocInput");if(el){el.focus();try{el.select();}catch(e){}}},60);
+  }
+  function mapApplyLoc(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    var el=document.getElementById("mapLocInput");
+    var v=el?el.value.trim():"";
+    var p=mapParseLocInput(v);
+    if(!p){toast("无法识别该定位，请检查格式（经纬度或链接）");return;}
+    if(!mapInWz(p.lng,p.lat)){toast("该定位不在温州辖区，已忽略");return;}
+    c.loc=v;
+    c.geo={lng:p.lng,lat:p.lat,src:"loc",at:Date.now()};
+    c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    mapRefresh();
+    mapShowPopover(c,{lng:p.lng,lat:p.lat});
+    toast("已更新「"+(c.name||"该客户")+"」的地图定位");
+  }
+  function mapCloseLoc(id){
+    var c=customers.find(function(x){return x.id===id;});
+    var pt=(c&&c.geo)?{lng:c.geo.lng,lat:c.geo.lat}:{lng:120.65,lat:27.99};
+    if(c)mapShowPopover(c,pt);else mapClosePopover();
   }
   // 移动标记位置：重新进入选点模式，更新该客户坐标
   function mapMoveMarker(id){
@@ -6931,6 +6971,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,showAll:mapShowAll,forceReResolve:mapForceReResolve,
+    setLoc:mapSetLoc,applyLoc:mapApplyLoc,closeLoc:mapCloseLoc,
     state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,queue:mapGeoQueue.length};}};
 
   function delCustomer(id){
