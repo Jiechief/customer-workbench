@@ -1699,6 +1699,7 @@ body{background:var(--bg);}
             <button class="btn" type="button" id="btnMapHeat" onclick="window.__map.toggleHeat()">热力图</button>
             <button class="btn" type="button" id="btnMapCluster" onclick="window.__map.toggleCluster()">聚合</button>
             <button class="btn" type="button" onclick="window.__map.batchResolve()">批量补解析</button>
+            <button class="btn" type="button" style="color:#d8a740" onclick="window.__map.forceReResolve()">全部重新解析</button>
             <button class="btn primary" type="button" onclick="window.__map.showAll()">显示全部客户</button>
             <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
@@ -6558,8 +6559,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(!mapInst){
         mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap"],function(){
           try{
-            mapInst=new A.Map("mapCanvas",{zoom:5,center:[110,32],resizeEnable:true});
-            if(typeof A.MarkerCluster==="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
+            // 温州辖区范围：东经119.3-121.2，北纬27.0-28.7
+            var wzBounds=new A.Bounds(new A.LngLat(119.3,27.0),new A.LngLat(121.2,28.7));
+            mapInst=new A.Map("mapCanvas",{zoom:10,center:[120.65,27.99],resizeEnable:true,limitBounds:wzBounds});
+            if(typeof A.MarkerCluster=="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
             window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
           }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
           mapSetStat("地图已就绪");
@@ -6588,6 +6591,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         customers.forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
         if(pts.length>0){
           try{mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
+          // 限制 zoom 不低于 9（温州辖区级别）
+          try{if(mapInst.getZoom()<9)mapInst.setZoom(9);}catch(e){}
         }
       }
     },800);
@@ -6615,6 +6620,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     }
     toast("已显示全部 "+customers.length+" 家客户（"+(function(){var n=0;customers.forEach(function(c){if(mapHasGeo(c))n++;});return n;})()+" 家已定位）");
+  }
+  // 全部重新解析：清空所有客户 geo 坐标，强制重新解析（用于客户散落在外、approx 兜底点错误时）
+  function mapForceReResolve(){
+    if(!confirm("确认清空所有 "+customers.length+" 家客户的坐标并重新解析？\n这会清掉所有标记，重新从地址解析（带主城市约束）。"))return;
+    var cleared=0;
+    customers.forEach(function(c){
+      if(c&&c.geo){c.geo=null;cleared++;}
+    });
+    try{saveCustomers();}catch(e){}
+    mapRefresh();
+    mapRenderStats();
+    mapRenderSelBar();
+    mapRenderPending(getFiltered());
+    // 全部加入队列强制重新解析
+    mapEnqueue(customers,true);
+    toast("已清空 "+cleared+" 个坐标，开始重新解析…");
   }
   function mapToggle(){
     mapOpened=!mapOpened;
@@ -6679,7 +6700,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     autoOpen:mapAutoOpen,renderToolbar:mapBindToolbar,filterByIntent:mapFilterByIntent,filterByRegion:mapFilterByRegion,
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
-    moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,showAll:mapShowAll,
+    moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,showAll:mapShowAll,forceReResolve:mapForceReResolve,
     state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,queue:mapGeoQueue.length};}};
 
   function delCustomer(id){
