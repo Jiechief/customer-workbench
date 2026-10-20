@@ -6478,12 +6478,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           }
           return;
         }
-        // 2) 无精确客户：直接 geocode 地区名定位（不走散乱兜底点，避免视野跨全国）
+        // 2) 无精确客户：从所有该区域客户的真实地址里挑一条最完整的去 geocode，避免短词歧义
         var rg=mapFilterState.region;
-        var mc=mapCityPrefix();
-        var q=mc?(mc+rg):rg;
+        var bestAddr="";
+        customers.forEach(function(c){
+          if((c.region||"")!==rg)return;
+          var a=String(c.address||"").trim();
+          // 优先选带「镇/路/村/街/号」等能精确定位的完整地址
+          if(a&&a.length>(bestAddr.length||0)&&/镇|路|村|街|号|大道|巷|弄/.test(a))bestAddr=a;
+        });
+        var q=bestAddr||(mapCityPrefix()?mapCityPrefix()+rg:rg);
         mapGeocode(q,function(geo){
-          if(geo&&mapInst){try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}}
+          if(geo&&mapInst){try{mapInst.setZoomAndCenter(13,[geo.lng,geo.lat]);}catch(e){}}
         });
         return;
       }
