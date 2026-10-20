@@ -6274,6 +6274,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     return null;
   }
+  // 温州辖区边界（客户都在温州管辖内）：解析结果一旦出界即判为错误，退回兜底，杜绝标记飞到外省
+  var MAP_WZ_BOUNDS={minLng:119.0,maxLng:121.5,minLat:26.7,maxLat:28.9};
+  function mapInWz(lng,lat){
+    return lng>=MAP_WZ_BOUNDS.minLng&&lng<=MAP_WZ_BOUNDS.maxLng&&lat>=MAP_WZ_BOUNDS.minLat&&lat<=MAP_WZ_BOUNDS.maxLat;
+  }
   function mapPump(){
     if(!mapAMap)return;
     while(mapGeoRunning<MAP_CONCURRENCY&&mapGeoQueue.length){
@@ -6292,13 +6297,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var rawAddr=String(c.address||"").trim();
         var rg=String(c.region||"").trim();
         var isAddr=mapIsAddressText(rawAddr);
+        // 接受坐标：必须落在温州辖区内，否则判为失败继续兜底——杜绝标记飞出温州
+        function accept(g,src){
+          if(!g)return false;
+          if(!mapInWz(g.lng,g.lat))return false;
+          c.geo={lng:g.lng,lat:g.lat,src:src||"auto",at:Date.now()};
+          done();
+          return true;
+        }
         // 逐级兜底：region+地址 → region → 主城市中心/省中心
         function fallback(){
           if(rg&&rawAddr){
             mapGeocode(rg+rawAddr,function(g2){
-              if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+              if(accept(g2,"auto"))return;
               mapGeocode(rg,function(g3){
-                if(g3){c.geo={lng:g3.lng,lat:g3.lat,src:"region",at:Date.now()};done();return;}
+                if(accept(g3,"region"))return;
                 var ap=mapApproxCenter()||mapProvCenter(rg);
                 if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
                 done();
@@ -6306,7 +6319,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             });
           }else if(rg){
             mapGeocode(rg,function(g3){
-              if(g3){c.geo={lng:g3.lng,lat:g3.lat,src:"region",at:Date.now()};done();return;}
+              if(accept(g3,"region"))return;
               var ap=mapApproxCenter()||mapProvCenter(rg);
               if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
               done();
@@ -6319,17 +6332,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         function primary(){
           if(isAddr){
             mapGeocode(rawAddr,function(g){
-              if(g){c.geo={lng:g.lng,lat:g.lat,src:"auto",at:Date.now()};done();return;}
+              if(accept(g,"auto"))return;
               mapPoiSearch(rawAddr,function(g2){
-                if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+                if(accept(g2,"auto"))return;
                 fallback();
               });
             });
           }else{
             mapPoiSearch(rawAddr,function(g){
-              if(g){c.geo={lng:g.lng,lat:g.lat,src:"auto",at:Date.now()};done();return;}
+              if(accept(g,"auto"))return;
               mapGeocode(rawAddr,function(g2){
-                if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+                if(accept(g2,"auto"))return;
                 fallback();
               });
             });
@@ -6338,6 +6351,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         primary();
       })(cur);
     }
+  }
+  // 自动纠正：解析结果落在温州辖区外、且非手动标记的客户，清空坐标重新解析（杜绝历史脏数据）
+  function mapAutoCorrect(){
+    if(!mapAMap)return;
+    var bad=[];
+    customers.forEach(function(c){
+      if(c&&mapHasGeo(c)&&c.geo.src!=="manual"&&!mapInWz(c.geo.lng,c.geo.lat))bad.push(c);
+    });
+    if(!bad.length)return;
+    mapSetStat("检测到 "+bad.length+" 家客户坐标在温州辖区外，自动重新定位…");
+    bad.forEach(function(c){c.geo=null;});
+    try{saveCustomers();}catch(e){}
+    mapRefresh();
+    mapEnqueue(bad,true);
   }
   // ---------- 地图管理能力：筛选/统计/圈选/热力/详情 ----------
   var mapFilterState={intention:"all",status:"all",region:"all",search:""};
@@ -6661,23 +6688,25 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(!mapInst){
         mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap","AMap.PlaceSearch"],function(){
           try{
-            // 温州辖区范围：东经119.3-121.2，北纬27.0-28.7
-            var wzBounds=new A.Bounds(new A.LngLat(119.3,27.0),new A.LngLat(121.2,28.7));
+            // 温州辖区范围（与坐标校验同用一份边界）
+            var wzBounds=new A.Bounds(new A.LngLat(MAP_WZ_BOUNDS.minLng,MAP_WZ_BOUNDS.minLat),new A.LngLat(MAP_WZ_BOUNDS.maxLng,MAP_WZ_BOUNDS.maxLat));
             mapInst=new A.Map("mapCanvas",{zoom:10,center:[120.65,27.99],resizeEnable:true,limitBounds:wzBounds});
             if(typeof A.MarkerCluster=="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
             window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
           }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
-          mapSetStat("地图已就绪");
-          mapBindClick();
-          mapPump();
-          mapRefresh();
-        });
-        return;
+           mapSetStat("地图已就绪");
+           mapBindClick();
+           mapPump();
+           mapRefresh();
+           mapAutoCorrect();
+         });
+         return;
       }
       mapSetStat("地图已就绪");
       mapBindClick();
       mapPump();
       mapRefresh();
+      mapAutoCorrect();
     });
   }
   function mapOpen(){mapOpened=true;mapInit();}
