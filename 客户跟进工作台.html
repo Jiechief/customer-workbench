@@ -1869,6 +1869,9 @@ body{background:var(--bg);}
       <div class="field"><label>真实地址</label><input type="text" id="f_address" placeholder="详细地址，如 XX市XX区XX路XX号（地图定位用，不要填备注）"></div>
     </div>
     <div class="row2">
+      <div class="field" style="flex:1"><label>客户发来的定位</label><input type="text" id="f_loc" placeholder="粘贴客户直接发来的经纬度（如 120.65,27.99）、高德/百度链接或微信位置分享；坐标按高德显示，保存后地图标记自动更新到该点"></div>
+    </div>
+    <div class="row2">
       <div class="field"><label>客户所属地区</label><input type="text" id="f_region" placeholder="如：华东 / 华南 / 浙江"></div>
       <div class="field"><label>客户产品名称</label><input type="text" id="f_product" placeholder="客户在卖/做的产品"></div>
     </div>
@@ -3145,7 +3148,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function infoValue(label,value,isLink,cid){
     var v;
-    var fieldMap={"联系人名称":"contactName","职位":"position","联系人电话":"phone","真实地址":"address","客户所属地区":"region","客户产品名称":"product","是否有电商经验":"ecomExp","电商店铺链接":"shopLinks"};
+    var fieldMap={"联系人名称":"contactName","职位":"position","联系人电话":"phone","真实地址":"address","客户所属地区":"region","客户发来的定位":"loc","客户产品名称":"product","是否有电商经验":"ecomExp","电商店铺链接":"shopLinks"};
     var fkey=fieldMap[label]||"";
     if(!value||!String(value).trim())v='<span class="empty-sm">未填写</span>';
     else if(isLink&&/^https?:\/\//i.test(String(value))){var text=String(value),display=text.length>36?text.slice(0,33)+'...':text;v='<a href="'+esc(text)+'" target="_blank" rel="noopener" title="'+esc(text)+'"><span class="url-display">'+esc(display)+'</span></a>';}
@@ -3307,6 +3310,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+=editInput(c,"phone","phone","联系人电话","手机号");
         html+=editInput(c,"address","address","真实地址","客户地址");
         html+=editInput(c,"region","region","客户所属地区","如：华东 / 华南 / 浙江");
+        html+=editInput(c,"loc","loc","客户发来的定位","经纬度 / 高德链接 / 微信位置");
         html+=editInput(c,"product","product","客户产品名称","产品在卖/做的产品");
         html+=editSelect(c,"intention","意向等级",[{v:"高",t:"高意向"},{v:"中",t:"中意向"},{v:"低",t:"低意向"},{v:"已合作",t:"已合作"},{v:"断约",t:"断约"}]);
         html+=editSelect(c,"ecomExp","是否有电商经验",[{v:"是",t:"是"},{v:"否",t:"否"}]);
@@ -3325,6 +3329,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+=infoValue("联系人电话",c.phone,false,c.id);
         html+=infoValue("真实地址",c.address,false,c.id);
         html+=infoValue("客户所属地区",c.region,false,c.id);
+        html+=infoValue("客户发来的定位",c.loc,false,c.id);
         html+=infoValue("客户产品名称",c.product,false,c.id);
         html+=infoValue("是否有电商经验",c.ecomExp,false,c.id);
         html+=infoValue("下次跟进时间",c.followUpAt?fmtFollow(c.followUpAt):"",false);
@@ -3373,7 +3378,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var c=customers.find(function(x){return x.id===id;});
         if(!c)return;
         if((c[f]||"")===v)return;
+        var _oldLoc=(f==="loc")?(c.loc||"").trim():"";
         c[f]=v;c.updatedAt=Date.now();
+        // 定位变更：清旧定位坐标，重新解析落点并刷新地图标记
+        if(f==="loc"&&_oldLoc!==v){if(c.geo&&c.geo.src==="loc")c.geo=null;mapEnqueue([c],true);}
         saveCustomers();renderStats();toast("已更新");
       });
     });
@@ -3737,6 +3745,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     row("电话",c.phone);
     row("地区",c.region);
     row("地址",c.address,true);
+    row("客户定位",c.loc,true);
     row("产品",c.product);
     if(c.relatedCompany&&String(c.relatedCompany).trim()){
       var rel=String(c.relatedCompany).split(/[,，\n]+/).map(function(s){return s.trim();}).filter(function(s){return s;});
@@ -6024,25 +6033,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.promptFilterTest=function(tab,kw){promptTab=tab||"all";promptKeyword=kw||"";return promptFilter();};
 
   // ---------- 客户新增/编辑 ----------
-  function openAdd(){currentCommCustId=null;$("custTitle").textContent="新增客户";$("f_id").value="";$("f_name").value="";$("f_contact").value="";$("f_position").value="";$("f_related").value="";$("f_acciowork").value="";$("f_phone").value="";$("f_address").value="";$("f_region").value="";$("f_intention").value="中";$("f_ecom").value="否";$("f_product").value="";$("f_shop").value="";$("f_newComm").value="";if($("f_followUp"))$("f_followUp").value="";resetRecogArea();openModal("modalCustomer");$("f_name").focus();}
+  function openAdd(){currentCommCustId=null;$("custTitle").textContent="新增客户";$("f_id").value="";$("f_name").value="";$("f_contact").value="";$("f_position").value="";$("f_related").value="";$("f_acciowork").value="";$("f_phone").value="";$("f_address").value="";$("f_region").value="";$("f_loc").value="";$("f_intention").value="中";$("f_ecom").value="否";$("f_product").value="";$("f_shop").value="";$("f_newComm").value="";if($("f_followUp"))$("f_followUp").value="";resetRecogArea();openModal("modalCustomer");$("f_name").focus();}
   window.openAdd=openAdd;
-  function editCustomer(id){var c=customers.find(function(x){return x.id===id;});if(!c)return;currentCommCustId=null;$("custTitle").textContent="修改客户";$("f_id").value=c.id;$("f_name").value=c.name||"";$("f_contact").value=c.contactName||"";$("f_position").value=c.position||"";$("f_related").value=c.relatedCompany||"";$("f_acciowork").value=c.accioworkNote||"";$("f_phone").value=c.phone||"";$("f_address").value=c.address||"";$("f_region").value=c.region||"";$("f_intention").value=c.intention||"中";$("f_ecom").value=c.ecomExp||"否";$("f_product").value=c.product||"";$("f_shop").value=c.shopLinks||"";if($("f_followUp"))$("f_followUp").value=c.followUpAt||"";resetRecogArea();openModal("modalCustomer");}
+  function editCustomer(id){var c=customers.find(function(x){return x.id===id;});if(!c)return;currentCommCustId=null;$("custTitle").textContent="修改客户";$("f_id").value=c.id;$("f_name").value=c.name||"";$("f_contact").value=c.contactName||"";$("f_position").value=c.position||"";$("f_related").value=c.relatedCompany||"";$("f_acciowork").value=c.accioworkNote||"";$("f_phone").value=c.phone||"";$("f_address").value=c.address||"";$("f_region").value=c.region||"";$("f_loc").value=c.loc||"";$("f_intention").value=c.intention||"中";$("f_ecom").value=c.ecomExp||"否";$("f_product").value=c.product||"";$("f_shop").value=c.shopLinks||"";if($("f_followUp"))$("f_followUp").value=c.followUpAt||"";resetRecogArea();openModal("modalCustomer");}
   window.editCustomer=editCustomer;
   function saveCustomer(){
     var name=$("f_name").value.trim();
     if(!name){toast("请填写客户名称");return;}
     var id=$("f_id").value;
     var newComm=$("f_newComm").value.trim();
+    var locChanged=false;
     var followAt=$("f_followUp")?($("f_followUp").value||"").trim():"";
-    var data={name:name,contactName:$("f_contact").value.trim(),position:$("f_position").value.trim(),relatedCompany:$("f_related").value.trim(),accioworkNote:$("f_acciowork").value.trim(),phone:$("f_phone").value.trim(),address:$("f_address").value.trim(),region:$("f_region").value.trim(),intention:$("f_intention").value,ecomExp:$("f_ecom").value,product:$("f_product").value.trim(),shopLinks:$("f_shop").value.trim(),followUpAt:followAt,updatedAt:Date.now()};
+    var data={name:name,contactName:$("f_contact").value.trim(),position:$("f_position").value.trim(),relatedCompany:$("f_related").value.trim(),accioworkNote:$("f_acciowork").value.trim(),phone:$("f_phone").value.trim(),address:$("f_address").value.trim(),region:$("f_region").value.trim(),loc:$("f_loc").value.trim(),intention:$("f_intention").value,ecomExp:$("f_ecom").value,product:$("f_product").value.trim(),shopLinks:$("f_shop").value.trim(),followUpAt:followAt,updatedAt:Date.now()};
     if(followAt)data.followUpDone=false;
     if(id){
       var c=customers.find(function(x){return x.id===id;});
       if(c){
         var oldAddr=(c.address||"").trim();
+        var oldLoc=(c.loc||"").trim();
+        locChanged=(oldLoc!==data.loc);
         Object.assign(c,data);
         // 地址变更：清除旧坐标，触发重新解析，标记自动更新位置
         if(oldAddr!==data.address.trim()&&c.geo){c.geo=null;mapFilterState._addrChanged=true;}
+        // 定位变更：清掉旧定位来源坐标，重新解析（pump 中 loc 最高优先）
+        if(locChanged&&c.geo&&c.geo.src==="loc"){c.geo=null;}
         if(newComm){c.comms=c.comms||[];c.comms.push({time:new Date().toISOString().slice(0,10),content:newComm});c.updatedAt=Date.now();}
       }
     }else{
@@ -6052,7 +6066,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     saveCustomers();closeModal("modalCustomer");render();toast("已保存");
     var _mapSaved=id?customers.find(function(x){return x.id===id;}):data;
-    if(_mapSaved)mapEnqueue([_mapSaved]);
+    if(_mapSaved)mapEnqueue([_mapSaved],locChanged);
   }
   window.saveCustomer=saveCustomer;
 
@@ -6124,6 +6138,43 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{
       mapAMap.plugin(list,function(){cb(true);});
     }catch(e){cb(false);}
+  }
+  // ---------- 客户直接发来的定位解析（经纬度 / 高德链接 / 百度链接 / 微信位置） ----------
+  // 输出为高德 GCJ-02。高德链接/微信位置默认即 GCJ-02；百度 location 直接取用（与 GCJ-02 偏差仅百米级，可接受）。
+  function mapParseLocInput(text){
+    var s=String(text||"").trim();
+    if(!s)return null;
+    var m,lng,la;
+    // 1) 高德链接 position=lng,lat
+    m=s.match(/position=([-\d.]+)[,\s%]+([-\d.]+)/i);
+    if(m){lng=parseFloat(m[1]);la=parseFloat(m[2]);}
+    // 2) 显式 lng=/lon=/经度  +  lat=/latitude=/纬度
+    var ln=(!isFinite(lng)?s.match(/(?:lng|lon|longitude|经度)\s*[:=]?\s*([-\d.]+)/i):null);
+    var laT=(!isFinite(la)?s.match(/(?:lat|latitude|纬度)\s*[:=]?\s*([-\d.]+)/i):null);
+    if(ln&&laT){lng=parseFloat(ln[1]);la=parseFloat(laT[1]);}
+    // 3) 百度链接 location=lat,lng（百度顺序：纬度在前）
+    if(!isFinite(lng)&&!isFinite(la)){
+      m=s.match(/location=([-\d.]+)[,\s%]+([-\d.]+)/i);
+      if(m){la=parseFloat(m[1]);lng=parseFloat(m[2]);}
+    }
+    // 4) 带方位 120.65E,27.99N
+    if(!isFinite(lng)&&!isFinite(la)){
+      m=s.match(/([-\d.]+)\s*[Ee][,\s%]+([-\d.]+)\s*[NnSs]/);
+      if(m){lng=parseFloat(m[1]);la=parseFloat(m[2]);if(/[Ss]/.test(m[0]))la=-la;}
+    }
+    // 5) 纯数字两个：用温州辖区范围判定哪个是经度
+    if(!isFinite(lng)&&!isFinite(la)){
+      var nums=s.replace(/[,，]/g," ").replace(/[^-\d.\s]/g," ").split(/\s+/).map(parseFloat).filter(function(n){return isFinite(n);});
+      if(nums.length>=2){
+        var p=nums[0],q=nums[1];
+        if(p>=119&&p<=121.5&&q>=26&&q<=30){lng=p;la=q;}
+        else if(q>=119&&q<=121.5&&p>=26&&p<=30){lng=q;la=p;}
+        else if(Math.abs(p)>=Math.abs(q)){lng=p;la=q;}
+        else{lng=q;la=p;}
+      }
+    }
+    if(!isFinite(lng)||!isFinite(la))return null;
+    return {lng:lng,lat:la};
   }
   function mapGeocodeNow(addr,cb,city){
     // 加超时与单次结算保护：外部接口不回调时不能让队列永久卡住
@@ -6227,10 +6278,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     (list||[]).forEach(function(c){
       if(!c)return;
       if(mapHasGeo(c)&&!force)return;
-      // 有可解析的真实地址，或有地区名（可用地区/锚点定位），其中之一即可
+      // 有可解析的真实地址、地区名（地区/锚点定位）、或直接发来的定位，之一即可
       var addrOK=!!(c.address&&mapLooksLikeAddress(c.address));
       var regionOK=!!(c.region&&String(c.region).trim());
-      if(!addrOK&&!regionOK)return;
+      var locOK=!!(c.loc&&mapParseLocInput(c.loc));
+      if(!addrOK&&!regionOK&&!locOK)return;
       if(force){mapGeoQueue=mapGeoQueue.filter(function(x){return !x||x.id!==c.id;});}
       else{var inQ=false;for(var i=0;i<mapGeoQueue.length;i++){if(mapGeoQueue[i]&&mapGeoQueue[i].id===c.id){inQ=true;break;}}if(inQ)return;}
       arr.push(c);
@@ -6316,6 +6368,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var isAddr=mapIsAddressText(rawAddr);
         var anchor=mapRegionAnchor(rg); // 区域锚点（同名地名歧义时最可靠）
         function setGeo(g,src){c.geo={lng:g.lng,lat:g.lat,src:src,at:Date.now()};done();}
+        // 客户直接发来的定位（经纬度/链接）最高优先：落在温州辖区内即直接采用，不再 geocode
+        var locP=mapParseLocInput(String(c.loc||""));
+        if(locP&&mapInWz(locP.lng,locP.lat)){setGeo(locP,"loc");return;}
         // 接受坐标：必须落在温州辖区；有锚点时还必须离锚点够近（离得远=同名歧义，落到锚点）
         function accept(g,src){
           if(!g)return false;
@@ -6384,7 +6439,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!mapAMap)return;
     var bad=[];
     customers.forEach(function(c){
-      if(!c||!mapHasGeo(c)||c.geo.src==="manual")return;
+      if(!c||!mapHasGeo(c)||c.geo.src==="manual"||c.geo.src==="loc")return;
       // 无法重新解析（无地址且无地区）的客户，保留原坐标，避免清空后丢失标记
       var canRe=(c.address&&mapLooksLikeAddress(c.address))||(c.region&&String(c.region).trim());
       if(!canRe)return;
@@ -6654,7 +6709,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         // 1) 人工修正标记最优先
         var manualPts=[];
         (list||[]).forEach(function(c){
-          if(mapHasGeo(c)&&c.geo.src==="manual")manualPts.push([c.geo.lng,c.geo.lat]);
+          if(mapHasGeo(c)&&(c.geo.src==="manual"||c.geo.src==="loc"))manualPts.push([c.geo.lng,c.geo.lat]);
         });
         if(manualPts.length>=1){
           if(manualPts.length===1){try{mapInst.setZoomAndCenter(13,manualPts[0]);}catch(e){}}
@@ -6917,9 +6972,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveCardEdit(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
+    var _oldLoc=(c.loc||"").trim();
     c.phone=$("ce_"+id+"_phone").value.trim();
     c.address=$("ce_"+id+"_address").value.trim();
     c.region=$("ce_"+id+"_region").value.trim();
+    c.loc=$("ce_"+id+"_loc").value.trim();
     c.product=$("ce_"+id+"_product").value.trim();
     c.intention=$("ce_"+id+"_intention").value;
     c.ecomExp=$("ce_"+id+"_ecomExp").value;
@@ -6932,7 +6989,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(fuEl){c.followUpAt=fuEl.value||"";if(c.followUpAt)c.followUpDone=false;}
     c.updatedAt=Date.now();
     editingId=null;
-    saveCustomers();renderStats();renderList();toast("已更新");
+    // 定位变更：清掉旧定位坐标，重新解析落点并刷新地图
+    if(_oldLoc!==c.loc){if(c.geo&&c.geo.src==="loc")c.geo=null;saveCustomers();mapEnqueue([c],true);}
+    else{saveCustomers();}
+    renderStats();renderList();toast("已更新");
   }
   window.saveCardEdit=saveCardEdit;
 
