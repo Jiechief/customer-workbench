@@ -1708,6 +1708,7 @@ body{background:var(--bg);}
             <button class="btn" type="button" onclick="window.__map.clearSelection()">清空选择</button>
             <button class="btn" type="button" onclick="window.__map.selAction('locate')">飞到选中</button>
             <button class="btn" type="button" onclick="window.__map.selAction('export')">导出选中</button>
+            <button class="btn" type="button" style="color:#e06c6c" onclick="window.__map.selAction('delete')">删除标记</button>
           </div>
         </div>
         <div class="map-body" id="mapBody" style="display:flex;">
@@ -6402,6 +6403,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       rows.forEach(function(c){csv+=[c.name||"",c.intention||"",c.region||"",c.address||"",c.status||"",c.lastContact||""].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(",")+"\n";});
       var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
       var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="选中客户_"+rows.length+".csv";a.click();
+    }else if(act==="delete"){
+      // 批量删除标记：清空选中客户的 geo 坐标，客户本身保留
+      if(!confirm("确认删除 "+ids.length+" 家客户的地图标记？\n（仅清除坐标，不删除客户记录）"))return;
+      var removed=0;
+      ids.forEach(function(id){
+        var c=customers.find(function(x){return x.id===id;});
+        if(c&&c.geo){c.geo=null;removed++;}
+      });
+      mapSelection={};
+      try{saveCustomers();}catch(e){}
+      mapRefresh();
+      mapRenderStats();
+      mapRenderSelBar();
+      toast("已删除 "+removed+" 个标记");
     }
   }
 
