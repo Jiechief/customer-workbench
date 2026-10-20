@@ -1298,16 +1298,32 @@ body{background:var(--bg);}
   .map-panel-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
   .map-panel-title{font-size:14px;font-weight:700;color:var(--text);}
   .map-head-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
-  .map-body{display:flex;height:420px;}
-  .map-canvas{flex:1 1 auto;min-width:0;height:100%;background:var(--panel2);}
-  .map-side{width:240px;flex:0 0 240px;border-left:1px solid var(--border);overflow:auto;padding:10px 12px;background:var(--panel);}
-  .map-side-head{font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .map-toolbar{background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;}
+  .map-filter-row{display:flex;gap:10px;padding:12px 14px;flex-wrap:wrap;align-items:center;}
+  .map-filter-row select,.map-filter-row .search,.map-filter-row .btn{font-size:12.5px;padding:6px 12px;}
+  .map-filter-row .sep{flex:1 0 8px;max-width:20px;}
+  .map-stats-row{display:flex;gap:0;padding:0 14px 8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px;}
+  .map-stat-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);font-size:11.5px;color:var(--text);margin-right:6px;cursor:pointer;border:1px solid var(--border);}
+  .map-stat-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .map-stat-chip .dot{width:8px;height:8px;border-radius:50%;}
+  .map-stat-chip .num{font-weight:700;}
+  .map-selection-bar{display:flex;gap:8px;align-items:center;padding:8px 14px;background:var(--accent-weak);font-size:12.5px;color:var(--text);border-top:1px solid var(--border);}
+  .map-selection-bar #mapSelCount{font-weight:700;color:var(--accent);}
+  .map-body{display:flex;height:calc(100vh - 280px);min-height:460px;}
+  .map-canvas{flex:1 1 auto;min-width:0;height:100%;background:var(--panel2);position:relative;}
+  .map-side{width:280px;flex:0 0 280px;border-left:1px solid var(--border);overflow:auto;padding:12px 14px;background:var(--panel);}
+  .map-side-head{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
   .map-hint{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;}
   .map-pend-item{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--border);}
   .map-pend-name{font-size:13px;color:var(--text);font-weight:600;}
   .map-pend-addr{font-size:11px;color:var(--muted);word-break:break-all;}
   .card.map-flash{animation:mapFlashAnim 2.2s ease;}
-  @keyframes mapFlashAnim{0%{box-shadow:0 0 0 3px var(--accent);}100%{box-shadow:var(--shadow);}}
+  .map-popover{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:12px 14px;min-width:240px;max-width:320px;z-index:50;font-size:12.5px;}
+  .map-popover .mp-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .map-popover .mp-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);margin-bottom:3px;}
+  .map-popover .mp-row b{color:var(--text);font-weight:600;}
+  .map-popover .mp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .map-popover .mp-actions .btn{font-size:11px;padding:4px 10px;}
   @media (max-width:680px){.map-body{flex-direction:column;height:auto;}.map-canvas{height:300px;}.map-side{width:auto;flex:none;border-left:none;border-top:1px solid var(--border);max-height:190px;}}
    .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
    .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);white-space:nowrap;}
@@ -1396,6 +1412,10 @@ body{background:var(--bg);}
       <a class="nav-item" data-view="customers" data-tip="客户列表">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         <span class="nav-text">客户列表</span>
+      </a>
+      <a class="nav-item" data-view="map" data-tip="客户地图">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+        <span class="nav-text">客户地图</span>
       </a>
       <a class="nav-item" data-view="prompts" data-tip="指令提示词">
         <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
@@ -1655,26 +1675,48 @@ body{background:var(--bg);}
           <button class="btn" onclick="toggleBatch()">退出批量</button>
         </div>
         <div class="list" id="list"></div>
-        <div class="map-panel" id="mapPanel">
-          <div class="map-panel-head">
-            <span class="map-panel-title">客户地图</span>
-            <span class="muted" id="mapStat">未加载</span>
-            <span class="map-head-btns">
-              <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
-              <button class="btn" type="button" onclick="window.__map.batchResolve()">批量补解析</button>
-              <button class="btn primary" id="btnMapToggle" type="button" onclick="window.__map.toggle()">展开地图</button>
-            </span>
+
+      </div>
+      <!-- 视图：客户地图 -->
+      <div id="viewMap" class="view" style="display:none;">
+        <div class="map-toolbar" id="mapToolbar">
+          <div class="map-filter-row">
+            <select id="mapF_intention" title="按意向筛选">
+              <option value="all">意向：全部</option>
+              <option value="high">高意向</option>
+              <option value="mid">中意向</option>
+              <option value="low">低意向</option>
+            </select>
+            <select id="mapF_status" title="按状态筛选">
+              <option value="all">状态：全部</option>
+              <option value="active">已合作</option>
+              <option value="pending">待跟进</option>
+              <option value="overdue">逾期未跟</option>
+            </select>
+            <select id="mapF_region" title="按地区筛选"><option value="all">地区：全部</option></select>
+            <input type="text" id="mapSearch" class="search" placeholder="搜索客户名定位…">
+            <span class="sep"></span>
+            <button class="btn" type="button" id="btnMapHeat" onclick="window.__map.toggleHeat()">热力图</button>
+            <button class="btn" type="button" id="btnMapCluster" onclick="window.__map.toggleCluster()">聚合</button>
+            <button class="btn" type="button" onclick="window.__map.batchResolve()">批量补解析</button>
+            <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
-          <div class="map-body" id="mapBody" style="display:none;">
-            <div class="map-canvas" id="mapCanvas"></div>
-            <div class="map-side" id="mapSide">
-              <div class="map-side-head">待定位 <b id="mapPendingCount">0</b> 家</div>
-              <div class="map-hint">这些客户还没有坐标。点「批量补解析」自动尝试，失败可在地图上手动点选。</div>
-              <div id="mapPendingList"></div>
-            </div>
+          <div class="map-stats-row" id="mapStatsRow"></div>
+          <div class="map-selection-bar" id="mapSelBar" style="display:none;">
+            <span id="mapSelCount">已选 0 家</span>
+            <button class="btn" type="button" onclick="window.__map.clearSelection()">清空选择</button>
+            <button class="btn" type="button" onclick="window.__map.selAction('locate')">飞到选中</button>
+            <button class="btn" type="button" onclick="window.__map.selAction('export')">导出选中</button>
           </div>
         </div>
-
+        <div class="map-body" id="mapBody" style="display:flex;">
+          <div class="map-canvas" id="mapCanvas"></div>
+          <div class="map-side" id="mapSide">
+            <div class="map-side-head" id="mapSideHead">客户地图</div>
+            <div class="map-hint" id="mapHint">勾选 Key 后点「展开地图」开始使用。</div>
+            <div id="mapPendingList"></div>
+          </div>
+        </div>
       </div>
       <div id="viewPrompts" class="view" style="display:none;">
         <div class="prompts-wrap">
@@ -5398,19 +5440,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function switchView(view){
     currentView=view;
     editingId=null;
-    if(typeof closePick==="function")closePick();
+    if(typeof closePick=="function")closePick();
     $("viewDashboard").style.display=view==="dashboard"?"block":"none";
     $("viewCustomers").style.display=view==="customers"?"block":"none";
+    if($("viewMap"))$("viewMap").style.display=view==="map"?"block":"none";
     if($("viewPrompts"))$("viewPrompts").style.display=view==="prompts"?"block":"none";
     if($("viewPromptHelper"))$("viewPromptHelper").style.display=view==="prompthelper"?"block":"none";
     if($("viewPlans"))$("viewPlans").style.display=view==="plans"?"block":"none";
-    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":"客户列表";
+    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="map"?"客户地图":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":"客户列表";
     $("pageTitle").textContent=title;
     document.querySelectorAll(".nav-item[data-view]").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-view")===view);
     });
     if(view==="dashboard")renderDashboard();
     else if(view==="customers"){renderStats();refreshList();if(mapOpened&&mapInst)mapRefresh();}
+    else if(view==="map"){mapBindToolbar();mapAutoOpen();}
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
     else if(view==="prompthelper"){phRender();}
     else if(view==="plans"){renderPlans();}
@@ -6148,22 +6192,186 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       })(cur);
     }
   }
+  // ---------- 地图管理能力：筛选/统计/圈选/热力/详情 ----------
+  var mapFilterState={intention:"all",status:"all",region:"all",search:""};
+  var mapSelection={};  // id -> true
+  var mapHeatOn=false, mapHeatLayer=null;
+  var mapPopover=null;
+
+  function mapBindToolbar(){
+    var els=["mapF_intention","mapF_status","mapF_region"];
+    els.forEach(function(id){
+      var el=$(id);if(!el)return;
+      el.onchange=function(){mapFilterState[id.replace("mapF_","")]=el.value;mapRefresh();mapRenderStats();};
+    });
+    var si=$("mapSearch");if(si){si.oninput=function(){mapFilterState.search=si.value.trim().toLowerCase();mapRefresh();};}
+    mapRenderRegionOptions();
+    mapRenderStats();
+  }
+  function mapRenderRegionOptions(){
+    var sel=$("mapF_region");if(!sel)return;
+    var seen={},opts='<option value="all">地区：全部</option>';
+    customers.forEach(function(c){
+      var r=(c.region||"").trim();if(!r)return;
+      if(!seen[r]){seen[r]=true;opts+='<option value="'+esc(r)+'">'+esc(r)+'</option>';}
+    });
+    sel.innerHTML=opts;
+  }
+  function mapFiltered(){
+    var f=mapFilterState;
+    return customers.filter(function(c){
+      if(f.intention!=="all"&&(c.intention||"low")!==f.intention)return false;
+      if(f.status==="active"&&c.status!=="active")return false;
+      if(f.status==="pending"&&c.status!=="pending")return false;
+      if(f.status==="overdue"){var d=daysSince(c.lastContact);if(d<parseInt(settings.reminderDays||7,10))return false;}
+      if(f.region!=="all"&&(c.region||"")!==f.region)return false;
+      if(f.search){var n=(c.name||"").toLowerCase();if(n.indexOf(f.search)<0)return false;}
+      return true;
+    });
+  }
+  function mapRenderStats(){
+    var box=$("mapStatsRow");if(!box)return;
+    var list=mapFiltered();
+    var geoced=0;
+    var byIntent={high:0,mid:0,low:0};
+    list.forEach(function(c){if(mapHasGeo(c))geoced++;byIntent[c.intention||"low"]++;});
+    var regions={};
+    list.forEach(function(c){var r=c.region||"未分类";regions[r]=(regions[r]||0)+1;});
+    var html="";
+    html+='<span class="map-stat-chip active"><span class="dot" style="background:var(--accent)"></span>显示 <span class="num">'+geoced+'</span>/'+list.length+'</span>';
+    html+='<span class="map-stat-chip" onclick="window.__map.filterByIntent(\'high\')"><span class="dot" style="background:#e06c6c"></span>高意向 <span class="num">'+byIntent.high+'</span></span>';
+    html+='<span class="map-stat-chip" onclick="window.__map.filterByIntent(\'mid\')"><span class="dot" style="background:#d8a740"></span>中意向 <span class="num">'+byIntent.mid+'</span></span>';
+    html+='<span class="map-stat-chip" onclick="window.__map.filterByIntent(\'low\')"><span class="dot" style="background:#5a9bd4"></span>低意向 <span class="num">'+byIntent.low+'</span></span>';
+    var regs=Object.keys(regions).sort(function(a,b){return regions[b]-regions[a];}).slice(0,6);
+    regs.forEach(function(r){
+      var rid=encodeURIComponent(r);
+      html+='<span class="map-stat-chip" onclick="window.__map.filterByRegion(\''+rid+'\')">'+esc(r)+' <span class="num">'+regions[r]+'</span></span>';
+    });
+    box.innerHTML=html;
+  }
+  function mapFilterByIntent(v){mapFilterState.intention=v;var el=$("mapF_intention");if(el)el.value=v;mapRefresh();mapRenderStats();}
+  function mapFilterByRegion(v){var r=decodeURIComponent(v);mapFilterState.region=r;var el=$("mapF_region");if(el)el.value=r;mapRefresh();mapRenderStats();}
+
+  // 点击 marker 显示详情 popover
+  function mapBindClick(){
+    if(!mapInst||mapInst.__bindClick)return;
+    mapInst.__bindClick=true;
+    mapInst.on("click",function(e){
+      if(mapPickId)return;  // 选点模式下不显示详情
+      if(!e.lnglat){mapClosePopover();return;}
+      // 优先找最近的客户
+      var nearest=null,minD=Infinity;
+      customers.forEach(function(c){
+        if(!mapHasGeo(c))return;
+        var d=(c.geo.lng-e.lnglat.lng)*(c.geo.lng-e.lnglat.lng)+(c.geo.lat-e.lnglat.lat)*(c.geo.lat-e.lnglat.lat);
+        if(d<minD){minD=d;nearest=c;}
+      });
+      if(nearest&&minD<0.5){mapShowPopover(nearest,e.lnglat);}
+      else{mapClosePopover();}
+    });
+  }
+  function mapShowPopover(c,lnglat){
+    mapClosePopover();
+    if(!mapInst||!mapAMap)return;
+    var days=daysSince(c.lastContact);
+    var html='<div class="map-popover" id="mapPop">'+
+      '<div class="mp-name">'+esc(c.name||"未命名")+'</div>'+
+      '<div class="mp-row"><span>意向</span><b>'+esc(c.intention==="high"?"高":c.intention==="mid"?"中":"低")+'</b></div>'+
+      '<div class="mp-row"><span>状态</span><b>'+esc(c.status==="active"?"已合作":c.status==="pending"?"待跟进":"逾期")+'</b></div>'+
+      '<div class="mp-row"><span>地区</span><b>'+esc(c.region||"-")+'</b></div>'+
+      '<div class="mp-row"><span>最近沟通</span><b>'+(c.lastContact?days+" 天前":"无记录")+'</b></div>'+
+      (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'')+
+      '<div class="mp-actions">'+
+        '<button class="btn primary" onclick="window.__map.locate(&#39;'+c.id+'&#39;)">飞到</button>'+
+        '<button class="btn" onclick="window.__map.toggleSelect(&#39;'+c.id+'&#39;)">'+(mapSelection[c.id]?"取消选择":"选中")+'</button>'+
+        '<button class="btn" onclick="window.__map.gotoCustomer(&#39;'+c.id+'&#39;)">查看客户</button>'+
+      '</div>'+
+      '</div>';
+    mapPopover=new mapAMap.InfoWindow({
+      content:html,
+      offset:new mapAMap.Pixel(0,-30),
+      isCustom:true
+    });
+    mapPopover.open(mapInst,[lnglat.lng,lnglat.lat]);
+  }
+  function mapClosePopover(){if(mapPopover){try{mapPopover.close();}catch(e){}mapPopover=null;}}
+  function mapGotoCustomer(id){
+    switchView("customers");
+    setTimeout(function(){mapFocus(id);},200);
+  }
+  function mapToggleSelect(id){mapSelection[id]=!mapSelection[id];if(!mapSelection[id])delete mapSelection[id];mapRenderSelBar();mapRefresh();}
+  function mapClearSelection(){mapSelection={};mapRenderSelBar();mapRefresh();}
+  function mapRenderSelBar(){
+    var bar=$("mapSelBar"),cnt=$("mapSelCount");
+    var n=Object.keys(mapSelection).length;
+    if(bar)bar.style.display=n>0?"flex":"none";
+    if(cnt)cnt.textContent="已选 "+n+" 家";
+  }
+  function mapSelAction(act){
+    var ids=Object.keys(mapSelection);
+    if(!ids.length){toast("未选中客户");return;}
+    if(act==="locate"){
+      var pts=[];ids.forEach(function(id){var c=customers.find(function(x){return x.id===id;});if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
+      if(pts.length){try{mapInst.setFitView(pts);}catch(e){}}
+    }else if(act==="export"){
+      var rows=ids.map(function(id){var c=customers.find(function(x){return x.id===id;});return c;}).filter(Boolean);
+      var csv="name,intention,region,address,status,lastContact\n";
+      rows.forEach(function(c){csv+=[c.name||"",c.intention||"",c.region||"",c.address||"",c.status||"",c.lastContact||""].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(",")+"\n";});
+      var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+      var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="选中客户_"+rows.length+".csv";a.click();
+    }
+  }
+
+  // 热力图
+  function mapToggleHeat(){
+    if(!mapInst){toast("地图未就绪");return;}
+    mapHeatOn=!mapHeatOn;
+    var btn=$("btnMapHeat");if(btn)btn.classList.toggle("primary",mapHeatOn);
+    if(mapHeatOn){
+      if(!mapHeatLayer&&mapAMap&&typeof mapAMap.HeatMap==="function"){mapHeatLayer=new mapAMap.HeatMap(mapInst,{radius:30});}
+      if(mapHeatLayer){
+        var data=[];
+        customers.forEach(function(c){if(mapHasGeo(c)){data.push({lng:c.geo.lng,lat:c.geo.lat,count:1});}});
+        try{mapHeatLayer.setDataSet({data:data,max:8});mapHeatLayer.show();}catch(e){}
+      }
+    }else{if(mapHeatLayer){try{mapHeatLayer.hide();}catch(e){}}}
+  }
+  function mapToggleCluster(){
+    if(!mapInst){toast("地图未就绪");return;}
+    if(mapCluster){try{mapCluster.setGridSize(mapCluster.getGridSize()===60?120:60);}catch(e){}toast("聚合已切换");}
+    else{toast("当前聚合插件不可用");}
+  }
+
   function mapRefresh(){
     if(!mapInst)return;
-    var list=getFiltered();
+    var list=mapFiltered();
     var ms=[],ok=0;
+    var colorOf={high:"#e06c6c",mid:"#d8a740",low:"#5a9bd4"};
     list.forEach(function(c){
       if(!mapHasGeo(c))return;
       ok++;
-      var m=new mapAMap.Marker({position:[c.geo.lng,c.geo.lat],title:c.name||"客户",extData:{id:c.id}});
-      m.on("click",function(){mapFocus(c.id);});
+      var col=colorOf[c.intention||"low"];
+      var isSel=!!mapSelection[c.id];
+      var m=new mapAMap.Marker({
+        position:[c.geo.lng,c.geo.lat],
+        title:c.name||"客户",
+        extData:{id:c.id},
+        label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6,-22)}:null,
+        content:(function(){
+          var s=isSel?'<div style="width:18px;height:18px;border-radius:50%;background:'+col+';border:3px solid var(--accent);box-shadow:0 0 0 2px #fff;"></div>':'<div style="width:12px;height:12px;border-radius:50%;background:'+col+';border:2px solid #fff;"></div>';
+          return s;
+        })()
+      });
+      m.on("click",function(){mapShowPopover(c,{lng:c.geo.lng,lat:c.geo.lat});});
       ms.push(m);
     });
     mapAddMarkers(ms);
     var pend=list.length-ok;
     mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
-    if(ok>0){try{mapInst.setFitView();}catch(e){}}
+    if(ok>0&&!mapHeatOn){try{mapInst.setFitView();}catch(e){}}
     mapRenderPending(list);
+    mapRenderStats();
+    mapRenderSelBar();
   }
   function mapAddMarkers(ms){
     if(mapCluster){
@@ -6196,36 +6404,43 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapInit(){
     var body=$("mapBody");if(!body)return;
     body.style.display="flex";
-    var tg=$("btnMapToggle");if(tg)tg.textContent="收起地图";
     if(!mapHasKey()){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");mapRenderPending(getFiltered());return;}
     mapLoadSdk(function(A,err){
       if(err==="nokey"){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");return;}
       if(err==="loading"){mapSetStat("地图加载中…");return;}
       if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
       if(!mapInst){
-        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder"],function(){
+        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap"],function(){
           try{
             mapInst=new A.Map("mapCanvas",{zoom:5,center:[110,32],resizeEnable:true});
             if(typeof A.MarkerCluster==="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
             window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
           }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
           mapSetStat("地图已就绪");
+          mapBindClick();
           mapPump();
           mapRefresh();
         });
         return;
       }
       mapSetStat("地图已就绪");
+      mapBindClick();
       mapPump();
       mapRefresh();
     });
   }
   function mapOpen(){mapOpened=true;mapInit();}
+  // 独立页面：进入时自动展开
+  function mapAutoOpen(){
+    if(!mapOpened){mapOpened=true;}
+    mapInit();
+    mapBindToolbar();
+  }
   function mapToggle(){
     mapOpened=!mapOpened;
     var b=$("mapBody");if(!b)return;
     if(mapOpened){b.style.display="flex";mapInit();}
-    else{b.style.display="none";var tg=$("btnMapToggle");if(tg)tg.textContent="展开地图";}
+    else{b.style.display="none";}
   }
   function mapOpenKeySetting(){openSettings();}
   function mapBatchResolve(){
@@ -6279,6 +6494,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     },1400);
   }
   window.__map={toggle:mapToggle,open:mapOpen,init:mapInit,refresh:mapRefresh,batchResolve:mapBatchResolve,pick:mapPick,locate:mapLocate,focus:mapFocus,openKeySetting:mapOpenKeySetting,hasKey:mapHasKey,enqueue:mapEnqueue,hasGeo:mapHasGeo,geocode:mapGeocode,renderPending:mapRenderPending,
+    autoOpen:mapAutoOpen,renderToolbar:mapBindToolbar,filterByIntent:mapFilterByIntent,filterByRegion:mapFilterByRegion,
+    toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
+    toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,queue:mapGeoQueue.length};}};
 
   function delCustomer(id){
