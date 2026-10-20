@@ -6456,16 +6456,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     mapAddMarkers(ms);
     var pend=list.length-ok;
     mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
-    if(ok>0&&!mapHeatOn){mapFitToRegion(list);}
+    if(!mapHeatOn){mapFitToRegion(list);}
     mapRenderPending(list);
     mapRenderStats();
     mapRenderSelBar();
   }
-  // 区域筛选自动定位：优先用该区域精确坐标客户定位；无精确坐标时才 geocode 地区名
+  // 区域筛选自动定位：优先用该区域精确坐标客户定位；无精确坐标时 geocode 地区名
   function mapFitToRegion(list){
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
-        // 1) 先看该区域内是否有精确坐标客户（src=auto），有就 fitView 这些点
+        // 1) 该区域内有精确坐标客户（src=auto），用这些点 fitView
         var autoPts=[];
         (list||[]).forEach(function(c){
           if(mapHasGeo(c)&&c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
@@ -6478,20 +6478,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           }
           return;
         }
-        // 2) 没有精确客户：再退一步用所有已定位客户（含 approx/region 兜底）
-        var anyPts=[];
-        (list||[]).forEach(function(c){if(mapHasGeo(c))anyPts.push([c.geo.lng,c.geo.lat]);});
-        if(anyPts.length>=1){
-          if(anyPts.length===1){
-            try{mapInst.setZoomAndCenter(13,anyPts[0]);}catch(e){}
-          }else{
-            try{mapInst.setFitView(anyPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
-          }
-          return;
-        }
-        // 3) 一个已定位客户都没有：geocode 地区名定位
+        // 2) 无精确客户：直接 geocode 地区名定位（不走散乱兜底点，避免视野跨全国）
         var rg=mapFilterState.region;
-        mapGeocode(rg,function(geo){
+        var mc=mapCityPrefix();
+        var q=mc?(mc+rg):rg;
+        mapGeocode(q,function(geo){
           if(geo&&mapInst){try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}}
         });
         return;
