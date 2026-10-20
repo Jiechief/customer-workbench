@@ -6122,18 +6122,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       mapAMap.plugin(list,function(){cb(true);});
     }catch(e){cb(false);}
   }
-  function mapGeocodeNow(addr,cb){
+  function mapGeocodeNow(addr,cb,city){
     // 加超时与单次结算保护：外部接口不回调时不能让队列永久卡住
     var settled=false;
     var fin=function(v){if(settled)return;settled=true;try{if(timer)clearTimeout(timer);}catch(e){}cb(v);};
     var timer=null;
     try{
-      var g=new mapAMap.Geocoder();
+      var opts={};
+      // 城市约束：高德 Geocoder 的 city 参数把搜索范围限定到主城市，避免同名地区跳错
+      if(city){opts.city=city;}
+      var g=new mapAMap.Geocoder(opts);
       timer=setTimeout(function(){fin(null);},6000);
       g.getLocation(String(addr),function(status,result){
         try{
           if(status==="complete"&&result&&result.geocodes&&result.geocodes.length){
-            var p=result.geocodes[0].location;
+            // 多候选时：优先选属于主城市的那个（address 含主城市字样）；否则取第一个
+            var pick=result.geocodes[0];
+            if(city&&result.geocodes.length>1){
+              var cityStr=String(city);
+              for(var i=0;i<result.geocodes.length;i++){
+                var ga=String(result.geocodes[i].address||"")+String(result.geocodes[i].district||"")+String(result.geocodes[i].formattedAddress||"");
+                if(ga.indexOf(cityStr)>=0){pick=result.geocodes[i];break;}
+              }
+            }
+            var p=pick.location;
             if(p&&isFinite(p.lng)&&isFinite(p.lat)){fin({lng:p.lng,lat:p.lat});return;}
           }
           fin(null);
@@ -6141,13 +6153,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
     }catch(e){fin(null);}
   }
-  function mapGeocode(addr,cb){
+  function mapGeocode(addr,cb,city){
     if(!mapAMap||!addr){cb(null);return;}
+    // 若未显式传 city，用设置里的主城市
+    if(!city){city=mapCityPrefix();}
     if(typeof mapAMap.Geocoder!=="function"){
-      mapLoadPlugins(["AMap.Geocoder"],function(ok){ if(ok)mapGeocodeNow(addr,cb);else cb(null); });
+      mapLoadPlugins(["AMap.Geocoder"],function(ok){ if(ok)mapGeocodeNow(addr,cb,city);else cb(null); });
       return;
     }
-    mapGeocodeNow(addr,cb);
+    mapGeocodeNow(addr,cb,city);
   }
   // 判断文本是否像详细地址：含省市县区路街号村等特征字，且长度合理
   function mapLooksLikeAddress(s){
@@ -6206,9 +6220,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           mapPump();
         };
         var rawAddr=String(c.address||"").trim();
-        var mc=mapCityPrefix();
-        var qAddr=mc?(mc+rawAddr):rawAddr;
-        mapGeocode(qAddr,function(geo){
+        // 主城市约束由 mapGeocode 内部通过 city 参数传入，不再字符串拼接
+        mapGeocode(rawAddr,function(geo){
           if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
           // 城市级兜底：用「客户所属地区」再试一次
           var rg=String(c.region||"").trim();
@@ -6453,9 +6466,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
         var rg=mapFilterState.region;
-        var mc=mapCityPrefix();
-        var q=mc?mc+rg:rg;
-        mapGeocode(q,function(geo){
+        // 主城市约束由 mapGeocode 内部通过 city 参数传入
+        mapGeocode(rg,function(geo){
           if(!mapInst)return;
           if(geo){
             try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}
