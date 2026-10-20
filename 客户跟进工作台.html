@@ -6528,26 +6528,29 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapFitToRegion(list){
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
-        // 1) 该区域内有精确坐标客户（src=auto），用这些点 fitView
-        var autoPts=[];
+        // 1) 优先手动标记（src=manual，人工修正最可靠），其次精确地址（src=auto）
+        var manualPts=[],autoPts=[];
         (list||[]).forEach(function(c){
-          if(mapHasGeo(c)&&c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
+          if(!mapHasGeo(c))return;
+          if(c.geo.src==="manual")manualPts.push([c.geo.lng,c.geo.lat]);
+          else if(c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
         });
-        if(autoPts.length>=1){
-          if(autoPts.length===1){
-            try{mapInst.setZoomAndCenter(13,autoPts[0]);}catch(e){}
+        // 人工修正过的坐标优先：只要有一个 manual 点，就跳过去，绝不再 geocode 覆盖
+        var prefer=manualPts.length?manualPts:autoPts;
+        if(prefer.length>=1){
+          if(prefer.length===1){
+            try{mapInst.setZoomAndCenter(13,prefer[0]);}catch(e){}
           }else{
-            try{mapInst.setFitView(autoPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
+            try{mapInst.setFitView(prefer.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
           }
           return;
         }
-        // 2) 无精确客户：从所有该区域客户的真实地址里挑一条最完整的去 geocode，避免短词歧义
+        // 2) 无手动/精确坐标：从所有该区域客户的真实地址里挑一条最完整的去 geocode，避免短词歧义
         var rg=mapFilterState.region;
         var bestAddr="";
         customers.forEach(function(c){
           if((c.region||"")!==rg)return;
           var a=String(c.address||"").trim();
-          // 优先选带「镇/路/村/街/号」等能精确定位的完整地址
           if(a&&a.length>(bestAddr.length||0)&&/镇|路|村|街|号|大道|巷|弄/.test(a))bestAddr=a;
         });
         var q=bestAddr||(mapCityPrefix()?mapCityPrefix()+rg:rg);
