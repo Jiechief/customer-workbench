@@ -2053,6 +2053,7 @@ body{background:var(--bg);}
     <div id="aiSceneModels"></div>
 
     <div style="margin:16px 0 8px;font-size:14px;font-weight:700;color:var(--text);">地图服务（客户地图用）</div>
+    <div class="field"><label>主城市（用于区域筛选定位与地址解析）</label><input type="text" id="s_mapCity" placeholder="如：温州市 — 筛选「塘下」会定位到「温州市塘下」，避免同名地区跳错"></div>
     <div class="field"><label>高德地图 Key</label><input type="text" id="s_mapKey" placeholder="高德开放平台创建 Key 时，平台类型选「Web端(JS API)」"></div>
     <div class="field"><label>安全密钥 securityJsCode</label><input type="text" id="s_mapSecret" placeholder="创建 Key 成功后页面下方那块，2.0 必填，否则地图白屏"></div>
     <div class="hint">地址解析会把「真实地址」文本发送至高德地图服务用于换算坐标；解析失败或未配置 Key 均不影响客户保存。</div>
@@ -2264,7 +2265,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var MARK_LABELS={red:"红",orange:"橙",amber:"黄",green:"绿",blue:"蓝",purple:"紫",gray:"灰"};
   var skillCats=["开通配置","交付SOP","故障排查","销售话术","进阶玩法"];
   var pendingSkillFile=null; // 暂存待存入的文件（base64）
-  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",mapKey:"",mapSecret:"",reminderDays:7,theme:"light",skin:"purple"};
+  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",mapKey:"",mapSecret:"",mapCity:"",reminderDays:7,theme:"light",skin:"purple"};
   // ---------- 模型供应商注册表（单一数据源：新增供应商只改这里） ----------
   // 每个供应商给出默认 apiBase / 文本模型 / 视觉模型；vision 为 null/"" 表示该供应商无预设视觉模型
   var PROVIDERS={
@@ -6055,6 +6056,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- 客户地图（高德地图 JS API 2.0，懒加载） ----------
   var mapAMap=null,mapInst=null,mapCluster=null,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapPickMode="",mapOpened=false,mapSdkLoading=false;
   function mapHasKey(){return !!(settings&&settings.mapKey&&String(settings.mapKey).trim());}
+  // 主城市前缀：筛选区域定位、地址解析时自动拼到地区/地址前面，避免同名地区跳错
+  function mapCityPrefix(){var c=String(settings&&settings.mapCity||"").trim();return c;}
   function mapSetStat(t){var el=$("mapStat");if(el)el.textContent=t;}
   // 捕获高德鉴权/渲染错误，映射成用户能看懂的原因（否则只白屏无提示）
   var mapAmapErr="";
@@ -6202,7 +6205,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           mapRefresh();
           mapPump();
         };
-        mapGeocode(String(c.address||"").trim(),function(geo){
+        var rawAddr=String(c.address||"").trim();
+        var mc=mapCityPrefix();
+        var qAddr=mc?(mc+rawAddr):rawAddr;
+        mapGeocode(qAddr,function(geo){
           if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
           // 城市级兜底：用「客户所属地区」再试一次
           var rg=String(c.region||"").trim();
@@ -6447,7 +6453,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{
       if(mapFilterState.region!=="all"&&mapFilterState.region){
         var rg=mapFilterState.region;
-        mapGeocode(rg,function(geo){
+        var mc=mapCityPrefix();
+        var q=mc?mc+rg:rg;
+        mapGeocode(q,function(geo){
           if(!mapInst)return;
           if(geo){
             try{mapInst.setZoomAndCenter(12,[geo.lng,geo.lat]);}catch(e){}
@@ -7431,6 +7439,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $("s_theme").value=settings.theme;
     if($("s_mapKey"))$("s_mapKey").value=settings.mapKey||"";
     if($("s_mapSecret"))$("s_mapSecret").value=settings.mapSecret||"";
+    if($("s_mapCity"))$("s_mapCity").value=settings.mapCity||"";
     renderProviderPanel();
     renderSceneModels();
     openModal("modalSettings");
@@ -7442,6 +7451,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     settings.theme=$("s_theme").value;
     if($("s_mapKey"))settings.mapKey=$("s_mapKey").value.trim();
     if($("s_mapSecret"))settings.mapSecret=$("s_mapSecret").value.trim();
+    if($("s_mapCity"))settings.mapCity=$("s_mapCity").value.trim();
     // Read all provider inputs from DOM
     var inputs=document.querySelectorAll("#aiProvidersPanel input[data-pidx]");
     inputs.forEach(function(inp){
