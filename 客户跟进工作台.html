@@ -6403,6 +6403,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var mapSelection={};  // id -> true
   var mapHeatOn=false, mapHeatLayer=null;
   var mapPopover=null;
+  var mapMarkerClickGuard=0; // 点标记的时间戳：防止标记click冒泡到地图click时误关详情
 
   function mapBindToolbar(){
     var els=["mapF_intention","mapF_status","mapF_region"];
@@ -6460,21 +6461,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   // 点击 marker 显示详情 popover
   function mapBindClick(){
-    if(!mapInst||mapInst.__bindClick)return;
-    mapInst.__bindClick=true;
-    mapInst.on("click",function(e){
-      if(mapPickId)return;  // 选点模式下不显示详情
-      if(!e.lnglat){mapClosePopover();return;}
-      // 优先找最近的客户
-      var nearest=null,minD=Infinity;
-      customers.forEach(function(c){
-        if(!mapHasGeo(c))return;
-        var d=(c.geo.lng-e.lnglat.lng)*(c.geo.lng-e.lnglat.lng)+(c.geo.lat-e.lnglat.lat)*(c.geo.lat-e.lnglat.lat);
-        if(d<minD){minD=d;nearest=c;}
+    if(!mapInst)return;
+    try{
+      mapInst.on("click",function(e){
+        if(mapPickId)return; // 选点模式走 mapPick 处理器
+        // 刚点过标记（其click可能冒泡到地图），忽略，避免误关详情
+        if(Date.now()-mapMarkerClickGuard<300)return;
+        // 点空白处：只关闭已打开的详情，不再自动吸附最近客户
+        mapClosePopover();
       });
-      if(nearest&&minD<0.5){mapShowPopover(nearest,e.lnglat);}
-      else{mapClosePopover();}
-    });
+    }catch(e){}
   }
   function mapShowPopover(c,lnglat){
     mapClosePopover();
@@ -6629,7 +6625,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         offset:new mapAMap.Pixel(-(isSel?17:13),-(isSel?34:26)),
         label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6,-30)}:null
       });
-      m.on("click",function(){mapShowPopover(c,{lng:c.geo.lng,lat:c.geo.lat});});
+      m.on("click",function(){mapMarkerClickGuard=Date.now();mapShowPopover(c,{lng:c.geo.lng,lat:c.geo.lat});});
       ms.push(m);
     });
     mapAddMarkers(ms);
