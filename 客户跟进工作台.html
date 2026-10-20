@@ -6174,11 +6174,52 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     mapGeocodeNow(addr,cb,city);
   }
-  // 判断文本是否像详细地址：含省市县区路街号村等特征字，且长度合理
+  // 判断文本是否为可搜索的位置：地址 或 公司/店铺名（POI）。用户常把客户公司名填在地址栏（高德可直接搜到），故放宽，只排除明显垃圾文本
   function mapLooksLikeAddress(s){
     s=String(s==null?"":s).trim();
-    if(s.length<5)return false;
-    return /(省|市|县|区|路|街|道|号|村|镇|乡|弄|巷|园|大道|广场|大厦|室|栋|幢|组|座|层|苑|港|街坊|小区|园区|开发区)/.test(s);
+    if(s.length<2)return false;
+    if(/电话|手机|微信|邮箱|qq|备注|联系人|暂无|无地址|没有|不详|未知|联系/i.test(s))return false;
+    if(/^[\d\- .\s]{4,}$/.test(s))return false;
+    return true;
+  }
+  // 是否"地址型"文本（含省市区路街号村镇等特征字）；否则视为"POI 型"（公司/店铺名），用 PlaceSearch 解析
+  function mapIsAddressText(s){
+    return /(省|市|县|区|路|街|道|号|村|镇|乡|弄|巷|大道|广场|大厦|室|栋|幢|组|座|层|苑|港|小区|园区|开发区)/.test(s);
+  }
+  // POI 搜索：公司/店铺名等，用高德 PlaceSearch（与地图直接搜索一致），带有效城市约束
+  function mapPoiSearch(name,cb,city){
+    if(!mapAMap||!name){cb(null);return;}
+    if(!city)city=mapEffectiveCity();
+    if(typeof mapAMap.PlaceSearch!=="function"){
+      mapLoadPlugins(["AMap.PlaceSearch"],function(ok){ if(ok)mapPoiSearchNow(name,cb,city);else cb(null); });
+      return;
+    }
+    mapPoiSearchNow(name,cb,city);
+  }
+  function mapPoiSearchNow(name,cb,city){
+    var settled=false;
+    var timer=null;
+    var fin=function(v){if(settled)return;settled=true;try{if(timer)clearTimeout(timer);}catch(e){}cb(v);};
+    try{
+      var ps=new mapAMap.PlaceSearch({city:city,citylimit:true,pageSize:10});
+      timer=setTimeout(function(){fin(null);},6000);
+      ps.search(String(name),function(status,result){
+        try{
+          if(status==="complete"&&result&&result.poiList&&result.poiList.poiList&&result.poiList.poiList.length){
+            var pois=result.poiList.poiList;
+            var pick=pois[0];
+            var ccity=String(city).replace(/市$/,"");
+            for(var i=0;i<pois.length;i++){
+              var pa=String(pois[i].cityname||"")+String(pois[i].adname||"")+String(pois[i].pname||"");
+              if(ccity&&pa.indexOf(ccity)>=0){pick=pois[i];break;}
+            }
+            var ll=pick.location;
+            if(ll&&isFinite(ll.lng)&&isFinite(ll.lat)){fin({lng:ll.lng,lat:ll.lat});return;}
+          }
+          fin(null);
+        }catch(e){fin(null);}
+      });
+    }catch(e){fin(null);}
   }
   function mapHasGeo(c){return !!(c&&c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat));}
   function mapEnqueue(list,force){
@@ -6250,27 +6291,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         };
         var rawAddr=String(c.address||"").trim();
         var rg=String(c.region||"").trim();
-        // 主城市约束由 mapGeocode 内部通过 city 参数传入，不再字符串拼接
-        mapGeocode(rawAddr,function(geo){
-          if(geo){c.geo={lng:geo.lng,lat:geo.lat,src:"auto",at:Date.now()};done();return;}
-          // 第二级兜底：拼 region + 地址重新解析（避免单独搜 region 短词跳到同名地区）
+        var isAddr=mapIsAddressText(rawAddr);
+        // 逐级兜底：region+地址 → region → 主城市中心/省中心
+        function fallback(){
           if(rg&&rawAddr){
-            var combined=rg+rawAddr;
-            mapGeocode(combined,function(geo2){
-              if(geo2){c.geo={lng:geo2.lng,lat:geo2.lat,src:"auto",at:Date.now()};done();return;}
-              // 第三级：单独用 region 解析，city 用有效城市（温州）约束——不能拿「塘下」这种镇名当 city，否则高德忽略约束全国搜索
-              mapGeocode(rg,function(geo3){
-                if(geo3){c.geo={lng:geo3.lng,lat:geo3.lat,src:"region",at:Date.now()};done();return;}
-                // 大致范围兜底：优先主城市中心（客户都在温州），再退省中心，避免跳到省外
+            mapGeocode(rg+rawAddr,function(g2){
+              if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+              mapGeocode(rg,function(g3){
+                if(g3){c.geo={lng:g3.lng,lat:g3.lat,src:"region",at:Date.now()};done();return;}
                 var ap=mapApproxCenter()||mapProvCenter(rg);
                 if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
                 done();
               });
             });
           }else if(rg){
-            // 没有地址只有 region：用 region 解析，city 用有效城市（温州）约束
-            mapGeocode(rg,function(geo3){
-              if(geo3){c.geo={lng:geo3.lng,lat:geo3.lat,src:"region",at:Date.now()};done();return;}
+            mapGeocode(rg,function(g3){
+              if(g3){c.geo={lng:g3.lng,lat:g3.lat,src:"region",at:Date.now()};done();return;}
               var ap=mapApproxCenter()||mapProvCenter(rg);
               if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
               done();
@@ -6278,7 +6314,28 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           }else{
             done();
           }
-        });
+        }
+        // 主解析：地址型走 Geocoder，POI 型（公司/店铺名）走 PlaceSearch；失败则换另一种方式再试
+        function primary(){
+          if(isAddr){
+            mapGeocode(rawAddr,function(g){
+              if(g){c.geo={lng:g.lng,lat:g.lat,src:"auto",at:Date.now()};done();return;}
+              mapPoiSearch(rawAddr,function(g2){
+                if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+                fallback();
+              });
+            });
+          }else{
+            mapPoiSearch(rawAddr,function(g){
+              if(g){c.geo={lng:g.lng,lat:g.lat,src:"auto",at:Date.now()};done();return;}
+              mapGeocode(rawAddr,function(g2){
+                if(g2){c.geo={lng:g2.lng,lat:g2.lat,src:"auto",at:Date.now()};done();return;}
+                fallback();
+              });
+            });
+          }
+        }
+        primary();
       })(cur);
     }
   }
@@ -6602,7 +6659,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(err==="loading"){mapSetStat("地图加载中…");return;}
       if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
       if(!mapInst){
-        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap"],function(){
+        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap","AMap.PlaceSearch"],function(){
           try{
             // 温州辖区范围：东经119.3-121.2，北纬27.0-28.7
             var wzBounds=new A.Bounds(new A.LngLat(119.3,27.0),new A.LngLat(121.2,28.7));
