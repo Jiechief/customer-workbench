@@ -1310,6 +1310,8 @@ body{background:var(--bg);}
   .map-filter-row select,.map-filter-row .search,.map-filter-row .btn{font-size:12.5px;padding:6px 12px;}
   .map-filter-row .sep{flex:1 0 8px;max-width:20px;}
   .map-stats-row{display:flex;gap:0;padding:0 14px 8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px;}
+  .map-stat-line{padding:0 14px 8px;font-size:12px;color:var(--muted);line-height:1.6;min-height:18px;}
+  .map-stat-line:empty{display:none;}
   .map-stat-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);font-size:11.5px;color:var(--text);margin-right:6px;cursor:pointer;border:1px solid var(--border);}
   .map-stat-chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
   .map-stat-chip .dot{width:8px;height:8px;border-radius:50%;}
@@ -1706,11 +1708,13 @@ body{background:var(--bg);}
             <button class="btn" type="button" id="btnMapHeat" onclick="window.__map.toggleHeat()">热力图</button>
             <button class="btn" type="button" id="btnMapCluster" onclick="window.__map.toggleCluster()">聚合</button>
             <button class="btn" type="button" onclick="window.__map.reprecise()" title="按客户填写的真实地址重新解析坐标，提升定位精度">重解析坐标</button>
+            <button class="btn" type="button" onclick="window.__map.poiLocateAll()" title="按客户公司名称在高德地图检索真实地址并标注位置，适合地址栏为空、只填了公司名的客户">按公司名定位</button>
             <button class="btn primary" type="button" id="btnMapSpread" onclick="window.__map.toggleSpread()" title="坐标重合的客户错开显示，避免多个标记叠在一起">重叠区分</button>
             <button class="btn primary" type="button" onclick="window.__map.manageShow()">上图管理</button>
             <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
           <div class="map-stats-row" id="mapStatsRow"></div>
+          <div class="map-stat-line" id="mapStat"></div>
           <div class="map-selection-bar" id="mapSelBar" style="display:none;">
             <span id="mapSelCount">已选 0 家</span>
             <button class="btn" type="button" onclick="window.__map.clearSelection()">清空选择</button>
@@ -6172,7 +6176,41 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     s=s.replace(/\s+/g," ").trim();
     return s;
   }
+  // 地址结构化拆解：把「省/市/区 + 道路 + 门牌 + 楼层」拆成独立成分，
+  // 用于生成由细到粗的多级候选。门牌号级（100 分）最难命中，必须单独试。
+  function mapParseAddrParts(raw){
+    raw=String(raw==null?"":raw).replace(/\s+/g," ").trim();
+    var P={prov:"",city:"",district:"",road:"",house:"",floor:"",poi:""};
+    if(!raw)return P;
+    // 楼层 / 房间 / 座 / 单元
+    var fm=raw.match(/([0-9A-Za-z\u4e00-\u9fa5]{0,6}(?:楼|层|室|房|座|单元|幢|栋|号院))/);
+    if(fm)P.floor=fm[1];
+    // 门牌号：如 88号 / 12-3号 / 88-1
+    var hm=raw.match(/([0-9]+(?:[-之][0-9A-Za-z]+)?号(?:[\u4e00-\u9fa5]{0,3})?)/);
+    if(hm)P.house=hm[1];
+    // 道路 / 大道 / 街 / 路
+    var rm=raw.match(/([\u4e00-\u9fa5A-Za-z0-9]{0,12}(?:大道|路|街|道|弄|巷))/);
+    if(rm)P.road=rm[1];
+    // 省：先识别并剥离，避免后续把「浙江省温州市」整体当成一个区
+    var pm=raw.match(/([^\s]{2,6}?(?:省|自治区))/);
+    if(pm)P.prov=pm[1];
+    var rest=pm?raw.replace(pm[1],""):raw;
+    // 市：从「省」之后的部分里取市；非贪婪会跨过省界，故先按已知前缀切分
+    var cm=rest.match(/([\u4e00-\u9fa5]{2,8}?市)/);
+    if(cm){P.city=cm[1];rest=rest.replace(cm[1],"");}
+    // 区县 / 县级市：只认「区/县/旗」，「市」留给县级市单独判断，
+    // 避免「温州市瓯海区」被非贪婪匹配成「温州市瓯海区」整段
+    var dm=rest.match(/([\u4e00-\u9fa5]{2,8}?[区县旗])/);
+    if(dm)P.district=dm[1];
+    else{
+      // 县级市（瑞安市/乐清市…）：市名后紧跟道路/区县特征
+      var km=rest.match(/([\u4e00-\u9fa5]{2,6}市)(?=[\u4e00-\u9fa5]{0,4}(?:路|街|道|镇|乡|村|号|大道|工业园|开发区))/);
+      if(km)P.district=km[1];
+    }
+    return P;
+  }
   // 同一地址的不同写法，高德解析精度可能差出几公里（只到区县 vs 到门牌），全部试一遍
+  // 顺序即优先级：越精确的候选越靠前，配合 mapGeocodeBest 的早停阈值使用
   function mapAddrCandidates(c){
     var city=mapEffectiveCity();
     var raw=mapCleanAddress(c&&c.address);
@@ -6187,7 +6225,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       push(raw);
       var noProv=raw.replace(/^[^省]{0,6}(省|自治区)/,"");   // 去省级前缀：带「浙江省」常只解析到市级
       if(noProv!==raw&&noProv.length>=3)push(hasCity?noProv:city+noProv);
-      var m=raw.match(/[区县市旗]([^区县市旗]{2,})$/);        // 取区县之后的门牌段，命中门牌概率最高
+
+      // ---- 精细候选：道路+门牌+楼层，命中门牌号级的概率最高 ----
+      var P=mapParseAddrParts(raw);
+      var admin=[P.city,P.district].filter(Boolean).join("");
+      if(!admin)admin=city;
+      if(P.road){
+        var core=admin+P.road;
+        if(P.house){push(core+P.house);push(core+P.house+P.floor);}
+        push(core);
+      }
+      if(P.house){
+        // 只剩门牌号：必须靠 POI 或带道路的完整串才有意义
+        if(P.road)push(admin+P.road+P.house);
+        push(admin+P.house);
+      }
+      // 区县之后的主体段（老写法兜底）
+      var m=raw.match(/[区县市旗]([^区县市旗]{2,})$/);
       if(m&&m[1]){push(city+m[1]);push(m[1]);}
     }
     var rg=String(c&&c.region||"").trim();
@@ -6219,6 +6273,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               var ga=String(gc.address||"")+String(gc.district||"")+String(gc.formattedAddress||"")+String(gc.name||"");
               if(addrStr.length>=2&&ga.indexOf(addrStr)>=0)sc+=8;   // 命中查询词加权
               if(city&&ga.indexOf(String(city))>=0)sc+=6;           // 命中约束城市加权
+              // 门牌/单元/楼层级：返回的 level 与查询串都含门牌特征时再加权，
+              // 确保门牌级候选稳定压过道路级候选，避免多家客户落在同一点
+              if(/门牌|单元|号楼|号院/.test(String(gc.level||""))&&/[0-9]+号/.test(addrStr))sc+=12;
               if(sc>bestScore){bestScore=sc;best=gc;}
             }
             if(best){
@@ -6252,70 +6309,142 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var q=cands[idx++];
       mapGeocode(q,function(g){
         if(g&&(!best||(g.score||0)>(best.score||0)))best=g;
-        if(best&&(best.score||0)>=70){cb(best);return;}
+        // 早停阈值 92（兴趣点级）：道路级(70)过早收敛会让多家客户叠在同一条路上，
+        // 必须继续试完剩余候选才有机会命中门牌号级(100)。
+        if(best&&(best.score||0)>=92){cb(best);return;}
         step();
       });
     };
     step();
   }
+  // 公司名归一：去掉通用后缀与括号修饰，让 POI 检索更容易命中
+  // 「浙江迪凯卫浴有限公司」→ 「迪凯卫浴」；「温州XX鞋业（瓯海店）」→ 「温州XX鞋业」
+  function mapNormalizePoiName(nm){
+    nm=String(nm==null?"":nm).trim();
+    if(!nm)return "";
+    var core=nm.replace(/[（(][^）)]{0,20}[）)]/g,"");
+    core=core.replace(/(有限责任公司|股份有限公司|有限公司|集团有限公司|集团|公司|工厂|厂|商行|经营部|个体工商户|工作室|门市部|旗舰店|专卖店|体验店)$/g,"");
+    core=core.replace(/^(浙江省|温州市)/,"");
+    core=core.replace(/[\s\-_·]+/g,"");
+    return core||nm;
+  }
+  // POI 名称匹配度打分：0=无关，1=完全一致，2=包含关系
+  function mapPoiNameScore(query,poiName){
+    var q=mapNormalizePoiName(query),pn=String(poiName||"").replace(/[\s\-_·]+/g,"");
+    if(!q||!pn)return 0;
+    if(pn===q)return 1;
+    if(pn.indexOf(q)>=0||q.indexOf(pn)>=0)return 2;
+    // 短名兜底：取前 3 字比对（中文公司简称常见）
+    if(q.length>=3&&pn.indexOf(q.substring(0,3))>=0)return 2;
+    return 0;
+  }
   // 公司/厂名类地址：用 PlaceSearch 精确到兴趣点（Geocoder 往往只到道路或区县，几十家会叠在一个点）
+  // 多策略：依次尝试「原名」「去后缀名」「名称+区域」，任一命中即返回最优
   function mapPoiSearch(name,cb){
     if(!mapAMap||!name){cb(null);return;}
     var settled=false;
     var fin=function(v){if(settled)return;settled=true;cb(v);};
+    var city=mapEffectiveCity();
+    var queries=[];
+    var q0=String(name).trim();
+    var q1=mapNormalizePoiName(q0);
+    var q2=q0+mapCityPrefix();
+    [q0,q1,q2].forEach(function(q){
+      q=String(q||"").trim();
+      if(q.length>=2&&queries.indexOf(q)<0)queries.push(q);
+    });
+    if(!queries.length){fin(null);return;}
+    var qi=0,best=null;
     var run=function(){
+      if(qi>=queries.length){fin(best);return;}
+      var q=queries[qi++];
       try{
-        var ps=new mapAMap.PlaceSearch({city:mapEffectiveCity(),citylimit:true,pageSize:10,extensions:"base"});
-        setTimeout(function(){fin(null);},5000);
-        ps.search(String(name),function(status,result){
+        var ps=new mapAMap.PlaceSearch({city:city,citylimit:true,pageSize:15,extensions:"base"});
+        var timer=setTimeout(function(){step();},6000);
+        var stepped=false;
+        var step=function(){if(stepped)return;stepped=true;try{clearTimeout(timer);}catch(e){}next();};
+        var next=function(){
+          if(best){fin(best);return;}
+          run();
+        };
+        ps.search(q,function(status,result){
           try{
             var pois=(result&&result.poiList&&result.poiList.pois)||[];
-            var nm=String(name).trim();
             for(var i=0;i<pois.length;i++){
-              var p=pois[i];
-              if(!p||!p.location||!isFinite(p.location.lng)||!isFinite(p.location.lat))continue;
-              var pn=String(p.name||"");
-              // 名称必须真的对得上，避免搜出一堆无关 POI
-              if(nm.length>=4&&pn.indexOf(nm.substring(0,4))<0&&nm.indexOf(pn.substring(0,4))<0)continue;
-              fin({lng:p.location.lng,lat:p.location.lat,lvl:"兴趣点",score:92,addr:pn});
-              return;
+              var poi=pois[i];
+              if(!poi||!poi.location||!isFinite(poi.location.lng)||!isFinite(poi.location.lat))continue;
+              var pn=String(poi.name||"");
+              var ns=mapPoiNameScore(q,pn);
+              if(ns===0)continue;                       // 名称对不上：跳过，避免搜出无关 POI
+              // 完全匹配 100 分；包含关系 94 分；再按是否为门牌级 POI 加权
+              var sc=ns===1?100:94;
+              var ptype=String(poi.type||"");
+              if(/门牌|号|幢|栋|单元/.test(ptype)||/[0-9]+号$/.test(pn))sc+=4;
+              // POI 地址拼接：poi.address 通常已含省市区，避免重复拼接 cityname/adname
+              var addr=String(poi.address||"").trim();
+              if(!addr){addr=String(poi.pname||"")+String(poi.cityname||"")+String(poi.adname||"");}
+              addr=addr.replace(/[\s]+/g,"").trim();
+              var cand={lng:poi.location.lng,lat:poi.location.lat,lvl:"兴趣点",score:sc,
+                        addr:addr||pn,poiName:pn,poiType:ptype};
+              if(!best||sc>best.score)best=cand;
+              if(best.score>=100)break;                // 完全匹配，直接收工
             }
           }catch(e){}
-          fin(null);
+          step();
         });
-      }catch(e){cb(null);}
+      }catch(e){run();}
     };
-    if(typeof mapAMap.PlaceSearch!=="function"){
-      mapLoadPlugins(["AMap.PlaceSearch"],function(ok){if(ok)run();else cb(null);});
-      return;
-    }
-    run();
+    var fire=function(){
+      if(typeof mapAMap.PlaceSearch!=="function"){
+        mapLoadPlugins(["AMap.PlaceSearch"],function(ok){if(ok)run();else fin(null);});
+        return;
+      }
+      run();
+    };
+    fire();
   }
-  // 单个客户的最优坐标：地址多候选 Geocoder → 仍不够精确时再用公司名做 POI 检索
+  // 单个客户的最优坐标：地址多候选 Geocoder 与 公司名 POI 检索「并行取优」
+  // 两者都跑完，谁分高用谁。原先只在 Geocoder 得分<70 时才做 POI 兜底，
+  // 导致「地址栏填的是公司名」这类客户永远拿不到 POI 级坐标。
   function mapPreciseCustomer(c,cb){
     if(!c){cb(null);return;}
-    mapGeocodeBest(c,function(g){
-      if(g&&(g.score||0)>=70){cb(g);return;}
-      var nm=String(c.name||"").trim();
-      if(!nm){cb(g);return;}
-      mapPoiSearch(nm,function(p){
-        if(p&&(!g||(p.score||0)>(g.score||0))){cb(p);return;}
-        cb(g);
-      });
-    });
+    var nm=String(c.name||"").trim();
+    var addr=String(c.address||"").trim();
+    // 完全没有可用文本：无从解析
+    if(!nm&&!addr){cb(null);return;}
+    var gDone=false,pDone=false,gRes=null,pRes=null,finished=false;
+    var finish=function(){
+      // 标志必须在发起请求前就置位：mapGeocodeBest 在「无可解析候选」时会同步回调，
+      // 若先调用再置 false，回调里的 gDone=true 会被后面的 gDone=false 覆盖，
+      // 导致 finish 永远不满足、解析结果被丢弃（表现为解析完成却没有任何坐标）。
+      if(finished)return;
+      if(!gDone||!pDone)return;
+      finished=true;
+      // POI 与地址解析分高者胜；同分时优先 POI（公司名通常比文字地址更准）
+      if(pRes&&(!gRes||(pRes.score||0)>=(gRes.score||0))){cb(pRes);return;}
+      cb(gRes);
+    };
+    gDone=false;pDone=false;
+    mapGeocodeBest(c,function(g){gRes=g;gDone=true;finish();});
+    if(nm){mapPoiSearch(nm,function(p){pRes=p;pDone=true;finish();});}
+    else{pDone=true;finish();}
   }
   function mapApplyGeo(c,g){
     if(!c||!g||!isFinite(g.lng)||!isFinite(g.lat))return false;
     if(!mapInWz(g.lng,g.lat))return false;   // 出温州的坐标一律不采信，杜绝标记飞到外省
-    c.geo={lng:g.lng,lat:g.lat,src:"geo",lvl:g.lvl||"",score:g.score||0,at:Date.now()};
+    c.geo={lng:g.lng,lat:g.lat,src:"geo",lvl:g.lvl||"",score:g.score||0,
+           addr:String(g.addr||""),at:Date.now()};
     c.updatedAt=Date.now();
+    // 解析出坐标即自动上图：否则坐标虽已写入，但 mapFiltered/showOnMap 与
+    // mapBuildPlans/mapHasGeo 两道门槛会把该客户过滤掉，地图上看不到任何标记。
+    if(!c.showOnMap){c.showOnMap=true;}
     return true;
   }
   // 单个客户：按地址重解析
   function mapPreciseOne(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    if(!String(c.address||"").trim()){toast("该客户没有填写真实地址，请先补充地址");return;}
+    if(!String(c.address||"").trim()&&!String(c.name||"").trim()){toast("该客户没有公司名称和地址，无法定位");return;}
     mapClosePopover();
     mapSetStat("正在解析「"+(c.name||"")+"」的地址…");
     mapPreciseCustomer(c,function(g){
@@ -6330,15 +6459,59 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     });
   }
-  var mapPrecising=false;
+  var mapPrecising=false,mapPoiBusy=false;
+  // 批量：按公司名在高德检索真实地址并标注（适合地址栏为空、只填了公司名的客户）
+  // 与 mapRepreciseAll 互不干扰：这里只走 POI 检索，不做地理编码
+  function mapPoiLocateAll(){
+    // 不要求地图已初始化：批量定位只调高德接口与写数据，地图未就绪时跳过刷新即可
+    if(mapPoiBusy){toast("公司名定位正在进行中，请稍候…");return;}
+    // 目标：有公司名、且当前没有坐标（或坐标精度不够）的客户
+    var list=customers.filter(function(c){
+      if(!String(c.name||"").trim())return false;
+      if(c.geo&&c.geo.src==="manual")return false;      // 手动选点的不动
+      if(c.geo&&(c.geo.score||0)>=92)return false;        // 已是精确坐标的不重复解析
+      return true;
+    });
+    if(!list.length){toast("没有需要按公司名定位的客户（已精确定位与手动选点的会跳过）");return;}
+    var limit=Math.min(list.length,80);
+    if(!confirm("按公司名在高德地图检索 "+limit+" 家客户的真实地址并标注？\n\n"+
+      "· 适用于地址栏为空、只填了公司名称的客户\n"+
+      "· 逐条请求高德，约需 "+limit+" 秒\n"+
+      "· 只写入坐标与真实地址，不改动客户其它信息"))return;
+    mapPoiBusy=true;
+    var i=0,ok=0,fail=0;
+    var t0=Date.now();
+    var step=function(){
+      if(i>=limit||Date.now()-t0>170000){
+        mapPoiBusy=false;
+        try{saveCustomers();}catch(e){}
+        if(mapInst)mapRefresh();
+        mapSetStat("公司名定位完成：成功 "+ok+" 家"+(fail?("，未找到 "+fail+" 家"):""));
+        toast("公司名定位完成：成功 "+ok+" 家"+(fail?("，未找到 "+fail+" 家（可手动选点）"):""));
+        return;
+      }
+      var c=list[i++];
+      mapSetStat("正在按公司名定位 "+i+"/"+limit+"："+(c.name||""));
+      mapPoiSearch(c.name,function(p){
+        if(p&&mapApplyGeo(c,p))ok++;
+        else fail++;
+        setTimeout(step,180);
+      });
+    };
+    step();
+  }
   // 批量：只处理「已上图 + 有真实地址」的客户，逐条串行解析，避免并发被限流
   function mapRepreciseAll(){
     if(!mapInst){toast("地图尚未就绪");return;}
     if(mapPrecising){toast("正在解析中，请稍候…");return;}
-    var all=customers.filter(function(c){return c.showOnMap&&String(c.address||"").trim().length>=2;});
+    // 入列条件：有详细地址，或有公司名（公司名走 POI 检索定位）
+    var all=customers.filter(function(c){
+      if(!c.showOnMap)return false;
+      return String(c.address||"").trim().length>=2||String(c.name||"").trim().length>=2;
+    });
     var list=all.filter(function(c){return !(c.geo&&c.geo.src==="manual");});
     var skipped=all.length-list.length;
-    if(!list.length){toast(skipped?"这些客户都是手动选点的位置，无需重解析":"没有可解析的客户：请先上图，并在客户信息里填写真实地址");return;}
+    if(!list.length){toast(skipped?"这些客户都是手动选点的位置，无需重解析":"没有可解析的客户：请先上图，并填写公司名称或真实地址");return;}
     if(!confirm("按地址重新解析 "+list.length+" 家已上图客户的坐标？"+(skipped?("\n（另有 "+skipped+" 家为手动选点，保持不动）"):"")+"\n\n· 逐条请求高德，约需 "+(list.length*2)+" 秒\n· 只更新坐标，不改动客户其它信息\n· 解析后若仍标注重合，可用「重叠区分」错开显示"))return;
     mapPrecising=true;
     var i=0,updated=0,better=0,failed=0,t0=Date.now(),stopped=false;
@@ -6368,7 +6541,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   // ---------- 重叠区分：极近坐标的客户在像素层错开（不改动真实坐标与已存数据） ----------
   var mapOverlapSpread=true;
-  var MAP_OVERLAP_DEG=0.00055;   // 约 55 米内视为同一点，需要错开
+  var MAP_OVERLAP_DEG=0.0011;    // 约 110 米内视为同一点：屏幕上前述距离的标记已视觉挤作一团
+                                 // （原 55 米过严：相邻门牌号常相距 60~100 米却各自判定不重合）
   function mapSpreadOffset(i,n){
     // 多环展开：第一环最多 6 个，超出后逐环外扩，避免几十家挤在同一圈上又叠成一点
     if(n<=1)return [0,0];
@@ -6534,8 +6708,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var prec="无坐标";
     if(c.geo){
       if(c.geo.src==="manual"||c.geo.src==="loc")prec="手动选点";
-      else if(c.geo.lvl)prec=c.geo.lvl+((c.geo.score||0)>=70?"（精确）":"（粗，建议重解析）");
-      else prec=((c.geo.score||0)>=70)?"较精确":"粗略（建议重解析）";
+      else if(c.geo.lvl){
+        var sc2=c.geo.score||0;
+        // 92+（兴趣点/门牌级）视为精确；70-91（道路级）视为较精确；其余为粗略
+        if(sc2>=92)prec=c.geo.lvl+"（精确）";
+        else if(sc2>=70)prec=c.geo.lvl+"（较精确）";
+        else prec=c.geo.lvl+"（粗略，建议重解析）";
+      }
+      else prec=((c.geo.score||0)>=92)?"精确":((c.geo.score||0)>=70?"较精确":"粗略（建议重解析）");
     }
     var html='<div class="map-popover" id="mapPop">'+
       '<div class="mp-name">'+esc(c.name||"未命名")+'</div>'+
@@ -6544,6 +6724,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<div class="mp-row"><span>地区</span><b>'+esc(c.region||"-")+'</b></div>'+
       '<div class="mp-row"><span>最近沟通</span><b>'+(c.lastContact?days+" 天前":"无记录")+'</b></div>'+
       (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'')+
+      (c.geo&&c.geo.addr&&c.geo.addr!==c.address?'<div class="mp-row"><span>解析地址</span><b>'+esc(c.geo.addr)+'</b></div>':'')+
+      (c.geo?'<div class="mp-row"><span>经纬度</span><b>'+c.geo.lng.toFixed(6)+', '+c.geo.lat.toFixed(6)+'</b></div>':'')+
       '<div class="mp-row"><span>坐标精度</span><b>'+esc(prec)+'</b></div>'+
       ovHtml+
       '<div style="margin:6px 0 2px"><span style="font-size:12px;color:#999">标记颜色</span><div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center">'+
@@ -6757,7 +6939,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<h3>选择上图客户 <span id="mapShowModalCount" style="color:#888;font-size:12px;font-weight:normal">'+shown+' 家显示中</span></h3>'+
       '<div style="font-size:12px;color:#888;margin:6px 0">勾选要显示在地图上的客户。无坐标的客户勾选后，点它标记的「移动位置」在地图上选点。</div>'+
       '<input type="text" id="mapShowSearch" class="search" placeholder="搜索客户名…" style="width:100%;box-sizing:border-box;margin:8px 0">'+
-      '<div style="display:flex;gap:8px;margin:0 0 6px"><button class="btn" onclick="window.__map.allShow(true)">全部上图</button><button class="btn" onclick="window.__map.allShow(false)">清除全部</button></div>'+
+      '<div style="display:flex;gap:8px;margin:0 0 6px;flex-wrap:wrap"><button class="btn" onclick="window.__map.allShow(true)">全部上图</button><button class="btn" onclick="window.__map.allShow(false)">清除全部</button><button class="btn primary" onclick="window.__map.poiLocateAll()" title="按公司名称在高德检索真实地址并标注">按公司名定位</button></div>'+
       '<div id="mapShowList" style="max-height:52vh;overflow:auto"></div>'+
       '<div style="text-align:right;margin-top:12px"><button class="btn" onclick="window.__map.closeShowModal()">关闭</button></div>'+
     '</div>';
@@ -6961,9 +7143,40 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     reprecise:mapRepreciseAll,preciseOne:mapPreciseOne,toggleSpread:mapToggleSpread,
+    poiLocateAll:mapPoiLocateAll,
     moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,
     toggleShow:mapToggleShow,setShow:mapSetShow,setColor:mapSetColor,manageShow:mapManageShow,closeShowModal:mapCloseShowModal,allShow:mapAllShow,
-    state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst};}};
+    // ---- 解析诊断（验证精度 / 排查不显示原因）----
+    parseAddrParts:mapParseAddrParts,
+    candidates:function(c){var t=c&&c.id?customers.find(function(x){return x.id===c.id;}):c;return t?mapAddrCandidates(t):[];},
+    listGeocoded:function(){
+      return customers.filter(function(c){return mapHasGeo(c);}).map(function(c){
+        return {id:c.id,name:c.name,address:c.address,lng:c.geo.lng,lat:c.geo.lat,
+                lvl:c.geo.lvl||"",score:c.geo.score||0,src:c.geo.src||"",
+                geoAddr:c.geo.addr||"",showOnMap:!!c.showOnMap};
+      });
+    },
+    overlapGroups:function(){
+      var gs=[];
+      customers.filter(function(c){return mapHasGeo(c)&&c.showOnMap;}).forEach(function(c){
+        var g=null;
+        for(var i=0;i<gs.length;i++){
+          if(Math.abs(gs[i].lat-c.geo.lat)<=MAP_OVERLAP_DEG&&Math.abs(gs[i].lng-c.geo.lng)<=MAP_OVERLAP_DEG){g=gs[i];break;}
+        }
+        if(!g){g={lng:c.geo.lng,lat:c.geo.lat,names:[]};gs.push(g);}
+        g.names.push(c.name||c.id);
+      });
+      return gs.filter(function(g){return g.names.length>1;}).map(function(g){return{n:g.names.length,names:g.names};});
+    },
+    setKey:function(k,sec){settings.mapKey=String(k||"");settings.mapSecret=String(sec||"");},
+    // 注入已加载的高德 SDK 实例（供自动化测试与离线调试使用；正常流程走 mapLoadSdk）
+    setAMap:function(A){mapAMap=A||null;},
+    customers:function(){return customers.map(function(c){return{id:c.id,name:c.name,address:c.address,region:c.region,showOnMap:!!c.showOnMap,geo:c.geo||null};});},
+    setCustomers:function(arr){customers=(arr||[]).map(function(c){var o={};for(var k in c)o[k]=c[k];return o;});},
+    state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,
+        total:customers.length,geoced:customers.filter(function(c){return mapHasGeo(c);}).length,
+        shown:customers.filter(function(c){return c.showOnMap;}).length,
+        shownGeoced:customers.filter(function(c){return c.showOnMap&&mapHasGeo(c);}).length};}};
 
   function delCustomer(id){
     if(!confirm("确定删除该客户？此操作不可恢复。"))return;
