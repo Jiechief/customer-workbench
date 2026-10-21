@@ -333,6 +333,10 @@
   .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 14px;margin-bottom:12px;}
   .info-field{font-size:12px;}
   .btn.mini{padding:2px 8px;font-size:12px;line-height:1.5;}
+  /* 卡片内嵌小地图 */
+  .card-map-wrap{margin-top:10px;width:100%;}
+  .card-map{width:100%;height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:rgba(0,0,0,.03);}
+  .card-map-tip{padding:14px;font-size:12px;color:#888;border:1px dashed var(--border);border-radius:8px;text-align:center;background:rgba(0,0,0,.02);}
   /* 客户名称复制 */
   .name-wrap{position:relative;display:inline-flex;align-items:center;gap:2px;}
   .name-copy{display:none;cursor:pointer;color:#8a8a8a;padding:2px 3px;border-radius:4px;vertical-align:middle;}
@@ -3164,25 +3168,60 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var on=!!c.showOnMap;
     var has=mapHasGeo(c);
     return '<div class="info-field"><label>地图显示</label><div class="info-value">'+
-      '<button class="btn mini'+(on?" primary":"")+'" onclick="showCustomerOnMap(\''+c.id+'\')" title="点击自动打开地图并定位该客户">'+(on?"● 显示中 · 查看":"在地图显示")+'</button>'+
-      (on&&!has?' <span style="font-size:11px;color:#c77">无坐标，点击后可图上选点</span>':'')+
+      '<button class="btn mini" onclick="showCustomerMapInline(\''+c.id+'\')" title="点击在本卡片内显示该客户位置">查看位置</button>'+
+      (has?'':' <span style="font-size:11px;color:#c77">无坐标</span>')+
     '</div></div>';
   }
-  function showCustomerOnMap(id){
+  // ---------- 卡片内嵌小地图（不跳转） ----------
+  var cardMapInst=null,cardMapId="";
+  function ensureAMapSDK(cb){
+    if(mapAMap){cb(true);return;}
+    mapLoadSdk(function(a,err){
+      if(a){cb(true);return;}
+      if(err==="loading"){
+        var tries=0;
+        var t=setInterval(function(){
+          tries++;
+          if(mapAMap){clearInterval(t);cb(true);}
+          else if(tries>60){clearInterval(t);cb(false);}
+        },200);
+        return;
+      }
+      cb(false);
+    });
+  }
+  function collapseCardMap(){
+    if(cardMapInst){try{cardMapInst.destroy();}catch(e){}cardMapInst=null;}
+    cardMapId="";
+    var prev=document.querySelector(".card-map-wrap");
+    if(prev&&prev.parentNode)prev.parentNode.removeChild(prev);
+  }
+  function showCustomerMapInline(id){
+    var card=$("card_"+id);
+    if(!card)return;
+    if(cardMapId===id){collapseCardMap();return;}
+    collapseCardMap();
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    c.showOnMap=true;c.updatedAt=Date.now();
-    try{saveCustomers();}catch(e){}
-    switchView("map");
-    var act=function(){
-      if(!mapInst){setTimeout(act,400);return;}
-      mapRefresh();
-      if(mapHasGeo(c)){mapLocate(id);}
-      else{toast("「"+(c.name||"该客户")+"」还没有坐标，请在图上点选它的位置");mapPick(id);}
-    };
-    setTimeout(act,1100);
+    var wrap=document.createElement("div");
+    wrap.className="card-map-wrap";
+    wrap.innerHTML='<div class="card-map" id="cmap_'+id+'"></div>';
+    card.appendChild(wrap);
+    cardMapId=id;
+    ensureAMapSDK(function(ok){
+      if(!ok){wrap.innerHTML='<div class="card-map-tip">地图加载失败：请在「设置」配置高德地图 Key</div>';return;}
+      if(!mapHasGeo(c)){wrap.innerHTML='<div class="card-map-tip">该客户还没有坐标，请到「客户地图」用「移动位置」为其选点</div>';return;}
+      var el=$("cmap_"+id);
+      if(!el)return;
+      try{
+        cardMapInst=new mapAMap.Map("cmap_"+id,{zoom:15,center:[c.geo.lng,c.geo.lat],viewMode:"2D"});
+        new mapAMap.Marker({position:[c.geo.lng,c.geo.lat],map:cardMapInst});
+      }catch(e){
+        wrap.innerHTML='<div class="card-map-tip">地图加载失败：'+(e&&e.message||e)+'</div>';
+      }
+    });
   }
-  window.showCustomerOnMap=showCustomerOnMap;
+  window.showCustomerMapInline=showCustomerMapInline;
   function renderRelatedCompanies(value){
     var arr=String(value||"").split(/[,，\n]+/).map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
     if(arr.length===0)return '<span class="empty-sm">未填写</span>';
