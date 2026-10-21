@@ -1699,9 +1699,7 @@ body{background:var(--bg);}
             <span class="sep"></span>
             <button class="btn" type="button" id="btnMapHeat" onclick="window.__map.toggleHeat()">热力图</button>
             <button class="btn" type="button" id="btnMapCluster" onclick="window.__map.toggleCluster()">聚合</button>
-            <button class="btn" type="button" onclick="window.__map.batchResolve()">批量补解析</button>
-            <button class="btn" type="button" style="color:#d8a740" onclick="window.__map.forceReResolve()">全部重新解析</button>
-            <button class="btn primary" type="button" onclick="window.__map.showAll()">显示全部客户</button>
+            <button class="btn primary" type="button" onclick="window.__map.manageShow()">上图管理</button>
             <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
           <div class="map-stats-row" id="mapStatsRow"></div>
@@ -1718,7 +1716,6 @@ body{background:var(--bg);}
           <div class="map-side" id="mapSide">
             <div class="map-side-head" id="mapSideHead">客户地图</div>
             <div class="map-hint" id="mapHint">勾选 Key 后点「展开地图」开始使用。</div>
-            <div id="mapPendingList"></div>
           </div>
         </div>
       </div>
@@ -1868,9 +1865,6 @@ body{background:var(--bg);}
     <div class="row2">
       <div class="field"><label>联系人电话</label><input type="text" id="f_phone" placeholder="手机号"></div>
       <div class="field"><label>真实地址</label><input type="text" id="f_address" placeholder="详细地址，如 XX市XX区XX路XX号（地图定位用，不要填备注）"></div>
-    </div>
-    <div class="row2">
-      <div class="field" style="flex:1"><label>客户发来的定位</label><input type="text" id="f_loc" placeholder="粘贴客户直接发来的经纬度（如 120.65,27.99）、高德/百度链接或微信位置分享；坐标按高德显示，保存后地图标记自动更新到该点"></div>
     </div>
     <div class="row2">
       <div class="field"><label>客户所属地区</label><input type="text" id="f_region" placeholder="如：华东 / 华南 / 浙江"></div>
@@ -3149,7 +3143,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function infoValue(label,value,isLink,cid){
     var v;
-    var fieldMap={"联系人名称":"contactName","职位":"position","联系人电话":"phone","真实地址":"address","客户所属地区":"region","客户发来的定位":"loc","客户产品名称":"product","是否有电商经验":"ecomExp","电商店铺链接":"shopLinks"};
+    var fieldMap={"联系人名称":"contactName","职位":"position","联系人电话":"phone","真实地址":"address","客户所属地区":"region","客户产品名称":"product","是否有电商经验":"ecomExp","电商店铺链接":"shopLinks"};
     var fkey=fieldMap[label]||"";
     if(!value||!String(value).trim())v='<span class="empty-sm">未填写</span>';
     else if(isLink&&/^https?:\/\//i.test(String(value))){var text=String(value),display=text.length>36?text.slice(0,33)+'...':text;v='<a href="'+esc(text)+'" target="_blank" rel="noopener" title="'+esc(text)+'"><span class="url-display">'+esc(display)+'</span></a>';}
@@ -3311,7 +3305,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+=editInput(c,"phone","phone","联系人电话","手机号");
         html+=editInput(c,"address","address","真实地址","客户地址");
         html+=editInput(c,"region","region","客户所属地区","如：华东 / 华南 / 浙江");
-        html+=editInput(c,"loc","loc","客户发来的定位","经纬度 / 高德链接 / 微信位置");
         html+=editInput(c,"product","product","客户产品名称","产品在卖/做的产品");
         html+=editSelect(c,"intention","意向等级",[{v:"高",t:"高意向"},{v:"中",t:"中意向"},{v:"低",t:"低意向"},{v:"已合作",t:"已合作"},{v:"断约",t:"断约"}]);
         html+=editSelect(c,"ecomExp","是否有电商经验",[{v:"是",t:"是"},{v:"否",t:"否"}]);
@@ -3330,7 +3323,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+=infoValue("联系人电话",c.phone,false,c.id);
         html+=infoValue("真实地址",c.address,false,c.id);
         html+=infoValue("客户所属地区",c.region,false,c.id);
-        html+=infoValue("客户发来的定位",c.loc,false,c.id);
         html+=infoValue("客户产品名称",c.product,false,c.id);
         html+=infoValue("是否有电商经验",c.ecomExp,false,c.id);
         html+=infoValue("下次跟进时间",c.followUpAt?fmtFollow(c.followUpAt):"",false);
@@ -3368,7 +3360,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       html+='<div class="load-more-wrap"><button type="button" class="btn" id="loadMoreBtn">加载更多（还有 '+(list.length-listEnd)+' 条）</button></div>';
     }
     box.innerHTML=html;
-    bindCardImageDrop(box);
     var lb=$("loadMoreBtn");
     if(lb)lb.onclick=function(){listEnd=Math.min(list.length,listEnd+PAGE_SIZE);renderList();};
     if(batchMode)updateBatchUI();
@@ -3380,10 +3371,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var c=customers.find(function(x){return x.id===id;});
         if(!c)return;
         if((c[f]||"")===v)return;
-        var _oldLoc=(f==="loc")?(c.loc||"").trim():"";
         c[f]=v;c.updatedAt=Date.now();
-        // 定位变更：清旧定位坐标，重新解析落点并刷新地图标记
-        if(f==="loc"&&_oldLoc!==v){if(c.geo&&c.geo.src==="loc")c.geo=null;mapEnqueue([c],true);}
         saveCustomers();renderStats();toast("已更新");
       });
     });
@@ -3747,7 +3735,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     row("电话",c.phone);
     row("地区",c.region);
     row("地址",c.address,true);
-    row("客户定位",c.loc,true);
     row("产品",c.product);
     if(c.relatedCompany&&String(c.relatedCompany).trim()){
       var rel=String(c.relatedCompany).split(/[,，\n]+/).map(function(s){return s.trim();}).filter(function(s){return s;});
@@ -6035,30 +6022,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.promptFilterTest=function(tab,kw){promptTab=tab||"all";promptKeyword=kw||"";return promptFilter();};
 
   // ---------- 客户新增/编辑 ----------
-  function openAdd(){currentCommCustId=null;$("custTitle").textContent="新增客户";$("f_id").value="";$("f_name").value="";$("f_contact").value="";$("f_position").value="";$("f_related").value="";$("f_acciowork").value="";$("f_phone").value="";$("f_address").value="";$("f_region").value="";$("f_loc").value="";$("f_intention").value="中";$("f_ecom").value="否";$("f_product").value="";$("f_shop").value="";$("f_newComm").value="";if($("f_followUp"))$("f_followUp").value="";resetRecogArea();openModal("modalCustomer");$("f_name").focus();}
+  function openAdd(){currentCommCustId=null;$("custTitle").textContent="新增客户";$("f_id").value="";$("f_name").value="";$("f_contact").value="";$("f_position").value="";$("f_related").value="";$("f_acciowork").value="";$("f_phone").value="";$("f_address").value="";$("f_region").value="";$("f_intention").value="中";$("f_ecom").value="否";$("f_product").value="";$("f_shop").value="";$("f_newComm").value="";if($("f_followUp"))$("f_followUp").value="";resetRecogArea();openModal("modalCustomer");$("f_name").focus();}
   window.openAdd=openAdd;
-  function editCustomer(id){var c=customers.find(function(x){return x.id===id;});if(!c)return;currentCommCustId=null;$("custTitle").textContent="修改客户";$("f_id").value=c.id;$("f_name").value=c.name||"";$("f_contact").value=c.contactName||"";$("f_position").value=c.position||"";$("f_related").value=c.relatedCompany||"";$("f_acciowork").value=c.accioworkNote||"";$("f_phone").value=c.phone||"";$("f_address").value=c.address||"";$("f_region").value=c.region||"";$("f_loc").value=c.loc||"";$("f_intention").value=c.intention||"中";$("f_ecom").value=c.ecomExp||"否";$("f_product").value=c.product||"";$("f_shop").value=c.shopLinks||"";if($("f_followUp"))$("f_followUp").value=c.followUpAt||"";resetRecogArea();openModal("modalCustomer");}
+  function editCustomer(id){var c=customers.find(function(x){return x.id===id;});if(!c)return;currentCommCustId=null;$("custTitle").textContent="修改客户";$("f_id").value=c.id;$("f_name").value=c.name||"";$("f_contact").value=c.contactName||"";$("f_position").value=c.position||"";$("f_related").value=c.relatedCompany||"";$("f_acciowork").value=c.accioworkNote||"";$("f_phone").value=c.phone||"";$("f_address").value=c.address||"";$("f_region").value=c.region||"";$("f_intention").value=c.intention||"中";$("f_ecom").value=c.ecomExp||"否";$("f_product").value=c.product||"";$("f_shop").value=c.shopLinks||"";if($("f_followUp"))$("f_followUp").value=c.followUpAt||"";resetRecogArea();openModal("modalCustomer");}
   window.editCustomer=editCustomer;
   function saveCustomer(){
     var name=$("f_name").value.trim();
     if(!name){toast("请填写客户名称");return;}
     var id=$("f_id").value;
     var newComm=$("f_newComm").value.trim();
-    var locChanged=false;
     var followAt=$("f_followUp")?($("f_followUp").value||"").trim():"";
-    var data={name:name,contactName:$("f_contact").value.trim(),position:$("f_position").value.trim(),relatedCompany:$("f_related").value.trim(),accioworkNote:$("f_acciowork").value.trim(),phone:$("f_phone").value.trim(),address:$("f_address").value.trim(),region:$("f_region").value.trim(),loc:$("f_loc").value.trim(),intention:$("f_intention").value,ecomExp:$("f_ecom").value,product:$("f_product").value.trim(),shopLinks:$("f_shop").value.trim(),followUpAt:followAt,updatedAt:Date.now()};
+    var data={name:name,contactName:$("f_contact").value.trim(),position:$("f_position").value.trim(),relatedCompany:$("f_related").value.trim(),accioworkNote:$("f_acciowork").value.trim(),phone:$("f_phone").value.trim(),address:$("f_address").value.trim(),region:$("f_region").value.trim(),intention:$("f_intention").value,ecomExp:$("f_ecom").value,product:$("f_product").value.trim(),shopLinks:$("f_shop").value.trim(),followUpAt:followAt,updatedAt:Date.now()};
     if(followAt)data.followUpDone=false;
     if(id){
       var c=customers.find(function(x){return x.id===id;});
       if(c){
-        var oldAddr=(c.address||"").trim();
-        var oldLoc=(c.loc||"").trim();
-        locChanged=(oldLoc!==data.loc);
         Object.assign(c,data);
-        // 地址变更：清除旧坐标，触发重新解析，标记自动更新位置
-        if(oldAddr!==data.address.trim()&&c.geo){c.geo=null;mapFilterState._addrChanged=true;}
-        // 定位变更：清掉旧定位来源坐标，重新解析（pump 中 loc 最高优先）
-        if(locChanged&&c.geo&&c.geo.src==="loc"){c.geo=null;}
         if(newComm){c.comms=c.comms||[];c.comms.push({time:new Date().toISOString().slice(0,10),content:newComm});c.updatedAt=Date.now();}
       }
     }else{
@@ -6067,13 +6046,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       customers.push(data);
     }
     saveCustomers();closeModal("modalCustomer");render();toast("已保存");
-    var _mapSaved=id?customers.find(function(x){return x.id===id;}):data;
-    if(_mapSaved)mapEnqueue([_mapSaved],locChanged);
   }
   window.saveCustomer=saveCustomer;
 
   // ---------- 客户地图（高德地图 JS API 2.0，懒加载） ----------
-  var mapAMap=null,mapInst=null,mapCluster=null,mapClusterOn=true,mapGeoQueue=[],mapGeoBusy=false,mapPickId="",mapPickMode="",mapOpened=false,mapSdkLoading=false;
+  var mapAMap=null,mapInst=null,mapCluster=null,mapClusterOn=true,mapPickId="",mapPickMode="",mapOpened=false,mapSdkLoading=false;
   function mapHasKey(){return !!(settings&&settings.mapKey&&String(settings.mapKey).trim());}
   // 主城市前缀：筛选区域定位、地址解析时自动拼到地区/地址前面，避免同名地区跳错
   function mapCityPrefix(){var c=String(settings&&settings.mapCity||"").trim();return c;}
@@ -6141,43 +6118,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       mapAMap.plugin(list,function(){cb(true);});
     }catch(e){cb(false);}
   }
-  // ---------- 客户直接发来的定位解析（经纬度 / 高德链接 / 百度链接 / 微信位置） ----------
-  // 输出为高德 GCJ-02。高德链接/微信位置默认即 GCJ-02；百度 location 直接取用（与 GCJ-02 偏差仅百米级，可接受）。
-  function mapParseLocInput(text){
-    var s=String(text||"").trim();
-    if(!s)return null;
-    var m,lng,la;
-    // 1) 高德链接 position=lng,lat
-    m=s.match(/position=([-\d.]+)[,\s%]+([-\d.]+)/i);
-    if(m){lng=parseFloat(m[1]);la=parseFloat(m[2]);}
-    // 2) 显式 lng=/lon=/经度  +  lat=/latitude=/纬度
-    var ln=(!isFinite(lng)?s.match(/(?:lng|lon|longitude|经度)\s*[:=]?\s*([-\d.]+)/i):null);
-    var laT=(!isFinite(la)?s.match(/(?:lat|latitude|纬度)\s*[:=]?\s*([-\d.]+)/i):null);
-    if(ln&&laT){lng=parseFloat(ln[1]);la=parseFloat(laT[1]);}
-    // 3) 百度链接 location=lat,lng（百度顺序：纬度在前）
-    if(!isFinite(lng)&&!isFinite(la)){
-      m=s.match(/location=([-\d.]+)[,\s%]+([-\d.]+)/i);
-      if(m){la=parseFloat(m[1]);lng=parseFloat(m[2]);}
-    }
-    // 4) 带方位 120.65E,27.99N
-    if(!isFinite(lng)&&!isFinite(la)){
-      m=s.match(/([-\d.]+)\s*[Ee][,\s%]+([-\d.]+)\s*[NnSs]/);
-      if(m){lng=parseFloat(m[1]);la=parseFloat(m[2]);if(/[Ss]/.test(m[0]))la=-la;}
-    }
-    // 5) 纯数字两个：用温州辖区范围判定哪个是经度
-    if(!isFinite(lng)&&!isFinite(la)){
-      var nums=s.replace(/[,，]/g," ").replace(/[^-\d.\s]/g," ").split(/\s+/).map(parseFloat).filter(function(n){return isFinite(n);});
-      if(nums.length>=2){
-        var p=nums[0],q=nums[1];
-        if(p>=119&&p<=121.5&&q>=26&&q<=30){lng=p;la=q;}
-        else if(q>=119&&q<=121.5&&p>=26&&p<=30){lng=q;la=p;}
-        else if(Math.abs(p)>=Math.abs(q)){lng=p;la=q;}
-        else{lng=q;la=p;}
-      }
-    }
-    if(!isFinite(lng)||!isFinite(la))return null;
-    return {lng:lng,lat:la};
-  }
   function mapGeocodeNow(addr,cb,city){
     // 加超时与单次结算保护：外部接口不回调时不能让队列永久卡住
     var settled=false;
@@ -6240,176 +6180,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return /(省|市|县|区|路|街|道|号|村|镇|乡|弄|巷|大道|广场|大厦|室|栋|幢|组|座|层|苑|港|小区|园区|开发区)/.test(s);
   }
   // POI 搜索：公司/店铺名等，用高德 PlaceSearch（与地图直接搜索一致），带有效城市约束
-  function mapPoiSearch(name,cb,city){
-    if(!mapAMap||!name){cb(null);return;}
-    if(!city)city=mapEffectiveCity();
-    if(typeof mapAMap.PlaceSearch!=="function"){
-      mapLoadPlugins(["AMap.PlaceSearch"],function(ok){ if(ok)mapPoiSearchNow(name,cb,city);else cb(null); });
-      return;
-    }
-    mapPoiSearchNow(name,cb,city);
-  }
-  // 把解析好的坐标落到某客户并刷新（src=loc，与手动定位同级，不受自动纠正影响）
-  function applyLocToCustomer(c,g,locText){
-    if(!c||!g)return;
-    c.loc=String(locText||"").trim();
-    c.geo={lng:g.lng,lat:g.lat,src:"loc",at:Date.now()};
-    c.updatedAt=Date.now();
-    saveCustomers();
-    if(typeof renderList==="function")renderList();
-    if(mapInst)mapRefresh();
-  }
-  // 拖入/选择位置截图：视觉模型识别图中地址+公司名 → 高德 POI/Geocode 落点
-  function mapLocateFromImage(file,cb,err){
-    if(typeof fileToBase64Scaled!=="function"){ if(err)err(new Error("图片读取不可用")); return; }
-    fileToBase64Scaled(file,function(b64){
-      var sel=aiGetActiveProvider("imageRecognition");
-      if(!sel||!sel.visionModel){ if(err)err(new Error("未配置视觉模型，无法识别位置截图。请在「设置」配置支持图片的视觉模型（如千问 qwen3-vl-plus）；或改用「填入定位」粘贴经纬度/链接。")); return; }
-      var body={messages:[
-        {role:"system",content:"你是地图位置信息抽取助手。从这张位置截图/位置卡片中只提取两类信息：address=图中出现的详细地址(尽量完整,如 浙江省温州市平阳县万全镇郑楼工业区…), company=公司或店铺名称(如 平阳申华印刷机械有限公司)。只输出 JSON：{\"address\":\"...\",\"company\":\"...\"}，没有的字段填空字符串，不要任何解释或多余文字。"},
-        {role:"user",content:[{type:"image_url",image_url:{url:b64}},{type:"text",text:"请识别这张位置截图并输出 JSON。"}]}
-      ]};
-      aiCall("imageRecognition",body,{isVision:true,timeout:30000}).then(function(r){
-        var m=String((r&&r.content)||"").match(/\{[\s\S]*\}/);
-        if(!m){ if(err)err(new Error("模型未返回可解析的 JSON")); return; }
-        var o; try{o=JSON.parse(m[0]);}catch(e){ if(err)err(new Error("JSON 解析失败："+e.message)); return; }
-        var addr=String(o.address||"").trim();
-        var comp=String(o.company||"").trim();
-        if(!addr&&!comp){ if(err)err(new Error("未从图中识别到地址或公司名称")); return; }
-        function ok(g){ if(g&&g.lng!=null&&g.lat!=null){ cb({lng:g.lng,lat:g.lat},{address:addr,company:comp}); } else { if(err)err(new Error("未能定位：公司「"+comp+"」地址「"+addr+"」")); } }
-        if(comp){
-          mapPoiSearch(comp,function(g){ if(g&&g.lng!=null){ok(g);} else if(addr){mapGeocode(addr,ok);} else {ok(null);} });
-        } else {
-          mapGeocode(addr,ok);
-        }
-      }).catch(function(e){ if(err)err(e&&e.message?e.message:e); });
-    });
-  }
-  // 客户列表：把位置截图/经纬度/链接 拖到某客户卡片上 → 识别并落点到该客户
-  function bindCardImageDrop(box){
-    if(!box||box.__locDropBound)return; box.__locDropBound=true;
-    function findCard(el){ while(el&&el!==box){ if(el.id&&/^card_/.test(el.id))return el; el=el.parentNode; } return null; }
-    function hasFiles(e){ var t=e.dataTransfer&&e.dataTransfer.types;if(!t)return false; for(var i=0;i<t.length;i++){if(t[i]==="Files")return true;} return false; }
-    box.addEventListener("dragover",function(e){
-      if(!hasFiles(e))return;
-      var card=findCard(e.target); if(!card)return;
-      e.preventDefault();e.stopPropagation();
-      if(e.dataTransfer.dropEffect)e.dataTransfer.dropEffect="copy";
-      card.classList.add("loc-drop");
-    });
-    box.addEventListener("dragleave",function(e){ var card=findCard(e.target); if(card)card.classList.remove("loc-drop"); });
-    box.addEventListener("drop",function(e){
-      var card=findCard(e.target); if(!card)return;
-      e.preventDefault();e.stopPropagation(); card.classList.remove("loc-drop");
-      var id=card.id.replace(/^card_/,"");
-      var c=customers.find(function(x){return x.id===id;});
-      if(!c)return;
-      var file=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-      if(file&&/^image\//.test(file.type||"")){
-        toast("正在识别位置截图…");
-        mapLocateFromImage(file,function(g,info){
-          applyLocToCustomer(c,g,(info.company||"")+" "+(info.address||""));
-          toast("已为「"+(c.name||"该客户")+"」定位："+(info.company||info.address||"（截图识别）"));
-        },function(err){ toast("位置识别失败："+(err&&err.message?err.message:err)); });
-      } else {
-        var txt=String((e.dataTransfer&&e.dataTransfer.getData("text"))||"").trim();
-        if(!txt){ toast("请拖入位置截图（图片）或经纬度/链接"); return; }
-        var p=mapParseLocInput(txt);
-        if(p){
-          if(!mapInWz(p.lng,p.lat)){ toast("该定位不在温州辖区，已忽略"); return; }
-          applyLocToCustomer(c,p,txt);
-          toast("已为「"+(c.name||"该客户")+"」定位");
-        } else if(mapLooksLikeAddress(txt)){
-          mapGeocode(txt,function(g){
-            if(g&&g.lng!=null){ applyLocToCustomer(c,g,txt); toast("已为「"+(c.name||"该客户")+"」定位："+txt); }
-            else { toast("地址「"+txt+"」未能定位"); }
-          });
-        } else { toast("无法识别拖入的内容（需位置截图 / 经纬度 / 链接 / 地址）"); }
-      }
-    });
-  }
-  function mapPoiSearchNow(name,cb,city){
-    var settled=false;
-    var timer=null;
-    var fin=function(v){if(settled)return;settled=true;try{if(timer)clearTimeout(timer);}catch(e){}cb(v);};
-    try{
-      var ps=new mapAMap.PlaceSearch({city:city,citylimit:true,pageSize:10});
-      timer=setTimeout(function(){fin(null);},6000);
-      ps.search(String(name),function(status,result){
-        try{
-          if(status==="complete"&&result&&result.poiList&&result.poiList.poiList&&result.poiList.poiList.length){
-            var pois=result.poiList.poiList;
-            var pick=pois[0];
-            var ccity=String(city).replace(/市$/,"");
-            for(var i=0;i<pois.length;i++){
-              var pa=String(pois[i].cityname||"")+String(pois[i].adname||"")+String(pois[i].pname||"");
-              if(ccity&&pa.indexOf(ccity)>=0){pick=pois[i];break;}
-            }
-            var ll=pick.location;
-            if(ll&&isFinite(ll.lng)&&isFinite(ll.lat)){fin({lng:ll.lng,lat:ll.lat});return;}
-          }
-          fin(null);
-        }catch(e){fin(null);}
-      });
-    }catch(e){fin(null);}
-  }
   function mapHasGeo(c){return !!(c&&c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat));}
-  function mapEnqueue(list,force){
-    var arr=[];
-    (list||[]).forEach(function(c){
-      if(!c)return;
-      if(mapHasGeo(c)&&!force)return;
-      // 有可解析的真实地址、地区名（地区/锚点定位）、或直接发来的定位，之一即可
-      var addrOK=!!(c.address&&mapLooksLikeAddress(c.address));
-      var regionOK=!!(c.region&&String(c.region).trim());
-      var locOK=!!(c.loc&&mapParseLocInput(c.loc));
-      if(!addrOK&&!regionOK&&!locOK)return;
-      if(force){mapGeoQueue=mapGeoQueue.filter(function(x){return !x||x.id!==c.id;});}
-      else{var inQ=false;for(var i=0;i<mapGeoQueue.length;i++){if(mapGeoQueue[i]&&mapGeoQueue[i].id===c.id){inQ=true;break;}}if(inQ)return;}
-      arr.push(c);
-    });
-    if(!arr.length)return 0;
-    mapGeoQueue=mapGeoQueue.concat(arr);
-    mapPump();
-    return arr.length;
-  }
-  // 串行解析：一次一个，避免并发刷额度
-  var mapGeoRunning=0,MAP_CONCURRENCY=3;
-  // 大致范围兜底：地址精确解析失败时，按省名匹配中心点显示「大致范围」标记
-  var MAP_PROV_CENTERS={
-    "北京":[116.4,39.9],"天津":[117.2,39.1],"上海":[121.47,31.23],"重庆":[106.55,29.56],
-    "河北":[114.5,38.0],"山西":[112.55,37.87],"辽宁":[123.43,41.8],"吉林":[125.32,43.9],"黑龙江":[126.66,45.74],
-    "江苏":[118.78,32.06],"浙江":[120.15,30.28],"安徽":[117.28,31.86],"福建":[119.3,26.08],"江西":[115.9,28.68],
-    "山东":[117.0,36.65],"河南":[113.65,34.76],"湖北":[114.3,30.6],"湖南":[112.98,28.2],"广东":[113.27,23.13],
-    "海南":[110.32,20.03],"四川":[104.07,30.67],"贵州":[106.71,26.6],"云南":[102.72,25.04],"陕西":[108.95,34.27],
-    "甘肃":[103.82,36.06],"青海":[101.78,36.62],"台湾":[121.5,25.03],"内蒙古":[111.65,40.82],"广西":[108.32,22.82],
-    "西藏":[91.13,29.65],"宁夏":[106.27,38.47],"新疆":[87.62,43.83],"香港":[114.17,22.32],"澳门":[113.55,22.2]
-  };
-  function mapProvCenter(s){
-    s=String(s||"");
-    for(var k in MAP_PROV_CENTERS){
-      if(s.indexOf(k)>=0){return {lng:MAP_PROV_CENTERS[k][0],lat:MAP_PROV_CENTERS[k][1]};}
-    }
-    return null;
-  }
   // 有效城市：所有地理编码必须限定在有效城市内。未设主城市时默认温州（客户都在温州管辖内），避免全国搜索把标记撒到省外
   function mapEffectiveCity(){return mapCityPrefix()||"温州市";}
-  // 主城市中心点：解析彻底失败时兜底，确保标记落在主城市（温州）范围内
-  var MAP_CITY_CENTERS={
-    "温州市":[120.65,27.99],"杭州市":[120.15,30.28],"上海市":[121.47,31.23],"北京市":[116.4,39.9],
-    "宁波市":[121.55,29.87],"苏州市":[120.58,31.30],"广州市":[113.27,23.13],"深圳市":[114.06,22.55],
-    "金华市":[119.65,29.08],"台州市":[121.42,28.66],"丽水市":[119.92,28.45],"泉州市":[118.68,24.87],
-    "福州市":[119.30,26.08],"南昌市":[115.90,28.68],"嘉兴市":[120.76,30.77]
-  };
-  function mapApproxCenter(){
-    var city=mapEffectiveCity();
-    for(var k in MAP_CITY_CENTERS){
-      if(k.indexOf(city)>=0||city.indexOf(k.replace(/市$/,""))>=0){
-        return {lng:MAP_CITY_CENTERS[k][0],lat:MAP_CITY_CENTERS[k][1]};
-      }
-    }
-    return null;
-  }
   // 温州辖区边界（客户都在温州管辖内）：解析结果一旦出界即判为错误，退回兜底，杜绝标记飞到外省
   var MAP_WZ_BOUNDS={minLng:119.0,maxLng:121.5,minLat:26.7,maxLat:28.9};
   function mapInWz(lng,lat){
@@ -6422,124 +6195,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   };
   var MAP_ANCHOR_NEAR_M=15000; // 锚点15km内视为同一区域
   function mapRegionAnchor(rg){return (rg&&MAP_REGION_ANCHORS[rg])||null;}
-  // 两点间球面距离（米）
-  function mapDistMeters(lng1,lat1,lng2,lat2){
-    var R=6371000,rad=Math.PI/180;
-    var dLat=(lat2-lat1)*rad,dLng=(lng2-lng1)*rad;
-    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLng/2)*Math.sin(dLng/2);
-    return 2*R*Math.asin(Math.sqrt(a));
-  }
-  function mapPump(){
-    if(!mapAMap)return;
-    while(mapGeoRunning<MAP_CONCURRENCY&&mapGeoQueue.length){
-      mapGeoRunning++;
-      var cur=mapGeoQueue.shift();
-      mapSetStat("正在解析地址（剩余 "+(mapGeoQueue.length+mapGeoRunning)+"）");
-      (function(c){
-        var settled=false;
-        var done=function(){
-          if(settled)return;settled=true;
-          mapGeoRunning--;
-          try{saveCustomers();}catch(e){}
-          mapRefresh();
-          mapPump();
-        };
-        var rawAddr=String(c.address||"").trim();
-        var rg=String(c.region||"").trim();
-        var isAddr=mapIsAddressText(rawAddr);
-        var anchor=mapRegionAnchor(rg); // 区域锚点（同名地名歧义时最可靠）
-        function setGeo(g,src){c.geo={lng:g.lng,lat:g.lat,src:src,at:Date.now()};done();}
-        // 客户直接发来的定位（经纬度/链接）最高优先：落在温州辖区内即直接采用，不再 geocode
-        var locP=mapParseLocInput(String(c.loc||""));
-        if(locP&&mapInWz(locP.lng,locP.lat)){setGeo(locP,"loc");return;}
-        // 接受坐标：必须落在温州辖区；有锚点时还必须离锚点够近（离得远=同名歧义，落到锚点）
-        function accept(g,src){
-          if(!g)return false;
-          if(!mapInWz(g.lng,g.lat))return false;
-          if(anchor){
-            var d=mapDistMeters(g.lng,g.lat,anchor.lng,anchor.lat);
-            if(d>MAP_ANCHOR_NEAR_M){setGeo(anchor,"anchor");return true;}
-          }
-          setGeo(g,src);return true;
-        }
-        // 有锚点时直接用锚点（区域级定位最可靠）
-        function useAnchor(){
-          if(anchor){setGeo(anchor,"anchor");return true;}
-          return false;
-        }
-        // 逐级兜底：region+地址 → region → 主城市中心/省中心
-        function fallback(){
-          if(useAnchor())return;
-          if(rg&&rawAddr){
-            mapGeocode(rg+rawAddr,function(g2){
-              if(accept(g2,"auto"))return;
-              mapGeocode(rg,function(g3){
-                if(accept(g3,"region"))return;
-                var ap=mapApproxCenter()||mapProvCenter(rg);
-                if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
-                done();
-              });
-            });
-          }else if(rg){
-            mapGeocode(rg,function(g3){
-              if(accept(g3,"region"))return;
-              var ap=mapApproxCenter()||mapProvCenter(rg);
-              if(ap){c.geo={lng:ap.lng,lat:ap.lat,src:"approx",at:Date.now()};}
-              done();
-            });
-          }else{
-            done();
-          }
-        }
-        // 主解析：地址型走 Geocoder，POI 型（公司/店铺名）走 PlaceSearch；失败则换另一种方式再试
-        function primary(){
-          if(isAddr){
-            mapGeocode(rawAddr,function(g){
-              if(accept(g,"auto"))return;
-              mapPoiSearch(rawAddr,function(g2){
-                if(accept(g2,"auto"))return;
-                fallback();
-              });
-            });
-          }else{
-            mapPoiSearch(rawAddr,function(g){
-              if(accept(g,"auto"))return;
-              mapGeocode(rawAddr,function(g2){
-                if(accept(g2,"auto"))return;
-                fallback();
-              });
-            });
-          }
-        }
-        primary();
-      })(cur);
-    }
-  }
-  // 自动纠正：解析结果落在温州辖区外、且非手动标记的客户，清空坐标重新解析（杜绝历史脏数据）
-  function mapAutoCorrect(){
-    if(!mapAMap)return;
-    var bad=[];
-    customers.forEach(function(c){
-      if(!c||!mapHasGeo(c)||c.geo.src==="manual"||c.geo.src==="loc")return;
-      // 无法重新解析（无地址且无地区）的客户，保留原坐标，避免清空后丢失标记
-      var canRe=(c.address&&mapLooksLikeAddress(c.address))||(c.region&&String(c.region).trim());
-      if(!canRe)return;
-      // ① 出温州辖区 → 纠正
-      if(!mapInWz(c.geo.lng,c.geo.lat)){bad.push(c);return;}
-      // ② 离区域锚点太远（同名地名歧义，如「塘下」被解析到永嘉）→ 纠正
-      var an=mapRegionAnchor(c.region);
-      if(an){
-        var d=mapDistMeters(c.geo.lng,c.geo.lat,an.lng,an.lat);
-        if(d>MAP_ANCHOR_NEAR_M)bad.push(c);
-      }
-    });
-    if(!bad.length)return;
-    mapSetStat("检测到 "+bad.length+" 家客户位置异常（出辖区或偏离区域锚点），自动重新定位…");
-    bad.forEach(function(c){c.geo=null;});
-    try{saveCustomers();}catch(e){}
-    mapRefresh();
-    mapEnqueue(bad,true);
-  }
   // ---------- 地图管理能力：筛选/统计/圈选/热力/详情 ----------
   var mapFilterState={intention:"all",status:"all",region:"all",search:""};
   var mapSelection={};  // id -> true
@@ -6569,6 +6224,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapFiltered(){
     var f=mapFilterState;
     return customers.filter(function(c){
+      if(!c.showOnMap)return false;
       if(f.intention!=="all"&&(c.intention||"low")!==f.intention)return false;
       if(f.status==="active"&&c.status!=="active")return false;
       if(f.status==="pending"&&c.status!=="pending")return false;
@@ -6625,11 +6281,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<div class="mp-row"><span>地区</span><b>'+esc(c.region||"-")+'</b></div>'+
       '<div class="mp-row"><span>最近沟通</span><b>'+(c.lastContact?days+" 天前":"无记录")+'</b></div>'+
       (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'')+
+      '<div style="margin:6px 0 2px"><span style="font-size:12px;color:#999">标记颜色</span><div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center">'+
+        '<span title="默认(按意向)" onclick="window.__map.setColor(&#39;'+c.id+'&#39;,&#39;&#39;)" style="width:18px;height:18px;border-radius:50%;background:#999;cursor:pointer;box-shadow:0 0 0 2px '+(c.markerColor?"transparent":"#fff")+'"></span>'+
+        ["#e06c6c","#e0925a","#d8c040","#5cb85c","#5a9bd4","#9b6dd4","#e06ca8"].map(function(cc){return '<span title="'+cc+'" onclick="window.__map.setColor(&#39;'+c.id+'&#39;,&#39;'+cc+'&#39;)" style="width:18px;height:18px;border-radius:50%;background:'+cc+';cursor:pointer;box-shadow:0 0 0 2px '+(c.markerColor===cc?"#fff":"transparent")+'"></span>';}).join('')+
+        '<input type="color" value="'+(c.markerColor||"#e06c6c")+'" onchange="window.__map.setColor(&#39;'+c.id+'&#39;,this.value)" title="自定义颜色" style="width:24px;height:20px;border:none;padding:0;cursor:pointer;background:none">'+
+      '</div></div>'+
       '<div class="mp-actions">'+
         '<button class="btn primary" onclick="window.__map.locate(&#39;'+c.id+'&#39;)">飞到</button>'+
         '<button class="btn" onclick="window.__map.toggleSelect(&#39;'+c.id+'&#39;)">'+(mapSelection[c.id]?"取消选择":"选中")+'</button>'+
         '<button class="btn" onclick="window.__map.moveMarker(&#39;'+c.id+'&#39;)">移动位置</button>'+
-        '<button class="btn" onclick="window.__map.setLoc(&#39;'+c.id+'&#39;)">填入定位</button>'+
+        '<button class="btn" onclick="window.__map.toggleShow(&#39;'+c.id+'&#39;)">'+(c.showOnMap?"从地图隐藏":"显示到地图")+'</button>'+
         '<button class="btn" onclick="window.__map.deleteMarker(&#39;'+c.id+'&#39;)">删除标记</button>'+
         '<button class="btn" onclick="window.__map.gotoCustomer(&#39;'+c.id+'&#39;)">查看客户</button>'+
       '</div>'+
@@ -6645,45 +6306,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapGotoCustomer(id){
     switchView("customers");
     setTimeout(function(){mapFocus(id);},200);
-  }
-  // 地图弹层内直接填入客户定位（经纬度/高德链接/微信位置），解析后落点并刷新
-  function mapSetLoc(id){
-    var c=customers.find(function(x){return x.id===id;});
-    if(!c||!mapInst||!mapAMap)return;
-    var pt=(c.geo)?{lng:c.geo.lng,lat:c.geo.lat}:{lng:120.65,lat:27.99};
-    mapClosePopover();
-    var html='<div class="map-popover" id="mapPop" style="width:236px">'+
-      '<div class="mp-name">'+esc(c.name||"未命名")+'</div>'+
-      '<div class="mp-row" style="margin:6px 0 4px;color:#666;font-size:12px">粘贴客户发来的定位（经纬度 / 高德链接 / 微信位置）</div>'+
-      '<input type="text" id="mapLocInput" value="'+esc(c.loc||"")+'" placeholder="如 120.65,27.99 或高德/微信链接" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;outline:none">'+
-      '<div class="mp-actions" style="margin-top:8px;display:flex;gap:6px">'+
-        '<button class="btn primary" style="flex:1" onclick="window.__map.applyLoc(&#39;'+id+'&#39;)">应用定位</button>'+
-        '<button class="btn" onclick="window.__map.closeLoc(&#39;'+id+'&#39;)">取消</button>'+
-      '</div></div>';
-    mapPopover=new mapAMap.InfoWindow({content:html,offset:new mapAMap.Pixel(0,-10),isCustom:true});
-    mapPopover.open(mapInst,[pt.lng,pt.lat]);
-    setTimeout(function(){var el=document.getElementById("mapLocInput");if(el){el.focus();try{el.select();}catch(e){}}},60);
-  }
-  function mapApplyLoc(id){
-    var c=customers.find(function(x){return x.id===id;});
-    if(!c)return;
-    var el=document.getElementById("mapLocInput");
-    var v=el?el.value.trim():"";
-    var p=mapParseLocInput(v);
-    if(!p){toast("无法识别该定位，请检查格式（经纬度或链接）");return;}
-    if(!mapInWz(p.lng,p.lat)){toast("该定位不在温州辖区，已忽略");return;}
-    c.loc=v;
-    c.geo={lng:p.lng,lat:p.lat,src:"loc",at:Date.now()};
-    c.updatedAt=Date.now();
-    try{saveCustomers();}catch(e){}
-    mapRefresh();
-    mapShowPopover(c,{lng:p.lng,lat:p.lat});
-    toast("已更新「"+(c.name||"该客户")+"」的地图定位");
-  }
-  function mapCloseLoc(id){
-    var c=customers.find(function(x){return x.id===id;});
-    var pt=(c&&c.geo)?{lng:c.geo.lng,lat:c.geo.lat}:{lng:120.65,lat:27.99};
-    if(c)mapShowPopover(c,pt);else mapClosePopover();
   }
   // 移动标记位置：重新进入选点模式，更新该客户坐标
   function mapMoveMarker(id){
@@ -6711,13 +6333,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapDeleteMarker(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    if(!mapHasGeo(c)){toast("该客户尚未定位");return;}
-    if(!confirm("确定删除「"+(c.name||"该客户")+"」的地图标记？删除后地址变更会重新解析。"))return;
+    if(!mapHasGeo(c)){toast("该客户还没有坐标");return;}
+    if(!confirm("确定删除「"+(c.name||"该客户")+"」的地图标记（清除坐标）？"))return;
     c.geo=null;
     try{saveCustomers();}catch(e){}
     mapClosePopover();
     mapRefresh();
-    mapRenderPending(mapFiltered());
     toast("已删除标记");
   }
   function mapToggleSelect(id){mapSelection[id]=!mapSelection[id];if(!mapSelection[id])delete mapSelection[id];mapRenderSelBar();mapRefresh();}
@@ -6785,7 +6406,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     list.forEach(function(c){
       if(!mapHasGeo(c))return;
       ok++;
-      var col=colorOf[c.intention||"low"];
+      var col=c.markerColor||colorOf[c.intention||"low"];
       var isSel=!!mapSelection[c.id];
       var isApprox=(c.geo&&c.geo.src==="approx");
       var isRegion=(c.geo&&c.geo.src==="region");
@@ -6811,16 +6432,87 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       ms.push(m);
     });
     mapAddMarkers(ms);
-    var pend=list.length-ok;
-    if(ok===0&&list.length>0){
-      mapSetStat("共 "+list.length+" 家客户，均未定位 → 点「批量补解析」按地址/地区生成标记");
+    if(ok===0){
+      mapSetStat("当前没有显示中的客户 → 点「上图管理」选择要显示的客户");
     }else{
-      mapSetStat("显示 "+ok+" 家 / 共 "+list.length+" 家"+(pend>0?("（"+pend+" 家未定位）"):""));
+      mapSetStat("地图上显示 "+ok+" 家客户");
     }
     if(!mapHeatOn){mapFitToRegion(list);}
-    mapRenderPending(list);
     mapRenderStats();
     mapRenderSelBar();
+  }
+  // ---------- 手动上图管理 + 标记颜色 ----------
+  function mapToggleShow(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    c.showOnMap=!c.showOnMap;c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    mapClosePopover();
+    mapRefresh();
+    toast(c.showOnMap?("「"+(c.name||"该客户")+"」已显示在地图"):"「"+(c.name||"该客户")+"」已从地图隐藏");
+  }
+  function mapSetShow(id,on){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    c.showOnMap=!!on;c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    if(mapInst)mapRefresh();
+    var m=$("mapShowModalCount");
+    if(m){m.textContent=customers.filter(function(x){return x.showOnMap;}).length+" 家显示中";}
+  }
+  function mapRenderShowList(q){
+    var box=$("mapShowList");if(!box)return;
+    var list=customers.filter(function(c){return !q||(c.name||"").toLowerCase().indexOf(q)>=0;});
+    var html="";
+    list.forEach(function(c){
+      var has=mapHasGeo(c);
+      html+='<label style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid rgba(128,128,128,.15);cursor:pointer">'+
+        '<input type="checkbox" '+(c.showOnMap?"checked":"")+' onchange="window.__map.setShow(&#39;'+c.id+'&#39;,this.checked)">'+
+        '<span style="flex:1;font-size:14px">'+esc(c.name||"未命名")+'</span>'+
+        '<span style="font-size:11px;color:'+(has?"#5a9b6a":"#c77")+'">'+(has?"有坐标":"无坐标-需选点")+'</span>'+
+      '</label>';
+    });
+    if(!list.length)html='<div style="color:#999;padding:12px">没有客户</div>';
+    box.innerHTML=html;
+  }
+  function mapManageShow(){
+    var old=$("modalMapShow");if(old)old.remove();
+    var shown=customers.filter(function(c){return c.showOnMap;}).length;
+    var div=document.createElement("div");
+    div.className="modal open";
+    div.id="modalMapShow";
+    div.innerHTML='<div class="sheet" style="max-width:540px">'+
+      '<h3>选择上图客户 <span id="mapShowModalCount" style="color:#888;font-size:12px;font-weight:normal">'+shown+' 家显示中</span></h3>'+
+      '<div style="font-size:12px;color:#888;margin:6px 0">勾选要显示在地图上的客户。无坐标的客户勾选后，点它标记的「移动位置」在地图上选点。</div>'+
+      '<input type="text" id="mapShowSearch" class="search" placeholder="搜索客户名…" style="width:100%;box-sizing:border-box;margin:8px 0">'+
+      '<div style="display:flex;gap:8px;margin:0 0 6px"><button class="btn" onclick="window.__map.allShow(true)">全部上图</button><button class="btn" onclick="window.__map.allShow(false)">清除全部</button></div>'+
+      '<div id="mapShowList" style="max-height:52vh;overflow:auto"></div>'+
+      '<div style="text-align:right;margin-top:12px"><button class="btn" onclick="window.__map.closeShowModal()">关闭</button></div>'+
+    '</div>';
+    document.body.appendChild(div);
+    div.onclick=function(e){if(e.target===div)window.__map.closeShowModal();};
+    mapRenderShowList("");
+    var si=$("mapShowSearch");
+    if(si)si.oninput=function(){mapRenderShowList(si.value.trim().toLowerCase());};
+  }
+  function mapCloseShowModal(){var el=$("modalMapShow");if(el)el.remove();}
+  function mapAllShow(on){
+    customers.forEach(function(c){c.showOnMap=!!on;});
+    try{saveCustomers();}catch(e){}
+    if(mapInst)mapRefresh();
+    var si=$("mapShowSearch");
+    mapRenderShowList(si?si.value.trim().toLowerCase():"");
+    var m=$("mapShowModalCount");if(m)m.textContent=customers.filter(function(x){return x.showOnMap;}).length+" 家显示中";
+    toast(on?"已全部显示在地图":"已清除全部显示");
+  }
+  function mapSetColor(id,color){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    if(color){c.markerColor=color;}else{delete c.markerColor;}
+    c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    mapRefresh();
+    toast(color?("已设置「"+(c.name||"该客户")+"」标记颜色"):"已恢复「"+(c.name||"该客户")+"」默认颜色");
   }
   // 区域筛选自动定位：优先用该区域精确坐标客户定位；无精确坐标时 geocode 地区名
   function mapFitToRegion(list){
@@ -6882,31 +6574,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     }catch(e){}
   }
-  function mapRenderPending(list){
-    var box=$("mapPendingList");if(!box)return;
-    list=list||getFiltered();
-    var pend=list.filter(function(c){return !mapHasGeo(c);});
-    var cnt=$("mapPendingCount");if(cnt)cnt.textContent=pend.length;
-    if(!pend.length){box.innerHTML='<div class="map-hint">当前筛选下所有客户都有位置。</div>';return;}
-    var html="";
-    pend.slice(0,50).forEach(function(c){
-      html+='<div class="map-pend-item"><span class="map-pend-name">'+esc(c.name||"未命名")+'</span>'+
-        '<span class="map-pend-addr">'+esc(c.address||c.region||"无地址")+'</span>'+
-        '<span><button class="btn" type="button" onclick="window.__map.pick(\''+c.id+'\')">地图选点</button></span></div>';
-    });
-    if(pend.length>50)html+='<div class="map-hint">仅显示前 50 家</div>';
-    box.innerHTML=html;
-  }
   function mapInit(){
     var body=$("mapBody");if(!body)return;
     body.style.display="flex";
-    if(!mapHasKey()){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");mapRenderPending(getFiltered());return;}
+    if(!mapHasKey()){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");return;}
     mapLoadSdk(function(A,err){
       if(err==="nokey"){mapSetStat("未配置地图 Key，点「配置 Key」填写后即可使用");return;}
       if(err==="loading"){mapSetStat("地图加载中…");return;}
       if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
       if(!mapInst){
-        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap","AMap.PlaceSearch"],function(){
+        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap"],function(){
           try{
             // 温州辖区范围（与坐标校验同用一份边界）
             var wzBounds=new A.Bounds(new A.LngLat(MAP_WZ_BOUNDS.minLng,MAP_WZ_BOUNDS.minLat),new A.LngLat(MAP_WZ_BOUNDS.maxLng,MAP_WZ_BOUNDS.maxLat));
@@ -6916,17 +6593,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
            mapSetStat("地图已就绪");
            mapBindClick();
-           mapPump();
            mapRefresh();
-           mapAutoCorrect();
          });
          return;
       }
       mapSetStat("地图已就绪");
       mapBindClick();
-      mapPump();
       mapRefresh();
-      mapAutoCorrect();
     });
   }
   function mapOpen(){mapOpened=true;mapInit();}
@@ -6939,7 +6612,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     setTimeout(function(){
       if(mapInst){
         var pts=[];
-        customers.forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
+        customers.forEach(function(c){if(c.showOnMap&&mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
         if(pts.length>0){
           try{mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
           // 限制 zoom 不低于 9（温州辖区级别）
@@ -6948,46 +6621,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     },800);
   }
-  // 显示全部客户：清空所有筛选，把所有已定位客户一次性显示到地图上并 fitView
-  function mapShowAll(){
-    mapFilterState={intention:"all",status:"all",region:"all",search:""};
-    mapSelection={};
-    var el;
-    el=$("mapF_intention");if(el)el.value="all";
-    el=$("mapF_status");if(el)el.value="all";
-    el=$("mapF_region");if(el)el.value="all";
-    el=$("mapSearch");if(el)el.value="";
-    if(mapHeatOn)mapToggleHeat();
-    if(!mapInst){mapInit();}
-    mapRefresh();
-    mapRenderStats();
-    mapRenderSelBar();
-    // 强制 fitView 全部已定位客户
-    if(mapInst){
-      var pts=[];
-      customers.forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
-      if(pts.length>0){
-        try{mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}
-      }
-    }
-    toast("已显示全部 "+customers.length+" 家客户（"+(function(){var n=0;customers.forEach(function(c){if(mapHasGeo(c))n++;});return n;})()+" 家已定位）");
-  }
-  // 全部重新解析：清空所有客户 geo 坐标，强制重新解析（用于客户散落在外、approx 兜底点错误时）
-  function mapForceReResolve(){
-    if(!confirm("确认清空所有 "+customers.length+" 家客户的坐标并重新解析？\n这会清掉所有标记，重新从地址解析（带主城市约束）。"))return;
-    var cleared=0;
-    customers.forEach(function(c){
-      if(c&&c.geo){c.geo=null;cleared++;}
-    });
-    try{saveCustomers();}catch(e){}
-    mapRefresh();
-    mapRenderStats();
-    mapRenderSelBar();
-    mapRenderPending(getFiltered());
-    // 全部加入队列强制重新解析
-    mapEnqueue(customers,true);
-    toast("已清空 "+cleared+" 个坐标，开始重新解析…");
-  }
   function mapToggle(){
     mapOpened=!mapOpened;
     var b=$("mapBody");if(!b)return;
@@ -6995,12 +6628,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else{b.style.display="none";}
   }
   function mapOpenKeySetting(){openSettings();}
-  function mapBatchResolve(){
-    if(!mapHasKey()){toast("请先在设置里填写高德地图 Key");openSettings();return;}
-    if(!mapOpened)mapOpen();
-    var n=mapEnqueue(getFiltered(),false);
-    toast(n>0?("已开始解析 "+n+" 个地址"):"没有需要解析的地址");
-  }
   function mapFocus(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
@@ -7021,7 +6648,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
     if(!mapOpened)mapOpen();
-    if(!mapHasGeo(c)){mapEnqueue([c],true);toast("正在解析地址，解析完成后自动定位");return;}
+    if(!mapHasGeo(c)){toast("该客户还没有坐标，点它标记的「移动位置」在地图上选点");return;}
     var fly=function(){if(mapInst){try{mapInst.setZoomAndCenter(14,[c.geo.lng,c.geo.lat]);}catch(e){}}};
     if(mapInst)fly();else setTimeout(fly,1600);
   }
@@ -7047,13 +6674,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }catch(err){toast("选点失败，请重试");}
     },1400);
   }
-  window.__map={toggle:mapToggle,open:mapOpen,init:mapInit,refresh:mapRefresh,batchResolve:mapBatchResolve,pick:mapPick,locate:mapLocate,focus:mapFocus,openKeySetting:mapOpenKeySetting,hasKey:mapHasKey,enqueue:mapEnqueue,hasGeo:mapHasGeo,geocode:mapGeocode,renderPending:mapRenderPending,
+  window.__map={toggle:mapToggle,open:mapOpen,init:mapInit,refresh:mapRefresh,pick:mapPick,locate:mapLocate,focus:mapFocus,openKeySetting:mapOpenKeySetting,hasKey:mapHasKey,hasGeo:mapHasGeo,
     autoOpen:mapAutoOpen,renderToolbar:mapBindToolbar,filterByIntent:mapFilterByIntent,filterByRegion:mapFilterByRegion,
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
-    moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,showAll:mapShowAll,forceReResolve:mapForceReResolve,
-    setLoc:mapSetLoc,applyLoc:mapApplyLoc,closeLoc:mapCloseLoc,
-    state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst,queue:mapGeoQueue.length};}};
+    moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,
+    toggleShow:mapToggleShow,setShow:mapSetShow,setColor:mapSetColor,manageShow:mapManageShow,closeShowModal:mapCloseShowModal,allShow:mapAllShow,
+    state:function(){return{opened:mapOpened,hasKey:mapHasKey(),inst:!!mapInst};}};
 
   function delCustomer(id){
     if(!confirm("确定删除该客户？此操作不可恢复。"))return;
@@ -7094,11 +6721,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveCardEdit(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    var _oldLoc=(c.loc||"").trim();
     c.phone=$("ce_"+id+"_phone").value.trim();
     c.address=$("ce_"+id+"_address").value.trim();
     c.region=$("ce_"+id+"_region").value.trim();
-    c.loc=$("ce_"+id+"_loc").value.trim();
     c.product=$("ce_"+id+"_product").value.trim();
     c.intention=$("ce_"+id+"_intention").value;
     c.ecomExp=$("ce_"+id+"_ecomExp").value;
@@ -7111,9 +6736,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(fuEl){c.followUpAt=fuEl.value||"";if(c.followUpAt)c.followUpDone=false;}
     c.updatedAt=Date.now();
     editingId=null;
-    // 定位变更：清掉旧定位坐标，重新解析落点并刷新地图
-    if(_oldLoc!==c.loc){if(c.geo&&c.geo.src==="loc")c.geo=null;saveCustomers();mapEnqueue([c],true);}
-    else{saveCustomers();}
+    saveCustomers();
     renderStats();renderList();toast("已更新");
   }
   window.saveCardEdit=saveCardEdit;
