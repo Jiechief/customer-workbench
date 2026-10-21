@@ -1320,6 +1320,19 @@ body{background:var(--bg);}
   .map-filter-row select,.map-filter-row .search,.map-filter-row .btn{font-size:12.5px;padding:6px 12px;}
   .map-filter-row .sep{flex:1 0 8px;max-width:20px;}
   .map-stats-row{display:flex;gap:0;padding:0 14px 8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px;}
+  .mp-manual{margin:8px 0 4px;padding-top:8px;border-top:1px dashed rgba(128,128,128,.3)}
+  .mp-manual-row{display:flex;gap:6px;align-items:center}
+  .mp-manual-row .search{flex:1;min-width:0;margin:0}
+  .mp-kw-list{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+  .mp-kw-head{font-size:11px;color:#888;padding:2px 0}
+  .mp-kw-item{border:1px solid rgba(128,128,128,.28);border-radius:8px;padding:5px 8px;cursor:pointer;line-height:1.35;transition:background .12s}
+  .mp-kw-item:hover{background:rgba(128,128,128,.12)}
+  .mp-kw-item b{display:block;font-size:12px;font-weight:600}
+  .mp-kw-item span{display:block;font-size:11px;color:#888;margin-top:1px}
+  .mp-kw-item .mp-kw-co{color:#aaa;font-size:10px}
+  .mp-kw-tip{font-size:11px;color:#888;padding:4px 2px}
+  .mp-kw-none{color:#c77;line-height:1.6}
+  .mp-manual-tip{font-size:10px;color:#aaa;margin-top:4px;line-height:1.5}
   .map-stat-line{padding:0 14px 8px;font-size:12px;color:var(--muted);line-height:1.6;min-height:18px;}
   .map-stat-line:empty{display:none;}
   .map-stat-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);font-size:11.5px;color:var(--text);margin-right:6px;cursor:pointer;border:1px solid var(--border);}
@@ -1712,19 +1725,17 @@ body{background:var(--bg);}
               <option value="pending">待跟进</option>
               <option value="overdue">逾期未跟</option>
             </select>
-            <span class="map-div-sel"><select id="mapF_province" title="按省份筛选" class="map-div-l1"><option value="all">省：全部</option></select><select id="mapF_city" title="按地市筛选" class="map-div-l2"><option value="all">市：全部</option></select><select id="mapF_district" title="按区县筛选（温州市辖区）" class="map-div-l3"><option value="all">区县：全部</option></select><select id="mapF_town" title="按街道/镇筛选" class="map-div-l4"><option value="all">街道/镇：全部</option></select></span><select id="mapF_region" title="按其它地区筛选（客户资料里填的原始地区文本，如：华东/其它）"><option value="all">其它地区：全部</option></select>
+            <select id="mapF_region" title="按地区筛选（客户资料里填的地区）"><option value="all">地区：全部</option></select>
             <input type="text" id="mapSearch" class="search" placeholder="搜索客户名定位…">
             <span class="sep"></span>
             <button class="btn" type="button" id="btnMapHeat" onclick="window.__map.toggleHeat()">热力图</button>
             <button class="btn" type="button" id="btnMapCluster" onclick="window.__map.toggleCluster()">聚合</button>
-            <button class="btn" type="button" id="btnMapReAll" onclick="window.__map.reprecise()" title="按客户填写的真实地址与公司名称重新解析坐标；解析成功的客户自动显示到地图。中途可再次点击继续剩余部分">重解析坐标</button>
-            <button class="btn" type="button" onclick="window.__map.poiLocateAll()" title="按客户公司名称在高德地图检索真实地址并标注位置，适合地址栏为空、只填了公司名的客户">按公司名定位</button>
+            <button class="btn" type="button" id="btnMapReAll" onclick="window.__map.reprecise()" title="按客户填写的地址在公司名在高德地图里搜索真实坐标；只更新坐标，不会自动显示到地图。中途可再次点击继续剩余部分">重解析坐标</button>
+            <button class="btn" type="button" onclick="window.__map.poiLocateAll()" title="按客户公司名称在高德地图里搜索并写入坐标；只更新坐标，不会自动显示到地图">按公司名定位</button>
             <button class="btn primary" type="button" id="btnMapSpread" onclick="window.__map.toggleSpread()" title="坐标重合的客户错开显示，避免多个标记叠在一起">重叠区分</button>
             <button class="btn primary" type="button" onclick="window.__map.manageShow()">上图管理</button>
             <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
-          <div class="map-div-path" id="mapDivPath"></div>
-          <div class="map-div-path" id="mapDivPath"></div>
           <div class="map-stats-row" id="mapStatsRow"></div>
           <div class="map-stat-line" id="mapStat"></div>
           <div class="map-selection-bar" id="mapSelBar" style="display:none;">
@@ -6188,77 +6199,108 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     s=s.replace(/\s+/g," ").trim();
     return s;
   }
-  // 地址结构化拆解：把「省/市/区 + 道路 + 门牌 + 楼层」拆成独立成分，
-  // 用于生成由细到粗的多级候选。门牌号级（100 分）最难命中，必须单独试。
-  function mapParseAddrParts(raw){
-    raw=String(raw==null?"":raw).replace(/\s+/g," ").trim();
-    var P={prov:"",city:"",district:"",road:"",house:"",floor:"",poi:""};
-    if(!raw)return P;
-    // 楼层 / 房间 / 座 / 单元
-    var fm=raw.match(/([0-9A-Za-z\u4e00-\u9fa5]{0,6}(?:楼|层|室|房|座|单元|幢|栋|号院))/);
-    if(fm)P.floor=fm[1];
-    // 门牌号：如 88号 / 12-3号 / 88-1
-    var hm=raw.match(/([0-9]+(?:[-之][0-9A-Za-z]+)?号(?:[\u4e00-\u9fa5]{0,3})?)/);
-    if(hm)P.house=hm[1];
-    // 道路 / 大道 / 街 / 路
-    var rm=raw.match(/([\u4e00-\u9fa5A-Za-z0-9]{0,12}(?:大道|路|街|道|弄|巷))/);
-    if(rm)P.road=rm[1];
-    // 省：先识别并剥离，避免后续把「浙江省温州市」整体当成一个区
-    var pm=raw.match(/([^\s]{2,6}?(?:省|自治区))/);
-    if(pm)P.prov=pm[1];
-    var rest=pm?raw.replace(pm[1],""):raw;
-    // 市：从「省」之后的部分里取市；非贪婪会跨过省界，故先按已知前缀切分
-    var cm=rest.match(/([\u4e00-\u9fa5]{2,8}?市)/);
-    if(cm){P.city=cm[1];rest=rest.replace(cm[1],"");}
-    // 区县 / 县级市：只认「区/县/旗」，「市」留给县级市单独判断，
-    // 避免「温州市瓯海区」被非贪婪匹配成「温州市瓯海区」整段
-    var dm=rest.match(/([\u4e00-\u9fa5]{2,8}?[区县旗])/);
-    if(dm)P.district=dm[1];
-    else{
-      // 县级市（瑞安市/乐清市…）：市名后紧跟道路/区县特征
-      var km=rest.match(/([\u4e00-\u9fa5]{2,6}市)(?=[\u4e00-\u9fa5]{0,4}(?:路|街|道|镇|乡|村|号|大道|工业园|开发区))/);
-      if(km)P.district=km[1];
-    }
-    return P;
+  // ============================================================
+  // 定位：直接用高德地图搜索框同款的关键字搜索（PlaceSearch.search）
+  // 不再自己拆地址、拼「省+市+区+路+号」假地址——拼出来的串高德根本查不到，
+  // 只会解析到区县/市级中心点，导致几十家客户叠在同一个点上（越解析越不准）。
+  // 搜索就是用户在 amap.com 搜索框里输入同一串字，结果一致且可信。
+  // ============================================================
+
+  // 从一条 POI 结果转成统一坐标对象；poi=null 表示不是 POI 结果
+  function mapPoiToGeo(poi,scoreHint){
+    if(!poi||!poi.location||!isFinite(poi.location.lng)||!isFinite(poi.location.lat))return null;
+    var pn=String(poi.name||"").trim();
+    var addr=String(poi.address||"").trim();
+    if(!addr){addr=[poi.pname||"",poi.cityname||"",poi.adname||""].join("");}
+    addr=addr.replace(/\s+/g,"").trim();
+    var type=String(poi.type||"");
+    // 门牌/号楼级 POI 更可信，额外加权
+    var sc=Number(scoreHint)||100;
+    if(/门牌号|门牌|号楼|号院|幢|栋|单元/.test(type)||/[0-9]+号$/.test(pn))sc+=4;
+    return {lng:poi.location.lng,lat:poi.location.lat,lvl:"兴趣点",score:sc,
+            addr:addr||pn,poiName:pn,poiType:type};
   }
-  // 同一地址的不同写法，高德解析精度可能差出几公里（只到区县 vs 到门牌），全部试一遍
-  // 顺序即优先级：越精确的候选越靠前，配合 mapGeocodeBest 的早停阈值使用
-  function mapAddrCandidates(c){
+
+  // 高德关键字搜索（= 地图搜索框）。opts.citylimit 默认 true，避免搜到外地同名
+  // 返回全部结果（供用户手动点选），或按 opts.top1 只取最佳一条
+  function mapKeywordSearch(keyword,cb,opts){
+    opts=opts||{};
+    if(!mapAMap||!keyword){cb(opts.top1?null:[]);return;}
+    var settled=false;
+    var fin=function(v){if(settled)return;settled=true;cb(v);};
     var city=mapEffectiveCity();
-    var raw=mapCleanAddress(c&&c.address);
-    var out=[];
-    var push=function(v){
+    var run=function(){
+      var ps;
+      try{
+        ps=new mapAMap.PlaceSearch({city:city,citylimit:true,pageSize:20,pageIndex:1,extensions:"all"});
+      }catch(e){fin(null);return;}
+      var timer=setTimeout(function(){fin(null);},9000);
+      try{
+        ps.search(keyword,function(status,result){
+          try{clearTimeout(timer);}catch(e){}
+          try{
+            if(status!=="complete"){fin(null);return;}
+            var pois=(result&&result.poiList&&result.poiList.pois)||[];
+            var out=[];
+            pois.forEach(function(p){
+              var g=mapPoiToGeo(p);
+              // 温州边界：出界的直接丢掉，绝不让标记飞到外省
+              if(g&&mapInWz(g.lng,g.lat))out.push(g);
+            });
+            // 高德已按相关性排序，保持原序即可
+            fin(opts.top1?(out[0]||null):out);
+          }catch(e){fin(null);}
+        });
+      }catch(e){fin(null);}
+    };
+    if(typeof mapAMap.PlaceSearch!=="function"){
+      mapLoadPlugins(["AMap.PlaceSearch"],function(ok){if(ok)run();else fin(null);});
+      return;
+    }
+    run();
+  }
+
+  // 供搜索框用：按客户资料拼出几组关键词，合并去重后一次性搜索
+  function mapKeywordOf(c){
+    var out=[],push=function(v){
       v=String(v==null?"":v).replace(/\s+/g," ").trim();
       if(v.length>=2&&out.indexOf(v)<0)out.push(v);
     };
-    if(raw){
-      var hasCity=/[市州盟]/.test(raw);
-      if(!hasCity)push(city+raw);            // 补城市，杜绝跨市同名跳错
-      push(raw);
-      var noProv=raw.replace(/^[^省]{0,6}(省|自治区)/,"");   // 去省级前缀：带「浙江省」常只解析到市级
-      if(noProv!==raw&&noProv.length>=3)push(hasCity?noProv:city+noProv);
-
-      // ---- 精细候选：道路+门牌+楼层，命中门牌号级的概率最高 ----
-      var P=mapParseAddrParts(raw);
-      var admin=[P.city,P.district].filter(Boolean).join("");
-      if(!admin)admin=city;
-      if(P.road){
-        var core=admin+P.road;
-        if(P.house){push(core+P.house);push(core+P.house+P.floor);}
-        push(core);
-      }
-      if(P.house){
-        // 只剩门牌号：必须靠 POI 或带道路的完整串才有意义
-        if(P.road)push(admin+P.road+P.house);
-        push(admin+P.house);
-      }
-      // 区县之后的主体段（老写法兜底）
-      var m=raw.match(/[区县市旗]([^区县市旗]{2,})$/);
-      if(m&&m[1]){push(city+m[1]);push(m[1]);}
-    }
-    var rg=String(c&&c.region||"").trim();
-    if(!raw&&rg)push(city+rg);
+    push(c&&c.address);                                     // 用户填的原始地址（最可信）
+    push(mapCleanAddress(c&&c.address));
+    push(c&&c.name);                                        // 公司名
+    push([c&&c.name,c&&c.region].filter(Boolean).join(""));   // 公司名+地区
     return out;
+  }
+
+  // 单个客户最佳坐标：全部关键词在高德搜索一遍，取命中度最高的一条。
+  // 串行执行，避免并发打爆高德配额。
+  function mapPreciseCustomer(c,cb){
+    if(!c){cb(null);return;}
+    var keys=mapKeywordOf(c);
+    if(!keys.length){cb(null);return;}
+    var best=null,idx=0,t0=Date.now();
+    var step=function(){
+      if(idx>=keys.length||Date.now()-t0>30000){cb(best);return;}
+      var kw=keys[idx++];
+      mapKeywordSearch(kw,function(list){
+        if(list&&list.length){
+          // 关键词越靠后越泛化（公司名+地区），分数递减
+          var dec=Math.max(0,12-(keys.length-idx)*3);
+          list.forEach(function(g,li){
+            var sc=(g.score||100)-dec-li;
+            if(!best||sc>best.__sc){g.__sc=sc;best=g;}
+          });
+        }
+        step();
+      },{top1:false});
+    };
+    step();
+  }
+
+  // 地址关键词列表（诊断接口用）
+  function mapAddrCandidates(c){
+    return mapKeywordOf(c);
   }
   function mapGeocodeNow(addr,cb,city){
     // 加超时与单次结算保护：外部接口不回调时不能让队列永久卡住
@@ -6311,145 +6353,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     mapGeocodeNow(addr,cb,city);
   }
-  // 多候选依次解析，取精度最高的一条；到道路级（70 分）以上就提前停，省配额
-  function mapGeocodeBest(c,cb){
-    var cands=mapAddrCandidates(c);
-    if(!cands.length){cb(null);return;}
-    var best=null,idx=0;
-    var step=function(){
-      if(idx>=cands.length){cb(best);return;}
-      var q=cands[idx++];
-      mapGeocode(q,function(g){
-        if(g&&(!best||(g.score||0)>(best.score||0)))best=g;
-        // 早停阈值 92（兴趣点级）：道路级(70)过早收敛会让多家客户叠在同一条路上，
-        // 必须继续试完剩余候选才有机会命中门牌号级(100)。
-        if(best&&(best.score||0)>=92){cb(best);return;}
-        step();
-      });
-    };
-    step();
-  }
-  // 公司名归一：去掉通用后缀与括号修饰，让 POI 检索更容易命中
-  // 「浙江迪凯卫浴有限公司」→ 「迪凯卫浴」；「温州XX鞋业（瓯海店）」→ 「温州XX鞋业」
-  function mapNormalizePoiName(nm){
-    nm=String(nm==null?"":nm).trim();
-    if(!nm)return "";
-    var core=nm.replace(/[（(][^）)]{0,20}[）)]/g,"");
-    core=core.replace(/(有限责任公司|股份有限公司|有限公司|集团有限公司|集团|公司|工厂|厂|商行|经营部|个体工商户|工作室|门市部|旗舰店|专卖店|体验店)$/g,"");
-    core=core.replace(/^(浙江省|温州市)/,"");
-    core=core.replace(/[\s\-_·]+/g,"");
-    return core||nm;
-  }
-  // POI 名称匹配度打分：0=无关，1=完全一致，2=包含关系
-  function mapPoiNameScore(query,poiName){
-    var q=mapNormalizePoiName(query),pn=String(poiName||"").replace(/[\s\-_·]+/g,"");
-    if(!q||!pn)return 0;
-    if(pn===q)return 1;
-    if(pn.indexOf(q)>=0||q.indexOf(pn)>=0)return 2;
-    // 短名兜底：取前 3 字比对（中文公司简称常见）
-    if(q.length>=3&&pn.indexOf(q.substring(0,3))>=0)return 2;
-    return 0;
-  }
-  // 公司/厂名类地址：用 PlaceSearch 精确到兴趣点（Geocoder 往往只到道路或区县，几十家会叠在一个点）
-  // 多策略：依次尝试「原名」「去后缀名」「名称+区域」，任一命中即返回最优
-  function mapPoiSearch(name,cb){
-    if(!mapAMap||!name){cb(null);return;}
-    var settled=false;
-    var fin=function(v){if(settled)return;settled=true;cb(v);};
-    var city=mapEffectiveCity();
-    var queries=[];
-    var q0=String(name).trim();
-    var q1=mapNormalizePoiName(q0);
-    var q2=q0+mapCityPrefix();
-    [q0,q1,q2].forEach(function(q){
-      q=String(q||"").trim();
-      if(q.length>=2&&queries.indexOf(q)<0)queries.push(q);
-    });
-    if(!queries.length){fin(null);return;}
-    var qi=0,best=null;
-    var run=function(){
-      if(qi>=queries.length){fin(best);return;}
-      var q=queries[qi++];
-      try{
-        var ps=new mapAMap.PlaceSearch({city:city,citylimit:true,pageSize:15,extensions:"base"});
-        var timer=setTimeout(function(){step();},6000);
-        var stepped=false;
-        var step=function(){if(stepped)return;stepped=true;try{clearTimeout(timer);}catch(e){}next();};
-        var next=function(){
-          if(best){fin(best);return;}
-          run();
-        };
-        ps.search(q,function(status,result){
-          try{
-            var pois=(result&&result.poiList&&result.poiList.pois)||[];
-            for(var i=0;i<pois.length;i++){
-              var poi=pois[i];
-              if(!poi||!poi.location||!isFinite(poi.location.lng)||!isFinite(poi.location.lat))continue;
-              var pn=String(poi.name||"");
-              var ns=mapPoiNameScore(q,pn);
-              if(ns===0)continue;                       // 名称对不上：跳过，避免搜出无关 POI
-              // 完全匹配 100 分；包含关系 94 分；再按是否为门牌级 POI 加权
-              var sc=ns===1?100:94;
-              var ptype=String(poi.type||"");
-              if(/门牌|号|幢|栋|单元/.test(ptype)||/[0-9]+号$/.test(pn))sc+=4;
-              // POI 地址拼接：poi.address 通常已含省市区，避免重复拼接 cityname/adname
-              var addr=String(poi.address||"").trim();
-              if(!addr){addr=String(poi.pname||"")+String(poi.cityname||"")+String(poi.adname||"");}
-              addr=addr.replace(/[\s]+/g,"").trim();
-              var cand={lng:poi.location.lng,lat:poi.location.lat,lvl:"兴趣点",score:sc,
-                        addr:addr||pn,poiName:pn,poiType:ptype};
-              if(!best||sc>best.score)best=cand;
-              if(best.score>=100)break;                // 完全匹配，直接收工
-            }
-          }catch(e){}
-          step();
-        });
-      }catch(e){run();}
-    };
-    var fire=function(){
-      if(typeof mapAMap.PlaceSearch!=="function"){
-        mapLoadPlugins(["AMap.PlaceSearch"],function(ok){if(ok)run();else fin(null);});
-        return;
-      }
-      run();
-    };
-    fire();
-  }
-  // 单个客户的最优坐标：地址多候选 Geocoder 与 公司名 POI 检索「并行取优」
-  // 两者都跑完，谁分高用谁。原先只在 Geocoder 得分<70 时才做 POI 兜底，
-  // 导致「地址栏填的是公司名」这类客户永远拿不到 POI 级坐标。
-  function mapPreciseCustomer(c,cb){
-    if(!c){cb(null);return;}
-    var nm=String(c.name||"").trim();
-    var addr=String(c.address||"").trim();
-    // 完全没有可用文本：无从解析
-    if(!nm&&!addr){cb(null);return;}
-    var gDone=false,pDone=false,gRes=null,pRes=null,finished=false;
-    var finish=function(){
-      // 标志必须在发起请求前就置位：mapGeocodeBest 在「无可解析候选」时会同步回调，
-      // 若先调用再置 false，回调里的 gDone=true 会被后面的 gDone=false 覆盖，
-      // 导致 finish 永远不满足、解析结果被丢弃（表现为解析完成却没有任何坐标）。
-      if(finished)return;
-      if(!gDone||!pDone)return;
-      finished=true;
-      // POI 与地址解析分高者胜；同分时优先 POI（公司名通常比文字地址更准）
-      if(pRes&&(!gRes||(pRes.score||0)>=(gRes.score||0))){cb(pRes);return;}
-      cb(gRes);
-    };
-    gDone=false;pDone=false;
-    mapGeocodeBest(c,function(g){gRes=g;gDone=true;finish();});
-    if(nm){mapPoiSearch(nm,function(p){pRes=p;pDone=true;finish();});}
-    else{pDone=true;finish();}
-  }
   function mapApplyGeo(c,g){
     if(!c||!g||!isFinite(g.lng)||!isFinite(g.lat))return false;
     if(!mapInWz(g.lng,g.lat))return false;   // 出温州的坐标一律不采信，杜绝标记飞到外省
     c.geo={lng:g.lng,lat:g.lat,src:"geo",lvl:g.lvl||"",score:g.score||0,
            addr:String(g.addr||""),at:Date.now()};
     c.updatedAt=Date.now();
-    // 解析出坐标即自动上图：否则坐标虽已写入，但 mapFiltered/showOnMap 与
-    // mapBuildPlans/mapHasGeo 两道门槛会把该客户过滤掉，地图上看不到任何标记。
-    if(!c.showOnMap){c.showOnMap=true;}
+    // 注意：这里不自动置 showOnMap。坐标由程序解析，显隐由用户自己控制
+    // （客户卡片「标注到地图」/ 弹层「显示到地图」/ 上图管理）。
     return true;
   }
   // 单个客户：按地址重解析
@@ -6458,16 +6369,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!c)return;
     if(!String(c.address||"").trim()&&!String(c.name||"").trim()){toast("该客户没有公司名称和地址，无法定位");return;}
     mapClosePopover();
-    mapSetStat("正在解析「"+(c.name||"")+"」的地址…");
+    mapSetStat("正在高德搜索「"+(c.name||"")+"」…");
     mapPreciseCustomer(c,function(g){
       if(mapApplyGeo(c,g)){
         try{saveCustomers();}catch(e){}
         mapRefresh();
-        mapSetStat("已解析到「"+(g.lvl||"位置")+"」");
-        toast("已按地址更新「"+(c.name||"该客户")+"」坐标（"+(g.lvl||"位置")+"）");
+        mapSetStat("已搜索到「"+(c.name||"")+"」："+(g.addr||g.poiName||g.lvl));
+        toast("已在高德搜到「"+(c.name||"该客户")+"」："+(g.addr||g.poiName||"")+"；坐标已更新，标记显隐不变");
       }else{
-        mapSetStat("该地址无法解析，可点标记「移动位置」手动选点");
-        toast("地址无法解析，请手动选点");
+        mapSetStat("高德搜不到这个客户，可在上方输入框直接输入准确地址搜索定位");
+        toast("高德没搜到。可在标记详情里输入准确地址再搜，或用「移动位置」手动点");
       }
     });
   }
@@ -6480,8 +6391,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     // 目标：有公司名、且当前没有坐标（或坐标精度不够）的客户
     var list=customers.filter(function(c){
       if(!String(c.name||"").trim())return false;
-      if(c.geo&&c.geo.src==="manual")return false;      // 手动选点的不动
-      if(c.geo&&(c.geo.score||0)>=92)return false;        // 已是精确坐标的不重复解析
+      if(c.geo&&c.geo.src==="manual")return false;      // 手动选点/手动搜索的不动
+      if(c.geo&&(c.geo.score||0)>=100)return false;      // 已精确命中的不重复搜索
       return true;
     });
     if(!list.length){toast("没有需要按公司名定位的客户（已精确定位与手动选点的会跳过）");return;}
@@ -6503,12 +6414,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         return;
       }
       var c=list[i++];
-      mapSetStat("正在按公司名定位 "+i+"/"+limit+"："+(c.name||""));
-      mapPoiSearch(c.name,function(p){
+      mapSetStat("正在高德搜公司名 "+i+"/"+limit+"："+(c.name||""));
+      mapKeywordSearch(c.name,function(p){
         if(p&&mapApplyGeo(c,p))ok++;
         else fail++;
-        setTimeout(step,180);
-      });
+        setTimeout(step,220);
+      },{top1:true});
     };
     step();
   }
@@ -6516,10 +6427,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // （避免每次都从头重跑、反复消耗高德额度）
   var mapRepreciseState=null;
   function mapRepreciseClearState(){mapRepreciseState=null;}
-  // 批量重解析的入列判定：有详细地址 或 有公司名即可（公司名走 POI 检索）
-  // 注意：不能要求 showOnMap —— 新架构下客户默认不上图，
-  // 若沿用旧条件，473 家里只有少数手动标注过的会被解析，表现为「重新解析后只剩几个标记」。
-  // 解析成功后 mapApplyGeo 会自动置 showOnMap=true，天然完成上图。
+  // 批量搜索的入列判定：有详细地址 或 有公司名即可。
+  // 不要求 showOnMap —— 只写坐标，不动显隐，标记显隐完全由用户自己控制。
   function mapRepreciseTargets(){
     return customers.filter(function(c){
       if(c.geo&&c.geo.src==="manual")return false;              // 手动选点的不动
@@ -6549,7 +6458,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       +"\n\n· 有详细地址 "+withAddr+" 家，走地理编码精确定位"
       +(nameOnly?("\n· 仅公司名 "+nameOnly+" 家，走高德 POI 检索（库中未收录则可能找不到）"):"")
       +"\n· 逐条串行请求高德，约需 "+(all.length*2)+"~"+(all.length*5)+" 秒"
-      +"\n· 解析成功的客户会自动显示到地图上"
+      +"\n· 只更新坐标，不会自动显示到地图（显隐你自己在客户卡片或上图管理里控制）"
       +"\n· 只更新坐标，不改动客户其它信息"
       +"\n· 中途可再次点击本按钮继续剩余部分"))return;
     mapRepreciseRun({queue:all,i:0,updated:0,better:0,failed:0,reasons:{},t0:Date.now(),stopped:false});
@@ -6697,367 +6606,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var MAP_ANCHOR_NEAR_M=15000; // 锚点15km内视为同一区域
   function mapRegionAnchor(rg){return (rg&&MAP_REGION_ANCHORS[rg])||null;}
   // ---------- 地图管理能力：筛选/统计/圈选/热力/详情 ----------
-  var mapFilterState={intention:"all",status:"all",region:"all",search:"",paused:false,
-    province:"all",city:"all",district:"all",town:"all"};
-  // ---------- 温州市行政区划数据（内置，不依赖外部接口）----------
-  // 来源：温州市统计局《1-4 分县（市、区）行政街道、乡镇》统计表 + 区划代码 GB/T 2260
-  // 结构：level 1=省 2=市 3=区/县/县级市 4=街道/镇/乡；区县节点带 center 作为地图锚点
-  var __WZ_DIV={
-  "code": "330300",
-  "name": "温州市",
-  "level": 2,
-  "children": [
-    {
-      "code": "330302", "name": "鹿城区", "level": 3,
-      "center": {"lng": 120.655, "lat": 28.015},
-      "children": [
-        {"code": "330302001", "name": "五马街道", "level": 4, "type": "街道"},
-        {"code": "330302002", "name": "松台街道", "level": 4, "type": "街道"},
-        {"code": "330302003", "name": "广化街道", "level": 4, "type": "街道"},
-        {"code": "330302004", "name": "滨江街道", "level": 4, "type": "街道"},
-        {"code": "330302005", "name": "南郊街道", "level": 4, "type": "街道"},
-        {"code": "330302006", "name": "大南街道", "level": 4, "type": "街道"},
-        {"code": "330302007", "name": "蒲鞋市街道", "level": 4, "type": "街道"},
-        {"code": "330302008", "name": "南汇街道", "level": 4, "type": "街道"},
-        {"code": "330302009", "name": "双屿街道", "level": 4, "type": "街道"},
-        {"code": "330302010", "name": "丰门街道", "level": 4, "type": "街道"},
-        {"code": "330302011", "name": "仰义街道", "level": 4, "type": "街道"},
-        {"code": "330302012", "name": "七都街道", "level": 4, "type": "街道"},
-        {"code": "330302013", "name": "藤桥镇", "level": 4, "type": "镇"},
-        {"code": "330302014", "name": "山福镇", "level": 4, "type": "镇"}
-      ]
-    },
-    {
-      "code": "330303", "name": "龙湾区", "level": 3,
-      "center": {"lng": 120.811, "lat": 27.913},
-      "children": [
-        {"code": "330303001", "name": "永中街道", "level": 4, "type": "街道"},
-        {"code": "330303002", "name": "蒲州街道", "level": 4, "type": "街道"},
-        {"code": "330303003", "name": "海滨街道", "level": 4, "type": "街道"},
-        {"code": "330303004", "name": "永兴街道", "level": 4, "type": "街道"},
-        {"code": "330303005", "name": "状元街道", "level": 4, "type": "街道"},
-        {"code": "330303006", "name": "瑶溪街道", "level": 4, "type": "街道"},
-        {"code": "330303007", "name": "海城街道", "level": 4, "type": "街道"},
-        {"code": "330303008", "name": "沙城街道", "level": 4, "type": "街道"},
-        {"code": "330303009", "name": "天河街道", "level": 4, "type": "街道"},
-        {"code": "330303010", "name": "星海街道", "level": 4, "type": "街道"}
-      ]
-    },
-    {
-      "code": "330304", "name": "瓯海区", "level": 3,
-      "center": {"lng": 120.615, "lat": 28.006},
-      "children": [
-        {"code": "330304001", "name": "娄桥街道", "level": 4, "type": "街道"},
-        {"code": "330304002", "name": "景山街道", "level": 4, "type": "街道"},
-        {"code": "330304003", "name": "梧田街道", "level": 4, "type": "街道"},
-        {"code": "330304004", "name": "茶山街道", "level": 4, "type": "街道"},
-        {"code": "330304005", "name": "南白象街道", "level": 4, "type": "街道"},
-        {"code": "330304006", "name": "新桥街道", "level": 4, "type": "街道"},
-        {"code": "330304007", "name": "三垟街道", "level": 4, "type": "街道"},
-        {"code": "330304008", "name": "瞿溪街道", "level": 4, "type": "街道"},
-        {"code": "330304009", "name": "潘桥街道", "level": 4, "type": "街道"},
-        {"code": "330304010", "name": "郭溪街道", "level": 4, "type": "街道"},
-        {"code": "330304011", "name": "丽岙街道", "level": 4, "type": "街道"},
-        {"code": "330304012", "name": "仙岩街道", "level": 4, "type": "街道"},
-        {"code": "330304013", "name": "泽雅镇", "level": 4, "type": "镇"}
-      ]
-    },
-    {
-      "code": "330305", "name": "洞头区", "level": 3,
-      "center": {"lng": 121.157, "lat": 27.836},
-      "children": [
-        {"code": "330305001", "name": "北岙街道", "level": 4, "type": "街道"},
-        {"code": "330305002", "name": "东屏街道", "level": 4, "type": "街道"},
-        {"code": "330305003", "name": "元觉街道", "level": 4, "type": "街道"},
-        {"code": "330305004", "name": "霓屿街道", "level": 4, "type": "街道"},
-        {"code": "330305005", "name": "灵昆街道", "level": 4, "type": "街道"},
-        {"code": "330305006", "name": "昆鹏街道", "level": 4, "type": "街道"},
-        {"code": "330305007", "name": "大门镇", "level": 4, "type": "镇"},
-        {"code": "330305008", "name": "鹿西乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330381", "name": "瑞安市", "level": 3,
-      "center": {"lng": 120.655, "lat": 27.778},
-      "children": [
-        {"code": "330381001", "name": "安阳街道", "level": 4, "type": "街道"},
-        {"code": "330381002", "name": "玉海街道", "level": 4, "type": "街道"},
-        {"code": "330381003", "name": "锦湖街道", "level": 4, "type": "街道"},
-        {"code": "330381004", "name": "潘岱街道", "level": 4, "type": "街道"},
-        {"code": "330381005", "name": "东山街道", "level": 4, "type": "街道"},
-        {"code": "330381006", "name": "上望街道", "level": 4, "type": "街道"},
-        {"code": "330381007", "name": "莘塍街道", "level": 4, "type": "街道"},
-        {"code": "330381008", "name": "汀田街道", "level": 4, "type": "街道"},
-        {"code": "330381009", "name": "飞云街道", "level": 4, "type": "街道"},
-        {"code": "330381010", "name": "云周街道", "level": 4, "type": "街道"},
-        {"code": "330381011", "name": "仙降街道", "level": 4, "type": "街道"},
-        {"code": "330381012", "name": "南滨街道", "level": 4, "type": "街道"},
-        {"code": "330381013", "name": "塘下镇", "level": 4, "type": "镇"},
-        {"code": "330381014", "name": "陶山镇", "level": 4, "type": "镇"},
-        {"code": "330381015", "name": "桐浦镇", "level": 4, "type": "镇"},
-        {"code": "330381016", "name": "湖岭镇", "level": 4, "type": "镇"},
-        {"code": "330381017", "name": "林川镇", "level": 4, "type": "镇"},
-        {"code": "330381018", "name": "马屿镇", "level": 4, "type": "镇"},
-        {"code": "330381019", "name": "曹村镇", "level": 4, "type": "镇"},
-        {"code": "330381020", "name": "高楼镇", "level": 4, "type": "镇"},
-        {"code": "330381021", "name": "平阳坑镇", "level": 4, "type": "镇"},
-        {"code": "330381022", "name": "芳庄乡", "level": 4, "type": "乡"},
-        {"code": "330381023", "name": "北麂乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330382", "name": "乐清市", "level": 3,
-      "center": {"lng": 120.958, "lat": 28.455},
-      "children": [
-        {"code": "330382001", "name": "城东街道", "level": 4, "type": "街道"},
-        {"code": "330382002", "name": "乐成街道", "level": 4, "type": "街道"},
-        {"code": "330382003", "name": "城南街道", "level": 4, "type": "街道"},
-        {"code": "330382004", "name": "盐盆街道", "level": 4, "type": "街道"},
-        {"code": "330382005", "name": "翁垟街道", "level": 4, "type": "街道"},
-        {"code": "330382006", "name": "白石街道", "level": 4, "type": "街道"},
-        {"code": "330382007", "name": "石帆街道", "level": 4, "type": "街道"},
-        {"code": "330382008", "name": "天成街道", "level": 4, "type": "街道"},
-        {"code": "330382009", "name": "大荆镇", "level": 4, "type": "镇"},
-        {"code": "330382010", "name": "仙溪镇", "level": 4, "type": "镇"},
-        {"code": "330382011", "name": "雁荡镇", "level": 4, "type": "镇"},
-        {"code": "330382012", "name": "芙蓉镇", "level": 4, "type": "镇"},
-        {"code": "330382013", "name": "清江镇", "level": 4, "type": "镇"},
-        {"code": "330382014", "name": "虹桥镇", "level": 4, "type": "镇"},
-        {"code": "330382015", "name": "淡溪镇", "level": 4, "type": "镇"},
-        {"code": "330382016", "name": "柳市镇", "level": 4, "type": "镇"},
-        {"code": "330382017", "name": "北白象镇", "level": 4, "type": "镇"},
-        {"code": "330382018", "name": "湖雾镇", "level": 4, "type": "镇"},
-        {"code": "330382019", "name": "南塘镇", "level": 4, "type": "镇"},
-        {"code": "330382020", "name": "南岳镇", "level": 4, "type": "镇"},
-        {"code": "330382021", "name": "蒲岐镇", "level": 4, "type": "镇"},
-        {"code": "330382022", "name": "磐石镇", "level": 4, "type": "镇"},
-        {"code": "330382023", "name": "智仁乡", "level": 4, "type": "乡"},
-        {"code": "330382024", "name": "龙西乡", "level": 4, "type": "乡"},
-        {"code": "330382025", "name": "岭底乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330383", "name": "龙港市", "level": 3,
-      "center": {"lng": 120.556, "lat": 27.958},
-      "children": [
-        {"code": "330383001", "name": "龙江社区", "level": 4, "type": "社区"},
-        {"code": "330383002", "name": "金钗河社区", "level": 4, "type": "社区"},
-        {"code": "330383003", "name": "湖前社区", "level": 4, "type": "社区"},
-        {"code": "330383004", "name": "舥艚社区", "level": 4, "type": "社区"},
-        {"code": "330383005", "name": "凤江社区", "level": 4, "type": "社区"},
-        {"code": "330383006", "name": "新城社区", "level": 4, "type": "社区"},
-        {"code": "330383007", "name": "白沙社区", "level": 4, "type": "社区"},
-        {"code": "330383008", "name": "平等社区", "level": 4, "type": "社区"}
-      ]
-    },
-    {
-      "code": "330324", "name": "永嘉县", "level": 3,
-      "center": {"lng": 120.670, "lat": 28.345},
-      "children": [
-        {"code": "330324001", "name": "北城街道", "level": 4, "type": "街道"},
-        {"code": "330324002", "name": "东城街道", "level": 4, "type": "街道"},
-        {"code": "330324003", "name": "南城街道", "level": 4, "type": "街道"},
-        {"code": "330324004", "name": "瓯北街道", "level": 4, "type": "街道"},
-        {"code": "330324005", "name": "黄田街道", "level": 4, "type": "街道"},
-        {"code": "330324006", "name": "三江街道", "level": 4, "type": "街道"},
-        {"code": "330324007", "name": "乌牛街道", "level": 4, "type": "街道"},
-        {"code": "330324008", "name": "桥头镇", "level": 4, "type": "镇"},
-        {"code": "330324009", "name": "桥下镇", "level": 4, "type": "镇"},
-        {"code": "330324010", "name": "大若岩镇", "level": 4, "type": "镇"},
-        {"code": "330324011", "name": "碧莲镇", "level": 4, "type": "镇"},
-        {"code": "330324012", "name": "巽宅镇", "level": 4, "type": "镇"},
-        {"code": "330324013", "name": "岩头镇", "level": 4, "type": "镇"},
-        {"code": "330324014", "name": "枫林镇", "level": 4, "type": "镇"},
-        {"code": "330324015", "name": "岩坦镇", "level": 4, "type": "镇"},
-        {"code": "330324016", "name": "沙头镇", "level": 4, "type": "镇"},
-        {"code": "330324017", "name": "鹤盛镇", "level": 4, "type": "镇"},
-        {"code": "330324018", "name": "金溪镇", "level": 4, "type": "镇"},
-        {"code": "330324019", "name": "云岭乡", "level": 4, "type": "乡"},
-        {"code": "330324020", "name": "茗岙乡", "level": 4, "type": "乡"},
-        {"code": "330324021", "name": "溪下乡", "level": 4, "type": "乡"},
-        {"code": "330324022", "name": "界坑乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330326", "name": "平阳县", "level": 3,
-      "center": {"lng": 120.365, "lat": 27.808},
-      "children": [
-        {"code": "330326001", "name": "昆阳镇", "level": 4, "type": "镇"},
-        {"code": "330326002", "name": "鳌江镇", "level": 4, "type": "镇"},
-        {"code": "330326003", "name": "水头镇", "level": 4, "type": "镇"},
-        {"code": "330326004", "name": "萧江镇", "level": 4, "type": "镇"},
-        {"code": "330326005", "name": "腾蛟镇", "level": 4, "type": "镇"},
-        {"code": "330326006", "name": "山门镇", "level": 4, "type": "镇"},
-        {"code": "330326007", "name": "顺溪镇", "level": 4, "type": "镇"},
-        {"code": "330326008", "name": "南雁镇", "level": 4, "type": "镇"},
-        {"code": "330326009", "name": "万全镇", "level": 4, "type": "镇"},
-        {"code": "330326010", "name": "海西镇", "level": 4, "type": "镇"},
-        {"code": "330326011", "name": "南麂镇", "level": 4, "type": "镇"},
-        {"code": "330326012", "name": "麻步镇", "level": 4, "type": "镇"},
-        {"code": "330326013", "name": "凤卧镇", "level": 4, "type": "镇"},
-        {"code": "330326014", "name": "怀溪镇", "level": 4, "type": "镇"},
-        {"code": "330326015", "name": "青街畲族乡", "level": 4, "type": "乡"},
-        {"code": "330326016", "name": "闹村乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330327", "name": "苍南县", "level": 3,
-      "center": {"lng": 120.454, "lat": 27.518},
-      "children": [
-        {"code": "330327001", "name": "灵溪镇", "level": 4, "type": "镇"},
-        {"code": "330327002", "name": "宜山镇", "level": 4, "type": "镇"},
-        {"code": "330327003", "name": "钱库镇", "level": 4, "type": "镇"},
-        {"code": "330327004", "name": "金乡镇", "level": 4, "type": "镇"},
-        {"code": "330327005", "name": "藻溪镇", "level": 4, "type": "镇"},
-        {"code": "330327006", "name": "桥墩镇", "level": 4, "type": "镇"},
-        {"code": "330327007", "name": "矾山镇", "level": 4, "type": "镇"},
-        {"code": "330327008", "name": "赤溪镇", "level": 4, "type": "镇"},
-        {"code": "330327009", "name": "马站镇", "level": 4, "type": "镇"},
-        {"code": "330327010", "name": "望里镇", "level": 4, "type": "镇"},
-        {"code": "330327011", "name": "炎亭镇", "level": 4, "type": "镇"},
-        {"code": "330327012", "name": "大渔镇", "level": 4, "type": "镇"},
-        {"code": "330327013", "name": "莒溪镇", "level": 4, "type": "镇"},
-        {"code": "330327014", "name": "南宋镇", "level": 4, "type": "镇"},
-        {"code": "330327015", "name": "霞关镇", "level": 4, "type": "镇"},
-        {"code": "330327016", "name": "沿浦镇", "level": 4, "type": "镇"},
-        {"code": "330327017", "name": "凤阳畲族乡", "level": 4, "type": "乡"},
-        {"code": "330327018", "name": "岱岭畲族乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330328", "name": "文成县", "level": 3,
-      "center": {"lng": 120.092, "lat": 27.788},
-      "children": [
-        {"code": "330328001", "name": "大峃镇", "level": 4, "type": "镇"},
-        {"code": "330328002", "name": "珊溪镇", "level": 4, "type": "镇"},
-        {"code": "330328003", "name": "百丈漈镇", "level": 4, "type": "镇"},
-        {"code": "330328004", "name": "南田镇", "level": 4, "type": "镇"},
-        {"code": "330328005", "name": "西坑畲族镇", "level": 4, "type": "镇"},
-        {"code": "330328006", "name": "黄坦镇", "level": 4, "type": "镇"},
-        {"code": "330328007", "name": "巨屿镇", "level": 4, "type": "镇"},
-        {"code": "330328008", "name": "玉壶镇", "level": 4, "type": "镇"},
-        {"code": "330328009", "name": "峃口镇", "level": 4, "type": "镇"},
-        {"code": "330328010", "name": "周壤镇", "level": 4, "type": "镇"},
-        {"code": "330328011", "name": "二源镇", "level": 4, "type": "镇"},
-        {"code": "330328012", "name": "铜铃山镇", "level": 4, "type": "镇"},
-        {"code": "330328013", "name": "平和乡", "level": 4, "type": "乡"},
-        {"code": "330328014", "name": "双桂乡", "level": 4, "type": "乡"},
-        {"code": "330328015", "name": "公阳乡", "level": 4, "type": "乡"},
-        {"code": "330328016", "name": "桂山乡", "level": 4, "type": "乡"},
-        {"code": "330328017", "name": "周山畲族乡", "level": 4, "type": "乡"}
-      ]
-    },
-    {
-      "code": "330329", "name": "泰顺县", "level": 3,
-      "center": {"lng": 119.915, "lat": 27.557},
-      "children": [
-        {"code": "330329001", "name": "罗阳镇", "level": 4, "type": "镇"},
-        {"code": "330329002", "name": "百丈镇", "level": 4, "type": "镇"},
-        {"code": "330329003", "name": "筱村镇", "level": 4, "type": "镇"},
-        {"code": "330329004", "name": "泗溪镇", "level": 4, "type": "镇"},
-        {"code": "330329005", "name": "东溪镇", "level": 4, "type": "镇"},
-        {"code": "330329006", "name": "南浦溪镇", "level": 4, "type": "镇"},
-        {"code": "330329007", "name": "雅阳镇", "level": 4, "type": "镇"},
-        {"code": "330329008", "name": "仕阳镇", "level": 4, "type": "镇"},
-        {"code": "330329009", "name": "龟湖镇", "level": 4, "type": "镇"},
-        {"code": "330329010", "name": "西旸镇", "level": 4, "type": "镇"},
-        {"code": "330329011", "name": "三魁镇", "level": 4, "type": "镇"},
-        {"code": "330329012", "name": "彭溪镇", "level": 4, "type": "镇"},
-        {"code": "330329013", "name": "司前畲族镇", "level": 4, "type": "镇"},
-        {"code": "330329014", "name": "竹里畲族乡", "level": 4, "type": "乡"},
-        {"code": "330329015", "name": "包垟乡", "level": 4, "type": "乡"},
-        {"code": "330329016", "name": "凤垟乡", "level": 4, "type": "乡"},
-        {"code": "330329017", "name": "柳峰乡", "level": 4, "type": "乡"},
-        {"code": "330329018", "name": "雪溪乡", "level": 4, "type": "乡"},
-        {"code": "330329019", "name": "大安乡", "level": 4, "type": "乡"}
-      ]
-    }
-  ]
-};
-  var __WZ_PROV={code:"330000",name:"浙江省",level:1};
-  var __WZ_BY_CODE={},__WZ_BY_NAME={};
-  (function(){
-    var push=function(node,parent){
-      node.parent=parent;
-      if(node.code)__WZ_BY_CODE[node.code]=node;
-      if(node.name)__WZ_BY_NAME[node.name]=node;
-      (node.children||[]).forEach(function(k){push(k,node);});
-    };
-    __WZ_BY_CODE[__WZ_PROV.code]=__WZ_PROV;
-    __WZ_BY_NAME[__WZ_PROV.name]=__WZ_PROV;
-    push(__WZ_DIV,null);
-  })();
-  function __wzShortName(n){return String(n||"").replace(/(畲族)?(街道|镇|乡)$/,"").replace(/(县|区|市)$/,"");}
-  // 按名称查区划节点：
-  //   1) 全名精确命中（「瓯海区」「塘下镇」）
-  //   2) 短名命中 —— 客户手写简称（「瓯海」「鹿城」「塘下」「瑞安」）
-  //      注意不能像早期写法那样要求 short!==n：「瓯海」的短名仍是「瓯海」，
-  //      用 != 判断会让短名映射整体失效（这是短名筛不到的根因）。
-  //      同名短名优先取更长/更具体的节点（先街道镇，再区县）。
-  function __wzIdx(name){
-    if(!name)return null;
-    if(__WZ_BY_NAME[name])return __WZ_BY_NAME[name];
-    var short=__wzShortName(String(name).trim());
-    if(!short)return null;
-    var fallback=null;
-    for(var k in __WZ_BY_NAME){
-      var node=__WZ_BY_NAME[k];
-      if(__wzShortName(node.name)!==short)continue;
-      // 层级越低越具体：街道/镇(4) 优先于 区县(3) 优先于 市(2)
-      if(node.level===4)return node;
-      if(node.level===3&&!fallback)fallback=node;
-      if(node.level===2)fallback=fallback||node;
-    }
-    return fallback;
-  }
-  function __wzNodePath(node){
-    if(!node)return [];
-    var p=[],n=node,guard=0;
-    while(n&&guard++<6){p.unshift(n);n=n.parent;}
-    return p;
-  }
-  function __wzMatchText(text){
-    var s=String(text||"");
-    if(!s)return null;
-    var direct=__wzIdx(s);
-    if(direct)return direct;
-    // 层级优先：街道/镇(4) > 区/县(3) > 市(2) > 省(1)；同级取更长的名字
-    // （不能只按长度：「温州市瓯海区…」里「温州市」比「瓯海区」长，
-    //   纯长度优先会命中市一级，导致区县筛选失效）
-    var best=null;
-    for(var name in __WZ_BY_NAME){
-      if(s.indexOf(name)<0)continue;
-      var node=__WZ_BY_NAME[name];
-      if(!best)best=node;
-      else if(node.level>best.level)best=node;
-      else if(node.level===best.level&&name.length>best.name.length)best=node;
-    }
-    return best;
-  }
-  // 客户 → 区划三级路径。命中优先级：geo.addr → region → address → name
-  function __wzResolveCustomer(c){
-    var out={province:null,city:null,district:null,town:null,matched:null,source:""};
-    var tryText=function(txt,src){
-      if(!txt)return false;
-      var n=__wzMatchText(txt);
-      if(!n)return false;
-      var path=__wzNodePath(n);
-      out.matched=n;out.source=src;
-      out.province=__WZ_PROV.name;out.city=__WZ_DIV.name;
-      if(n.level===3)out.district=n.name;
-      else if(n.level===4){
-        out.town=n.name;
-        var parent=path[path.length-2];
-        out.district=(parent&&parent.level===3)?parent.name:null;
-      }
-      return true;
-    };
-    if(c&&c.geo&&c.geo.addr&&tryText(c.geo.addr,"geo.addr"))return out;
-    if(c&&tryText(c.region,"region"))return out;
-    if(c&&tryText(c.address,"address"))return out;
-    if(c&&tryText(c.name,"name"))return out;
-    return out;
-  }
+  var mapFilterState={intention:"all",status:"all",region:"all",search:"",paused:false};
   var mapSelection={};  // id -> true
   var MAP_REP_STATE_KEY="cwRepreciseState";  // 断点续跑持久化键
   var mapHeatOn=false, mapHeatLayer=null;
@@ -7070,12 +6619,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var el=$(id);if(!el)return;
       el.onchange=function(){mapFilterState[id.replace("mapF_","")]=el.value;mapRefresh();mapRenderStats();};
     });
-    // 行政区划级联：省 → 市 → 区县 → 街道/镇（温州市为唯一地市）
-    var bp=$("mapF_province"),bc=$("mapF_city"),bd=$("mapF_district"),bt=$("mapF_town");
-    if(bp)bp.onchange=function(){mapFilterState.province=bp.value;mapFilterState.city="all";mapFilterState.district="all";mapFilterState.town="all";mapRenderDivOptions();mapRefresh();mapRenderStats();};
-    if(bc)bc.onchange=function(){mapFilterState.city=bc.value;mapFilterState.district="all";mapFilterState.town="all";mapRenderDivOptions();mapRefresh();mapRenderStats();};
-    if(bd)bd.onchange=function(){mapFilterState.district=bd.value;mapFilterState.town="all";mapRenderDivOptions();mapRefresh();mapRenderStats();};
-    if(bt)bt.onchange=function(){mapFilterState.town=bt.value;mapRefresh();mapRenderStats();};
     var si=$("mapSearch");if(si){si.oninput=function(){mapFilterState.search=si.value.trim().toLowerCase();mapRefresh();};}
     var sb=$("btnMapSpread");if(sb)sb.classList.toggle("primary",mapOverlapSpread);
     mapRenderRegionOptions();
@@ -7086,94 +6629,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(rs){var o=JSON.parse(rs);var ids=o.ids||[];if(ids.length){mapFilterState.paused=false;mapRepreciseState={queue:ids.map(function(id){return customers.filter(function(x){return x.id===id;})[0];}).filter(Boolean),i:0,updated:o.updated||0,better:o.better||0,failed:o.failed||0,reasons:o.reasons||{},t0:Date.now(),stopped:false};mapSetStat("上次解析还有 "+ids.length+" 家未完成，点「重解析坐标」继续");}}
     }catch(e){}
   }
-  // ---- 行政区划级联选项渲染（真实区划名称：浙江省/温州市 → 区/县 → 街道/镇）----
-  function __WZ_BY_DIST(){
-    var f=mapFilterState;
-    if(!f||f.district==="all")return null;
-    return __WZ_DIV.children.filter(function(d){return d.name===f.district;})[0]||null;
-  }
-  function mapRenderDivOptions(){
-    var f=mapFilterState;
-    var bp=$("mapF_province"),bc=$("mapF_city"),bd=$("mapF_district"),bt=$("mapF_town");
-    if(bp){
-      var provHit=customers.filter(function(c){return __wzResolveCustomer(c).city===__WZ_DIV.name;}).length;
-      bp.innerHTML='<option value="all">省：全部</option>'
-        +(provHit?'<option value="'+esc(__WZ_PROV.name)+'">'+esc(__WZ_PROV.name)+'（'+provHit+'）</option>':"");
-      var pv=(f.province!=="all"&&provHit)?f.province:"all";
-      if(pv==="all")f.province="all";
-      bp.value=pv;
-    }
-    if(bc){
-      var cityOn=f.province!=="all";
-      var cityHit=customers.filter(function(c){return __wzResolveCustomer(c).city===__WZ_DIV.name;}).length;
-      bc.innerHTML='<option value="all">市：全部</option>'
-        +(cityHit?'<option value="'+esc(__WZ_DIV.name)+'">'+esc(__WZ_DIV.name)+'（'+cityHit+'）</option>':"");
-      var cv=(cityOn&&cityHit)?__WZ_DIV.name:"all";
-      if(cv==="all")f.city="all";
-      bc.disabled=!cityOn;
-      bc.value=cv;
-    }
-    if(bd){
-      var distOn=f.city!=="all";
-      var opts='<option value="all">区县：全部</option>';
-      if(distOn){
-        // 只列「当前筛选结果里确有客户」的区县，避免出现选了却空白的层级
-        var pool=mapFiltered(),cnt={};
-        pool.forEach(function(c){var d=__wzResolveCustomer(c).district;if(d)cnt[d]=(cnt[d]||0)+1;});
-        __WZ_DIV.children.forEach(function(d){
-          if(!cnt[d.name])return;
-          opts+='<option value="'+esc(d.name)+'">'+esc(d.name)+'（'+cnt[d.name]+'）</option>';
-        });
-      }
-      bd.innerHTML=opts;
-      var dv=(distOn&&f.district!=="all"&&opts.indexOf('value="'+esc(f.district)+'"')>0)?f.district:"all";
-      if(dv==="all")f.district="all";
-      bd.disabled=!distOn;
-      bd.value=dv;
-    }
-    if(bt){
-      var townOn=f.district!=="all";
-      var topts='<option value="all">街道/镇：全部</option>';
-      if(townOn){
-        var dnode=__WZ_BY_DIST();
-        var tpool=mapFiltered(),tcnt={};
-        tpool.forEach(function(c){var t=__wzResolveCustomer(c).town;if(t)tcnt[t]=(tcnt[t]||0)+1;});
-        var groups=[["街道",[]],["镇",[]],["乡/社区",[]]];
-        ((dnode&&dnode.children)||[]).forEach(function(k){
-          if(!tcnt[k.name])return;
-          var g=k.type==="街道"?groups[0]:(k.type==="镇"?groups[1]:groups[2]);
-          g[1].push('<option value="'+esc(k.name)+'">'+esc(k.name)+'（'+tcnt[k.name]+'）</option>');
-        });
-        groups.forEach(function(g){if(g[1].length)topts+='<optgroup label="'+g[0]+'">'+g[1].join("")+"</optgroup>";});
-      }
-      bt.innerHTML=topts;
-      var tv=(townOn&&f.town!=="all"&&topts.indexOf('value="'+esc(f.town)+'"')>0)?f.town:"all";
-      if(tv==="all")f.town="all";
-      bt.disabled=!townOn;
-      bt.value=tv;
-    }
-    mapRenderDivPath();
-  }
-  function mapRenderDivPath(){
-    var el=$("mapDivPath");if(!el)return;
-    var f=mapFilterState,segs=[f.town,f.district].filter(function(x){return x&&x!=="all";});
-    if(!segs.length){el.innerHTML="区划：<b>温州市全域</b>（可在左侧逐级下探到街道/镇）";return;}
-    el.innerHTML="区划：<b>"+esc(segs.join(" / "))+"</b>";
-  }
-  // 保留原函数名：渲染「其它地区」兜底选项 + 触发区划级联重绘
   function mapRenderRegionOptions(){
     var sel=$("mapF_region");if(!sel)return;
-    var seen={},opts='<option value="all">其它地区：全部</option>';
+    var seen={},opts='<option value="all">地区：全部</option>';
     customers.forEach(function(c){
-      // 只列「映射不到温州真实区划」的原始地区文本，避免与真实区划重复
-      if(__wzResolveCustomer(c).city)return;
       var r=(c.region||"").trim();if(!r)return;
       if(!seen[r]){seen[r]=true;opts+='<option value="'+esc(r)+'">'+esc(r)+'</option>';}
     });
     sel.innerHTML=opts;
     if(mapFilterState.region!=="all"&&opts.indexOf('value="'+esc(mapFilterState.region)+'"')<=0)mapFilterState.region="all";
     sel.value=mapFilterState.region;
-    mapRenderDivOptions();
   }
   function mapFiltered(){
     var f=mapFilterState;
@@ -7183,13 +6648,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(f.status==="active"&&c.status!=="active")return false;
       if(f.status==="pending"&&c.status!=="pending")return false;
       if(f.status==="overdue"){var d=daysSince(c.lastContact);if(d<parseInt(settings.reminderDays||7,10))return false;}
-      // 行政区划三级筛选：任一层选中即按该层级包含判断（选区=该区全部，选镇=该镇）
-      if(f.province!=="all"||f.city!=="all"||f.district!=="all"||f.town!=="all"){
-        var dv=__wzResolveCustomer(c);
-        if(f.city!=="all"&&dv.city!==f.city)return false;
-        if(f.district!=="all"&&dv.district!==f.district)return false;
-        if(f.town!=="all"&&dv.town!==f.town)return false;
-      }
       if(f.region!=="all"&&(c.region||"")!==f.region)return false;
       if(f.search){var n=(c.name||"").toLowerCase();if(n.indexOf(f.search)<0)return false;}
       return true;
@@ -7201,12 +6659,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var geoced=0;
     var byIntent={high:0,mid:0,low:0};
     list.forEach(function(c){if(mapHasGeo(c))geoced++;byIntent[c.intention||"low"]++;});
-    // 地区统计按真实行政区划名聚合（已映射的归到区县/镇，未映射的保留原始文本）
+    // 地区统计按客户资料里填的地区文本聚合
     var regions={};
     list.forEach(function(c){
-      var dv=__wzResolveCustomer(c);
-      var r=dv.town||dv.district||dv.city||(c.region||"未分类");
-      if(!regions[r])regions[r]={n:0,district:dv.district||"",town:dv.town||""};
+      var r=(c.region||"").trim()||"未分类";
+      if(!regions[r])regions[r]={n:0};
       regions[r].n++;
     });
     var html="";
@@ -7216,59 +6673,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     html+='<span class="map-stat-chip" onclick="window.__map.filterByIntent(\'low\')"><span class="dot" style="background:#5a9bd4"></span>低意向 <span class="num">'+byIntent.low+'</span></span>';
     var regs=Object.keys(regions).sort(function(a,b){return regions[b].n-regions[a].n;}).slice(0,8);
     regs.forEach(function(r){
-      var info=regions[r];
-      if(info.district){
-        // 已映射到区划：点选后下探到该区县/镇并飞行定位
-        var on=(mapFilterState.district===info.district&&(!info.town||mapFilterState.town===info.town));
-        var did=encodeURIComponent(info.district),tid=encodeURIComponent(info.town||"");
-        html+='<span class="map-stat-chip'+(on?" div-on":"")+'" title="点击筛选该区划" onclick="window.__map.filterByDivision(\''+did+'\',\''+tid+'\')">'+esc(r)+' <span class="num">'+info.n+'</span></span>';
-      }else{
-        // 未映射到真实区划：仍可按原始地区文本筛选
-        var rid=encodeURIComponent(r);
-        html+='<span class="map-stat-chip" title="未匹配到温州真实区划，按原始地区文本筛选" onclick="window.__map.filterByRegion(\''+rid+'\')">'+esc(r)+' <span class="num">'+info.n+'</span></span>';
-      }
+      var rid=encodeURIComponent(r);
+      html+='<span class="map-stat-chip" title="点击按该地区筛选" onclick="window.__map.filterByRegion(\''+rid+'\')">'+esc(r)+' <span class="num">'+regions[r].n+'</span></span>';
     });
     box.innerHTML=html;
-  }
-  // 飞到指定区划：镇街道级用该区下所有客户坐标均值，区县级用政府驻地中心点
-  function mapFlyToDivision(district,town){
-    if(!mapInst){toast("地图尚未就绪");return;}
-    var d=__WZ_DIV.children.filter(function(x){return x.name===district;})[0];
-    if(!d)return;
-    var target=null;
-    if(town){
-      var pts=customers.filter(function(c){
-        if(__wzResolveCustomer(c).town!==town)return false;
-        return c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat);
-      }).map(function(c){return[c.geo.lng,c.geo.lat];});
-      if(pts.length){
-        target=[pts.reduce(function(a,b){return a+b[0];},0)/pts.length,
-                pts.reduce(function(a,b){return a+b[1];},0)/pts.length];
-      }
-    }
-    if(!target&&d.center)target=[d.center.lng,d.center.lat];
-    if(!target)return;
-    try{mapInst.setZoomAndCenter(town?13:11,target);}catch(e){}
-  }
-  // 飞到指定区划：镇街道级用该区下所有客户坐标均值，区县级用政府驻地中心点
-  function mapFlyToDivision(district,town){
-    if(!mapInst){toast("地图尚未就绪");return;}
-    var d=__WZ_DIV.children.filter(function(x){return x.name===district;})[0];
-    if(!d)return;
-    var target=null;
-    if(town){
-      var pts=customers.filter(function(c){
-        if(__wzResolveCustomer(c).town!==town)return false;
-        return c.geo&&isFinite(c.geo.lng)&&isFinite(c.geo.lat);
-      }).map(function(c){return[c.geo.lng,c.geo.lat];});
-      if(pts.length){
-        target=[pts.reduce(function(a,b){return a+b[0];},0)/pts.length,
-                pts.reduce(function(a,b){return a+b[1];},0)/pts.length];
-      }
-    }
-    if(!target&&d.center)target=[d.center.lng,d.center.lat];
-    if(!target)return;
-    try{mapInst.setZoomAndCenter(town?13:11,target);}catch(e){}
   }
   function mapFilterByIntent(v){mapFilterState.intention=v;var el=$("mapF_intention");if(el)el.value=v;mapRefresh();mapRenderStats();}
   function mapFilterByRegion(v){var r=decodeURIComponent(v);mapFilterState.region=r;var el=$("mapF_region");if(el)el.value=r;mapRefresh();mapRenderStats();}
@@ -7319,8 +6727,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'')+
       (c.geo&&c.geo.addr&&c.geo.addr!==c.address?'<div class="mp-row"><span>解析地址</span><b>'+esc(c.geo.addr)+'</b></div>':'')+
       (c.geo?'<div class="mp-row"><span>经纬度</span><b>'+c.geo.lng.toFixed(6)+', '+c.geo.lat.toFixed(6)+'</b></div>':'')+
-      (function(){var dv=__wzResolveCustomer(c);var txt=dv.town?dv.district+" / "+dv.town:(dv.district||dv.city||"");return txt?'<div class="mp-row"><span>所属区划</span><b>'+esc(txt)+'</b></div>':'';})()+
-      (function(){var dv=__wzResolveCustomer(c);var txt=dv.district?(dv.town?dv.district+' / '+dv.town:dv.district):(dv.city||'');return txt?'<div class="mp-row"><span>所属区划</span><b>'+esc(txt)+'</b></div>':'';})()+
+      '<div class="mp-manual">'+
+        '<div class="mp-manual-row"><input type="text" id="mapKw_'+c.id+'" class="search" placeholder="在高德搜索框输入你到过的准确地址…" onkeydown="if(event.key===\'Enter\')window.__map.kwSearch(\''+c.id+'\')">'+
+        '<button class="btn primary" onclick="window.__map.kwSearch(\''+c.id+'\')">搜索定位</button></div>'+
+        '<div class="mp-kw-list" id="mapKwList_'+c.id+'"></div>'+
+        '<div class="mp-manual-tip">在高德能搜到的准确地址，搜出来点一下即可落到标记上，比自动解析准得多</div>'+
+      '</div>'+
       '<div class="mp-row"><span>坐标精度</span><b>'+esc(prec)+'</b></div>'+
       ovHtml+
       '<div style="margin:6px 0 2px"><span style="font-size:12px;color:#999">标记颜色</span><div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center">'+
@@ -7349,6 +6761,72 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapGotoCustomer(id){
     switchView("customers");
     setTimeout(function(){mapFocus(id);},200);
+  }
+  // ---------- 手动输入准确地址 → 高德搜索 → 点选落点 ----------
+  // 用户亲自去过，地址在高德搜索框能搜到；这里把高德搜索框原样搬到工作台里，
+  // 搜出候选让用户自己点，比任何自动解析都准。
+  function mapKwSearch(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c)return;
+    var el=$("mapKw_"+id),box=$("mapKwList_"+id);
+    if(!el||!box)return;
+    var kw=String(el.value||"").trim();
+    if(!kw){mapSetStat("请先输入要搜索的地址或公司名");return;}
+    if(!mapHasKey()){mapSetStat("未配置高德 Key，请先点「配置 Key」");return;}
+    box.innerHTML='<div class="mp-kw-tip">正在高德搜索…</div>';
+    mapClosePopover();
+    mapSetStat("正在高德搜索："+kw);
+    mapKeywordSearch(kw,function(list){
+      // 搜索期间弹层可能被关掉，这里重新打开详情再挂结果
+      var c2=customers.find(function(x){return x.id===id;});
+      if(!c2||!mapHasGeo(c2)&&!c2){/*客户已删*/return;}
+      var box2=$("mapKwList_"+id);
+      if(!box2){
+        if(mapHasGeo(c2))mapShowPopover(c2,[c2.geo.lng,c2.geo.lat],[]);
+        box2=$("mapKwList_"+id);
+      }
+      if(!box2){mapSetStat("请在地图上点开该客户标记后再搜索");return;}
+      var inp=$("mapKw_"+id);if(inp)inp.value=kw;
+      if(!list||!list.length){
+        box2.innerHTML='<div class="mp-kw-tip mp-kw-none">高德没搜到「'+esc(kw)+'」。<br>可以换个说法再搜（如加上「路」「号」），或用「移动位置」直接点。</div>';
+        mapSetStat("高德没搜到「"+kw+"」");
+        return;
+      }
+      var html='<div class="mp-kw-head">高德搜到 '+list.length+' 条，点一条落点：</div>';
+      list.slice(0,10).forEach(function(g,i){
+        var label=g.poiName||"（无名）";
+        var sub=[g.addr,g.poiType].filter(Boolean).join(" · ");
+        html+='<div class="mp-kw-item" onclick="window.__map.kwPick(\''+id+'\','+i+')">'+
+          '<b>'+(i+1)+'. '+esc(label)+'</b>'+
+          (sub?'<span>'+esc(sub)+'</span>':'')+
+          '<span class="mp-kw-co">'+g.lng.toFixed(6)+', '+g.lat.toFixed(6)+'</span>'+
+        '</div>';
+      });
+      box2.innerHTML=html;
+      mapKwCache[id]=list.slice(0,10);
+      mapSetStat("高德搜到 "+list.length+" 条，请点选一条落点");
+    },{top1:false});
+  }
+  var mapKwCache={};
+  function mapKwPick(id,i){
+    var c=customers.find(function(x){return x.id===id;});
+    var g=(mapKwCache[id]||[])[i];
+    if(!c||!g)return;
+    if(!mapInWz(g.lng,g.lat)){toast("该结果不在温州市范围内，已忽略");return;}
+    c.geo={lng:g.lng,lat:g.lat,src:"manual",lvl:"兴趣点",score:g.score||100,
+           addr:g.addr||"",poiName:g.poiName||"",at:Date.now(),bySearch:true};
+    c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    mapRefresh();
+    delete mapKwCache[id];
+    mapShowPopover(c,[c.geo.lng,c.geo.lat],[]);
+    mapSetStat("已按你选的「"+(g.poiName||g.addr)+"」设置位置");
+    toast("已定位「"+(c.name||"该客户")+"」到 "+(g.poiName||g.addr));
+  }
+  function mapKwClear(id){
+    var box=$("mapKwList_"+id);
+    if(box)box.innerHTML="";
+    delete mapKwCache[id];
   }
   // 移动标记位置：重新进入选点模式，更新该客户坐标
   function mapMoveMarker(id){
@@ -7735,32 +7213,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   window.__map={toggle:mapToggle,open:mapOpen,init:mapInit,refresh:mapRefresh,pick:mapPick,locate:mapLocate,focus:mapFocus,openKeySetting:mapOpenKeySetting,hasKey:mapHasKey,hasGeo:mapHasGeo,
     autoOpen:mapAutoOpen,renderToolbar:mapBindToolbar,filterByIntent:mapFilterByIntent,filterByRegion:mapFilterByRegion,
-    // 按行政区划筛选（统计行筹码点选用）：district 区县级、town 镇街道级（可空）
-    filterByDivision:function(district,town){
-      var d=decodeURIComponent(district||""),k=decodeURIComponent(town||"");
-      mapFilterState.city=(k||d)?__WZ_DIV.name:"all";
-      mapFilterState.district=(k||d)?d:"all";
-      mapFilterState.town=k||"all";
-      mapRenderDivOptions();mapRefresh();mapRenderStats();
-      mapFlyToDivision(d,k);
-    },
-    flyToDivision:function(d,k){mapFlyToDivision(decodeURIComponent(d||""),decodeURIComponent(k||""));},
-    divisions:function(){return {province:__WZ_PROV.name,city:__WZ_DIV.name,totalTowns:(function(){var n=0;__WZ_DIV.children.forEach(function(d){n+=(d.children||[]).length;});return n;})(),districts:__WZ_DIV.children.map(function(d){return {name:d.name,code:d.code,towns:(d.children||[]).length};})};},
-    resolveDivision:function(c){return __wzResolveCustomer(c);},
-    divUnmatchedCount:function(){return customers.filter(function(c){return !__wzResolveCustomer(c).city;}).length;},
-    // 按行政区划筛选（统计行筹码点选用）：district 区县级、town 镇街道级（可空）
-    filterByDivision:function(district,town){
-      var d=decodeURIComponent(district||""),k=decodeURIComponent(town||"");
-      mapFilterState.city=(k||d)?__WZ_DIV.name:"all";
-      mapFilterState.district=(k||d)?d:"all";
-      mapFilterState.town=k||"all";
-      mapFilterDivOptions();mapRefresh();mapRenderStats();
-      mapFlyToDivision(d,k);
-    },
-    flyToDivision:function(d,k){mapFlyToDivision(decodeURIComponent(d||""),decodeURIComponent(k||""));},
-    divisions:function(){return {province:__WZ_PROV.name,city:__WZ_DIV.name,totalTowns:(function(){var n=0;__WZ_DIV.children.forEach(function(d){n+=(d.children||[]).length;});return n;})(),districts:__WZ_DIV.children.map(function(d){return {name:d.name,code:d.code,towns:(d.children||[]).length};})};},
-    resolveDivision:function(c){return __wzResolveCustomer(c);},
-    divUnmatchedCount:function(){return customers.filter(function(c){return !__wzResolveCustomer(c).city;}).length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
@@ -7771,10 +7223,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     repreciseClear:function(){mapRepreciseClearState();try{localStorage.removeItem(MAP_REP_STATE_KEY);}catch(e){}},
     pauseReprecise:function(){mapFilterState.paused=true;},preciseOne:mapPreciseOne,toggleSpread:mapToggleSpread,
     poiLocateAll:mapPoiLocateAll,
+    kwSearch:mapKwSearch,kwPick:mapKwPick,kwClear:mapKwClear,
     moveMarker:mapMoveMarker,deleteMarker:mapDeleteMarker,
     toggleShow:mapToggleShow,setShow:mapSetShow,setColor:mapSetColor,manageShow:mapManageShow,closeShowModal:mapCloseShowModal,allShow:mapAllShow,
-    // ---- 解析诊断（验证精度 / 排查不显示原因）----
-    parseAddrParts:mapParseAddrParts,
+    // ---- 定位诊断（验证精度 / 排查不显示原因）----
+    keywordSearch:function(kw){return new Promise(function(res){mapKeywordSearch(kw,res,{top1:false});});},
     candidates:function(c){var t=c&&c.id?customers.find(function(x){return x.id===c.id;}):c;return t?mapAddrCandidates(t):[];},
     listGeocoded:function(){
       return customers.filter(function(c){return mapHasGeo(c);}).map(function(c){
