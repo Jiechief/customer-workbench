@@ -332,10 +332,6 @@
   .card-body{padding:12px 16px;}
   .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 14px;margin-bottom:12px;}
   .info-field{font-size:12px;}
-  /* 客户附图 */
-  .cust-img{max-width:140px;max-height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;display:block;background:rgba(0,0,0,.04);}
-  .cust-img-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .cust-img-btns{display:flex;flex-direction:column;gap:4px;}
   .btn.mini{padding:2px 8px;font-size:12px;line-height:1.5;}
   /* 客户名称复制 */
   .name-wrap{position:relative;display:inline-flex;align-items:center;gap:2px;}
@@ -3163,55 +3159,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     return '<div class="info-field"><label>'+label+'</label><div class="info-value">'+v+'</div></div>';
   }
-  // ---------- 客户附图（单张，base64 存 localStorage） ----------
-  var custImgTarget="";
-  function cardImageRow(c){
-    var has=!!(c.image&&String(c.image).trim());
-    var inner;
-    if(has){
-      inner='<div class="cust-img-wrap"><img class="cust-img" src="'+c.image+'" title="点击放大" onclick="viewCustImage(\''+c.id+'\')">'+
-        '<div class="cust-img-btns"><button class="btn mini" onclick="uploadCustImage(\''+c.id+'\')">更换</button>'+
-        '<button class="btn mini" onclick="delCustImage(\''+c.id+'\')">删除</button></div></div>';
-    }else{
-      inner='<button class="btn" onclick="uploadCustImage(\''+c.id+'\')" title="选择一张图片（如名片/门头/产品图）">＋ 上传图片</button>';
-    }
-    return '<div class="info-field"><label>图片</label><div class="info-value">'+inner+'</div></div>';
+  // ---------- 卡片：地图显示开关 ----------
+  function cardMapRow(c){
+    var on=!!c.showOnMap;
+    var has=mapHasGeo(c);
+    return '<div class="info-field"><label>地图显示</label><div class="info-value">'+
+      '<button class="btn mini'+(on?" primary":"")+'" onclick="toggleCardMap(\''+c.id+'\')" title="'+(on?"点击从地图隐藏":"点击显示到地图")+'">'+(on?"● 显示中":"○ 未显示")+'</button>'+
+      (on&&!has?' <span style="font-size:11px;color:#c77">无坐标，需在地图选点</span>':'')+
+    '</div></div>';
   }
-  function uploadCustImage(id){
-    var f=$("custImgFile");
-    if(!f){f=document.createElement("input");f.type="file";f.accept="image/*";f.id="custImgFile";f.style.display="none";document.body.appendChild(f);}
-    f.value="";custImgTarget=id;
-    f.onchange=function(){
-      var file=f.files&&f.files[0];
-      if(!file)return;
-      if(!/^image\//.test(file.type||"")){toast("请选择图片");return;}
-      if(typeof fileToBase64Scaled!=="function"){toast("图片处理不可用");return;}
-      fileToBase64Scaled(file,function(dataUrl){
-        var c=customers.find(function(x){return x.id===custImgTarget;});
-        if(!c)return;
-        if(dataUrl.length>1600000){toast("图片较大（缩放后仍超 1.5MB），可能占用较多本地空间");}
-        c.image=dataUrl;c.updatedAt=Date.now();
-        saveCustomers();renderList();
-        toast("已上传图片");
-      });
-    };
-    f.click();
-  }
-  function delCustImage(id){
+  function toggleCardMap(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    if(!confirm("删除该客户的图片？"))return;
-    c.image=null;c.updatedAt=Date.now();
-    saveCustomers();renderList();toast("已删除图片");
-  }
-  function viewCustImage(id){
-    var c=customers.find(function(x){return x.id===id;});
-    if(!c||!c.image)return;
-    var ov=document.createElement("div");
-    ov.style.cssText="position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.78);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;";
-    ov.innerHTML='<img src="'+c.image+'" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:8px;">';
-    ov.onclick=function(){ov.remove();};
-    document.body.appendChild(ov);
+    c.showOnMap=!c.showOnMap;c.updatedAt=Date.now();
+    try{saveCustomers();}catch(e){}
+    if(mapInst)mapRefresh();
+    renderList();
+    toast(c.showOnMap?("「"+(c.name||"该客户")+"」已显示在地图"):"「"+(c.name||"该客户")+"」已从地图隐藏");
   }
   function renderRelatedCompanies(value){
     var arr=String(value||"").split(/[,，\n]+/).map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
@@ -3375,7 +3339,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+='</div>';
       }else{
         html+='<div class="info-grid">';
-        html+=cardImageRow(c);
+        html+=cardMapRow(c);
         html+=infoValue("联系人名称",c.contactName,false,c.id);
         html+=infoValue("职位",c.position,false,c.id);
         if(c.relatedCompany && String(c.relatedCompany).trim()){
