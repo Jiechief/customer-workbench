@@ -3164,18 +3164,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var on=!!c.showOnMap;
     var has=mapHasGeo(c);
     return '<div class="info-field"><label>地图显示</label><div class="info-value">'+
-      '<button class="btn mini'+(on?" primary":"")+'" onclick="toggleCardMap(\''+c.id+'\')" title="'+(on?"点击从地图隐藏":"点击显示到地图")+'">'+(on?"● 显示中":"○ 未显示")+'</button>'+
-      (on&&!has?' <span style="font-size:11px;color:#c77">无坐标，需在地图选点</span>':'')+
+      '<button class="btn mini'+(on?" primary":"")+'" onclick="showCustomerOnMap(\''+c.id+'\')" title="点击自动打开地图并定位该客户">'+(on?"● 显示中 · 查看":"在地图显示")+'</button>'+
+      (on&&!has?' <span style="font-size:11px;color:#c77">无坐标，点击后可图上选点</span>':'')+
     '</div></div>';
   }
-  function toggleCardMap(id){
+  function showCustomerOnMap(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
-    c.showOnMap=!c.showOnMap;c.updatedAt=Date.now();
+    c.showOnMap=true;c.updatedAt=Date.now();
     try{saveCustomers();}catch(e){}
-    if(mapInst)mapRefresh();
-    renderList();
-    toast(c.showOnMap?("「"+(c.name||"该客户")+"」已显示在地图"):"「"+(c.name||"该客户")+"」已从地图隐藏");
+    switchView("map");
+    var act=function(){
+      if(!mapInst){setTimeout(act,400);return;}
+      mapRefresh();
+      if(mapHasGeo(c)){mapLocate(id);}
+      else{toast("「"+(c.name||"该客户")+"」还没有坐标，请在图上点选它的位置");mapPick(id);}
+    };
+    setTimeout(act,1100);
   }
   function renderRelatedCompanies(value){
     var arr=String(value||"").split(/[,，\n]+/).map(function(s){return s.trim();}).filter(function(s){return s.length>0;});
