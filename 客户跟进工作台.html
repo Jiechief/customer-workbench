@@ -3434,7 +3434,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+='<button class="btn" onclick="openComms(\''+c.id+'\')">沟通记录</button>';
         html+='<button class="btn" onclick="openAI(\''+c.id+'\')">AI分析</button>';
         html+='<button class="btn'+(c.inFollowList?' success':'')+'" onclick="toggleFollowList(\''+c.id+'\')">'+(c.inFollowList?'已待跟进':'待跟进')+'</button>';
-        html+='<button class="btn" onclick="window.__map.locate(\''+c.id+'\')">地图定位</button>';
+        html+='<button class="btn" onclick="window.__map.locate(\''+c.id+'\')" title="在地图上解析并定位该客户的位置">地图解析</button>';
         html+='<span class="sep"></span>';
         html+='<button class="btn danger" onclick="delCustomer(\''+c.id+'\')">删除</button>';
       }
