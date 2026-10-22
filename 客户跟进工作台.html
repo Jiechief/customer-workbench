@@ -2451,8 +2451,31 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function aiInitAll(){aiInitProviders();aiLoadSceneModels();aiLoadUsageLog();}
   var searchTerm="", intentionFilterSet=new Set(), regionFilterSet=new Set(), ageFilter="all", sortMode="intention";
   var PAGE_SIZE=60, listEnd=PAGE_SIZE;
-  // 客户列表的滚动位置记忆：切到别的视图再回来时恢复，避免每次都跳回顶部
-  var listScrollMemo=0, listEndMemo=PAGE_SIZE, listRestorePending=false;
+  // 客户列表滚动位置记忆。
+  // 注意：真正滚动的是外层 .main-scroll（.list 自身不滚动），
+  // 之前记 #list.scrollTop 永远是 0，所以恢复时必然回到顶部。
+  var listScrollMemo=0, listEndMemo=PAGE_SIZE, listRestorePending=false, listScrollUntil=0;
+  function listScrollTargets(){
+    var arr=[];
+    var lb=$("list");
+    if(lb)arr.push(lb);
+    var sc=document.querySelector(".main-scroll");
+    if(sc)arr.push(sc);
+    return arr;
+  }
+  function listScrollRead(){
+    var max=0;
+    listScrollTargets().forEach(function(el){
+      if(el&&el.scrollTop>max)max=el.scrollTop;
+    });
+    return max;
+  }
+  function applyListScroll(y){
+    listScrollTargets().forEach(function(el){
+      if(!el)return;
+      try{el.scrollTop=y;}catch(e){}
+    });
+  }
   var currentCommCustId=null, currentAiCustId=null;
   var importData=null;
   var accioImportData=null;
@@ -3339,7 +3362,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- 客户列表（展示态 + 编辑态） ----------
-  function renderList(){
+  function renderListInner(){
     var list=getFiltered();
     var box=$("list");
     if(customers.length===0){
@@ -3438,33 +3461,44 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
   // 筛选条件变化时重置分页，从头展示
+  // 所有重绘都走这里：视图切回列表后的短时间窗口内，任何一次重绘都把滚动位置拉回去，
+  // 避免后续 renderList（编辑卡片、状态变化等）把位置重置为 0
+  function renderList(){
+    renderListInner();
+    if(Date.now()<listScrollUntil&&listScrollMemo>0)applyListScroll(listScrollMemo);
+  }
   // keep=true：视图切换回来时沿用上次的已加载条数与滚动位置；否则视为筛选变化，回到顶部
   function refreshList(keep){
     if(keep&&listRestorePending){
       var total=getFiltered().length;
       listEnd=Math.min(Math.max(listEndMemo,PAGE_SIZE),Math.max(total,PAGE_SIZE));
+      listRestorePending=false;
+      listScrollUntil=Date.now()+800;
       renderList();
       restoreListScroll();
+    }else if(keep){
+      // 没有待恢复的位置（例如首次进入）：按普通刷新处理
+      listEnd=PAGE_SIZE;
+      renderList();
     }else{
       listRestorePending=false;
+      listScrollUntil=0;
       listScrollMemo=0;
       listEnd=PAGE_SIZE;
       renderList();
-      var lb=$("list");
-      if(lb)lb.scrollTop=0;
+      applyListScroll(0);
     }
     if(mapOpened&&mapInst)mapRefresh();
   }
-  // 恢复滚动位置：渲染后立即设一次，再在下一帧与 60ms 后各校正一次
-  // （卡片展开动画、图片解码等重排会把 scrollTop 拉回顶部）
+  // 恢复滚动位置：立即设一次，再在下一帧、80ms、200ms 各校正一次。
+  // 视图刚从 display:none 切回来时容器高度还没算好，scrollTop 会被浏览器 clamp 成 0，
+  // 所以必须等布局完成后再补设几次。
   function restoreListScroll(){
-    var lb=$("list");
-    if(!lb)return;
     var y=listScrollMemo||0;
-    listRestorePending=false;
-    try{lb.scrollTop=y;}catch(e){}
-    requestAnimationFrame(function(){try{lb.scrollTop=y;}catch(e){}});
-    setTimeout(function(){try{if(Math.abs(lb.scrollTop-y)>2)lb.scrollTop=y;}catch(e){}},60);
+    applyListScroll(y);
+    requestAnimationFrame(function(){applyListScroll(y);});
+    setTimeout(function(){applyListScroll(y);},80);
+    setTimeout(function(){applyListScroll(y);},200);
   }
 
   // ---------- 总览视图 ----------
@@ -5531,8 +5565,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function switchView(view){
     // 离开客户列表前先读 scrollTop：视图一旦 display:none，滚动位置就丢了
     if(currentView==="customers"&&view!=="customers"){
-      var lbx=$("list");
-      if(lbx)listScrollMemo=lbx.scrollTop||0;
+      listScrollMemo=listScrollRead();
       listEndMemo=listEnd;
       listRestorePending=true;
     }
