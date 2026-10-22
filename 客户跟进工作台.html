@@ -7691,13 +7691,65 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     el.classList.add("map-flash");
     setTimeout(function(){el.classList.remove("map-flash");},2400);
   }
+  // 客户卡片「地图解析」/ 弹层定位入口
   function mapLocate(id){
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
+    // 关键：mapOpen() 只在当前视图里初始化画布，并不会切到地图页。
+    // 从客户列表点按钮时如果不切视图，地图在后台初始化，界面上什么都不变 —— 表现为「点了没反应」。
+    if(currentView!=="map"&&typeof switchView==="function")switchView("map");
     if(!mapOpened)mapOpen();
-    if(!mapHasGeo(c)){toast("该客户还没有坐标，点它标记的「移动位置」在地图上选点");return;}
-    var fly=function(){if(mapInst){try{mapInst.setZoomAndCenter(14,[c.geo.lng,c.geo.lat]);}catch(e){}}};
-    if(mapInst)fly();else setTimeout(fly,1600);
+    if(mapHasGeo(c)){
+      var tries=0;
+      var fly=function(){
+        if(!mapInst){
+          if(tries++<20){setTimeout(fly,500);return;}
+          toast("地图加载较慢，请稍后再点一次「地图解析」");return;
+        }
+        try{mapInst.setZoomAndCenter(15,[c.geo.lng,c.geo.lat]);}catch(e){}
+      };
+      fly();
+      return;
+    }
+    // 还没有坐标：直接跑一次解析（地址优先，其次公司名）
+    mapResolveForCustomer(c);
+  }
+  // 「地图解析」的核心：按地址/公司名解析出坐标，并自动上图
+  function mapResolveForCustomer(c){
+    if(!c)return;
+    var hasAddr=String(c.address||"").trim().length>=2;
+    var hasName=String(c.name||"").trim().length>=2;
+    if(!hasAddr&&!hasName){toast("该客户没有地址和公司名，无法解析");return;}
+    if(!mapHasKey()){toast("还没配置高德 Key，先点「配置 Key」");return;}
+    mapSetStat("正在解析「"+(c.name||"该客户")+"」的位置…");
+    toast("正在解析地图位置…");
+    var wait=0;
+    var run=function(){
+      mapLoadSdk(function(A,err){
+        // 刚切到地图页时 SDK 还在下载，这里等它就绪再解析
+        if(err==="loading"&&wait++<20){setTimeout(run,600);return;}
+        if(err||!A){
+          mapSetStat("地图未就绪，暂时无法解析");
+          toast(err==="nokey"?"还没配置高德 Key，先点「配置 Key」":"地图未就绪，无法解析");
+          return;
+        }
+        mapPreciseCustomer(c,function(g){
+        if(mapApplyGeo(c,g)){
+          c.showOnMap=true;            // 解析出来就上图，否则用户仍然看不到
+          c.updatedAt=Date.now();
+          try{saveCustomers();}catch(e){}
+          mapRefresh();
+          if(mapInst){try{mapInst.setZoomAndCenter(15,[c.geo.lng,c.geo.lat]);}catch(e){}}
+          mapSetStat("已解析到「"+(g.addr||g.poiName||g.lvl||"位置")+"」");
+          toast("已解析「"+(c.name||"该客户")+"」的位置并显示在地图上");
+        }else{
+          mapSetStat("没解析到位置，可点标记「移动位置」手动选点");
+          toast("没解析到位置，可在「移动位置」里手动选点");
+        }
+        });
+      });
+    };
+    run();
   }
   function mapPick(id){
     var c=customers.find(function(x){return x.id===id;});
@@ -7728,7 +7780,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
     calibSave:mapCalibSave,calibCancel:mapCalibCancel,fixDup:mapFixDupGroups,dupGroups:mapDupGroups,
-    applyLabels:mapApplyLabels,
+    applyLabels:mapApplyLabels,resolve:mapResolveForCustomer,
     reprecise:mapRepreciseAll,
     repreciseTargets:function(){return mapRepreciseTargets().length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
