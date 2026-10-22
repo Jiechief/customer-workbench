@@ -1738,6 +1738,7 @@ body{background:var(--bg);}
           </div>
           <div class="map-stats-row" id="mapStatsRow"></div>
           <div class="map-region-row" id="mapRegionBar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px 8px;font-size:12px;"></div>
+          <div class="map-calib-row" id="mapCalibBar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:rgba(224,108,108,.08);border:1px solid rgba(224,108,108,.35);font-size:13px;"></div>
           <div class="map-stat-line" id="mapStat"></div>
           <div class="map-selection-bar" id="mapSelBar" style="display:none;">
             <span id="mapSelCount">已选 0 家</span>
@@ -6825,27 +6826,76 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     });
   }
-  // 手动校准：点地图任意位置，把该点存为该区域的中心
+  // 手动校准：先在地图上选点（有红圈预览），再点「保存为中心」才写入，避免误触直接覆盖
+  var mapCalibState=null;
+  var mapCalibHandler=null;
+  function mapCalibBar(html,show){
+    var el=$("mapCalibBar");if(!el)return;
+    if(!show){el.style.display="none";el.innerHTML="";return;}
+    el.style.display="flex";el.innerHTML=html;
+  }
+  function mapCalibRender(){
+    var st=mapCalibState;if(!st)return;
+    if(st.lng==null){
+      mapCalibBar('<span>地点校准：在图上点一下「'+esc(st.rg)+'」的中心位置</span>'+
+        '<button class="btn" type="button" onclick="window.__map.calibCancel()">取消</button>',true);
+      return;
+    }
+    mapCalibBar('<span>区域：<b>'+esc(st.rg)+'</b></span>'+
+      '<span style="color:#888">坐标 '+Number(st.lng).toFixed(5)+', '+Number(st.lat).toFixed(5)+'</span>'+
+      '<button class="btn primary" type="button" onclick="window.__map.calibSave()">保存为中心</button>'+
+      '<button class="btn" type="button" onclick="window.__map.calibCancel()">取消</button>',true);
+  }
+  function mapCalibFinish(){
+    if(mapCalibHandler&&mapInst){try{mapInst.off("click",mapCalibHandler);}catch(e){}}
+    mapCalibHandler=null;
+    var st=mapCalibState;
+    if(st&&st.mk&&mapInst){try{mapInst.remove(st.mk);}catch(e){}}
+    mapCalibState=null;
+    try{if(mapInst)mapInst.setDefaultCursor("default");}catch(e){}
+    mapCalibBar("",false);
+  }
   function mapCalibrateRegion(){
     var rg=mapFilterState.region;
     if(!rg||rg==="all"){toast("请先在「地区」里选择一个区域");return;}
     if(!mapInst){toast("地图还没就绪");return;}
-    var old=mapPickId;mapPickId="__region__";
-    toast("请在地图上点击「"+rg+"」的中心位置（Esc 不做也按点选执行）");
-    setTimeout(function(){
+    mapCalibFinish();
+    mapCalibState={rg:rg,lng:null,lat:null,mk:null};
+    mapCalibHandler=function(e){
+      var st=mapCalibState;
+      if(!st||!e||!e.lnglat)return;
+      st.lng=e.lnglat.lng;st.lat=e.lnglat.lat;
       try{
-        mapInst.off("click");
-        mapInst.on("click",function(e){
-          if(mapPickId!=="__region__"||!e.lnglat)return;
-          var v={lng:e.lnglat.lng,lat:e.lnglat.lat,zoom:mapInst.getZoom(),lvl:"manual",name:rg,src:"manual",at:Date.now()};
-          mapRegionCacheSet(rg,v);
-          mapPickId=old||"";
-          try{mapInst.off("click");mapBindClick();}catch(err){}
-          mapSetRegionBar(rg,v,"");
-          toast("已把「"+rg+"」的中心设到当前位置");
+        if(st.mk){mapInst.remove(st.mk);}
+        st.mk=new mapAMap.Marker({
+          position:[st.lng,st.lat],
+          content:'<svg width="30" height="30" viewBox="0 0 24 24" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))"><circle cx="12" cy="12" r="9" fill="rgba(224,108,108,.18)" stroke="#e06c6c" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#e06c6c"/></svg>',
+          offset:new mapAMap.Pixel(-15,-15),
+          zIndex:999,
+          bubble:true
         });
-      }catch(err){mapPickId=old||"";toast("校准失败，请重试");}
-    },150);
+        mapInst.add(st.mk);
+      }catch(err){}
+      mapCalibRender();
+    };
+    mapInst.on("click",mapCalibHandler);
+    try{mapInst.setDefaultCursor("crosshair");}catch(e){}
+    mapCalibRender();
+    toast("在图上点选位置后，按「保存为中心」生效");
+  }
+  function mapCalibSave(){
+    var st=mapCalibState;
+    if(!st||st.lng==null){toast("请先在图上点一下要保存的位置");return;}
+    var rg=st.rg;
+    var v={lng:st.lng,lat:st.lat,zoom:mapInst?mapInst.getZoom():13,lvl:"manual",name:rg,src:"manual",at:Date.now()};
+    mapRegionCacheSet(rg,v);
+    mapCalibFinish();
+    mapSetRegionBar(rg,v,"已手动校准");
+    toast("已把「"+rg+"」的中心保存到当前位置");
+  }
+  function mapCalibCancel(){
+    mapCalibFinish();
+    toast("已取消校准");
   }
   function mapClearRegionCenter(){
     var rg=mapFilterState.region;
@@ -7464,6 +7514,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
+    calibSave:mapCalibSave,calibCancel:mapCalibCancel,
     reprecise:mapRepreciseAll,
     repreciseTargets:function(){return mapRepreciseTargets().length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
