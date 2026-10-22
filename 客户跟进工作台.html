@@ -7068,6 +7068,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // 点击 marker 显示详情 popover
   function mapBindClick(){
     if(!mapInst)return;
+    if(!mapZoomBound){
+      mapZoomBound=true;
+      try{mapInst.on("zoomend",mapApplyLabels);}catch(e){}
+    }
     try{
       mapInst.on("click",function(e){
         if(mapPickId)return; // 选点模式走 mapPick 处理器
@@ -7309,9 +7313,45 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     mapToggleSpread();
   }
 
+  // ---------- 缩放显示公司名 ----------
+  // 只在放大到较大级别时显示名称：低级别下几十个名字会互相压盖，反而更看不清。
+  // 高德 zoom 上限 20，这里取 17 起显示（再往上都显示）。
+  var MAP_LABEL_MIN_ZOOM=17;
+  var mapMarkerIndex=[];
+  var mapZoomBound=false;
+  function mapMarkerLabelHtml(c,isSel){
+    var nm=esc(String((c&&c.name)||"").trim()||"未命名");
+    return '<div style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+
+      'font-size:12px;line-height:18px;padding:0 6px;border-radius:4px;background:rgba(255,255,255,.95);'+
+      'color:#222;border:1px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);">'+
+      (isSel?'<span style="color:#e06c6c;font-weight:700">✓ </span>':'')+nm+'</div>';
+  }
+  var MAP_LABEL_HIDDEN='<div style="display:none"></div>';
+  function mapMarkerLabelOpt(c,isSel,pl){
+    if(!pl)return null;
+    var on=mapInst?mapInst.getZoom()>=MAP_LABEL_MIN_ZOOM:false;
+    return {
+      content:(on||isSel)?mapMarkerLabelHtml(c,isSel):MAP_LABEL_HIDDEN,
+      direction:"top",
+      offset:new mapAMap.Pixel(pl.ox,pl.oy-4)
+    };
+  }
+  // 缩放结束后统一切换：不重建标记，只改 label，避免闪烁
+  function mapApplyLabels(){
+    if(!mapInst)return;
+    var on=mapInst.getZoom()>=MAP_LABEL_MIN_ZOOM;
+    mapMarkerIndex.forEach(function(it){
+      try{
+        if(!on&&!it.isSel)it.m.setLabel({content:MAP_LABEL_HIDDEN,direction:"top",offset:new mapAMap.Pixel(it.pl.ox,it.pl.oy-4)});
+        else it.m.setLabel(mapMarkerLabelOpt(it.c,it.isSel,it.pl));
+      }catch(e){}
+    });
+  }
+
   function mapRefresh(){
     if(!mapInst)return;
     var list=mapFiltered();
+    mapMarkerIndex=[];
     var colorOf={high:"#e06c6c",mid:"#d8a740",low:"#5a9bd4"};
     // 意向等级存的是中文（高/中/低/已合作/断约），必须按中文取值；
     // 以前按英文键取会得到 undefined，SVG 的 fill 拿不到颜色就渲染成黑色。
@@ -7348,8 +7388,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           '</svg>',
         offset:new mapAMap.Pixel(bx+pl.ox,by+pl.oy),
         zIndex:isSel?200:(pl.gn>1?150:100),
-        label:isSel?{content:"✓",offset:new mapAMap.Pixel(-6+pl.ox,-30+pl.oy)}:null
+        label:mapMarkerLabelOpt(c,isSel,pl)
       });
+      mapMarkerIndex.push({m:m,c:c,isSel:isSel,pl:pl});
       m.on("click",function(){mapMarkerClickGuard=Date.now();mapShowPopover(c,{lng:pl.lng,lat:pl.lat},pl.grp);});
       if(pl.gn>1)direct.push(m);else ms.push(m);
     });
@@ -7597,6 +7638,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
     calibSave:mapCalibSave,calibCancel:mapCalibCancel,fixDup:mapFixDupGroups,dupGroups:mapDupGroups,
+    applyLabels:mapApplyLabels,
     reprecise:mapRepreciseAll,
     repreciseTargets:function(){return mapRepreciseTargets().length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
