@@ -6262,6 +6262,77 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     run();
   }
 
+  // ---------- 坐标重合治理 ----------
+  // 批量解析时只取高德返回的第一条 POI，多个客户名相近就会全部落到同一个 POI/地标，
+  // 于是几十家客户挤在一个点上。这里改成：拿全部候选，优先挑「没被其他客户占用」的那条。
+  function mapGeoUsedByOther(lng,lat,excludeId){
+    for(var i=0;i<customers.length;i++){
+      var c=customers[i];
+      if(!c.geo||c.id===excludeId)continue;
+      if(Math.abs(Number(c.geo.lng)-lng)<1e-6&&Math.abs(Number(c.geo.lat)-lat)<1e-6)return true;
+    }
+    return false;
+  }
+  function mapPickDistinctPoi(c,cb){
+    var nm=String(c&&c.name||"").trim();
+    var addr=String(c&&c.address||"").trim();
+    var q=nm||addr;                       // 没公司名时用地址兜底
+    if(!q){cb(null);return;}
+    mapKeywordSearch(q,function(list){
+      if(!list||!list.length){cb(null);return;}
+      var pick=null;
+      for(var i=0;i<list.length;i++){
+        if(!mapGeoUsedByOther(list[i].lng,list[i].lat,c.id)){pick=list[i];break;}
+      }
+      // 候选全被占用（真·同一栋楼/同名公司）：保留第一条，但降分提示「不够可靠」
+      if(!pick){pick=list[0];pick.score=Math.min(Number(pick.score)||60,60);}
+      cb(pick);
+    },{});
+  }
+  // 统计坐标完全重合的客户分组
+  function mapDupGroups(){
+    var idx={},groups=[];
+    customers.forEach(function(c){
+      if(!c.geo||!isFinite(c.geo.lng)||!isFinite(c.geo.lat))return;
+      var k=Number(c.geo.lng).toFixed(6)+","+Number(c.geo.lat).toFixed(6);
+      if(!idx[k]){idx[k]=[];groups.push(idx[k]);}
+      idx[k].push(c);
+    });
+    return groups.filter(function(g){return g.length>=2;});
+  }
+  var mapFixingDup=false;
+  function mapFixDupGroups(){
+    if(mapFixingDup){toast("正在纠正中，请稍候…");return;}
+    var groups=mapDupGroups();
+    if(!groups.length){toast("当前没有坐标重合的客户");return;}
+    var list=[];
+    groups.forEach(function(g){list=list.concat(g);});
+    if(!confirm("检测到 "+groups.length+" 处坐标重合，涉及 "+list.length+" 家客户。\n\n"+
+      "将逐个按公司名在高德重新检索，并优先选取与其他客户不重复的地点。\n"+
+      "大约需要 "+list.length+" 秒，完成前请不要关闭页面。"))return;
+    mapFixingDup=true;
+    var i=0,ok=0,fail=0,t0=Date.now();
+    var step=function(){
+      if(i>=list.length||Date.now()-t0>200000){
+        mapFixingDup=false;
+        try{saveCustomers();}catch(e){}
+        if(mapInst)mapRefresh();
+        var left=mapDupGroups().length;
+        mapSetStat("重合纠正完成：更新 "+ok+" 家"+(fail?("，未找到 "+fail+" 家"):"")+
+          (left?("，仍有 "+left+" 处重合"):"，已无重合"));
+        toast("重合纠正完成：更新 "+ok+" 家"+
+          (left?("，仍有 "+left+" 处重合（多为同一栋楼或同名公司，可用「移动位置」手动分开）"):""));
+        return;
+      }
+      var c=list[i++];
+      mapSetStat("纠正重合坐标 "+i+"/"+list.length+"："+(c.name||""));
+      mapPickDistinctPoi(c,function(g){
+        if(g&&mapApplyGeo(c,g))ok++;else fail++;
+        setTimeout(step,200);
+      });
+    };
+    step();
+  }
   // 供搜索框用：按客户资料拼出几组关键词，合并去重后一次性搜索
   function mapKeywordOf(c){
     var out=[],push=function(v){
@@ -6417,11 +6488,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
       var c=list[i++];
       mapSetStat("正在高德搜公司名 "+i+"/"+limit+"："+(c.name||""));
-      mapKeywordSearch(c.name,function(p){
+      mapPickDistinctPoi(c,function(p){
         if(p&&mapApplyGeo(c,p))ok++;
         else fail++;
         setTimeout(step,220);
-      },{top1:true});
+      });
     };
     step();
   }
@@ -7242,13 +7313,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!mapInst)return;
     var list=mapFiltered();
     var colorOf={high:"#e06c6c",mid:"#d8a740",low:"#5a9bd4"};
+    // 意向等级存的是中文（高/中/低/已合作/断约），必须按中文取值；
+    // 以前按英文键取会得到 undefined，SVG 的 fill 拿不到颜色就渲染成黑色。
+    var mapIntentionColor=function(c){
+      var it=String((c&&c.intention)||"").trim();
+      if(it==="高"||it==="高意向")return colorOf.high;
+      if(it==="中"||it==="中意向")return colorOf.mid;
+      if(it==="低"||it==="低意向")return colorOf.low;
+      if(it==="已合作")return "#5cb85c";
+      if(it==="断约")return "#9aa0a6";
+      return colorOf.low;
+    };
     var built=mapBuildPlans(list);
     var plans=built.plans,groups=built.groups;
     var ms=[],direct=[],ok=0;
     plans.forEach(function(pl){
       var c=pl.c;
       ok++;
-      var col=c.markerColor||colorOf[c.intention||"low"];
+      var col=c.markerColor||mapIntentionColor(c);
       var isSel=!!mapSelection[c.id];
       var sc=(c.geo&&c.geo.score)||0;
       // 只到区县/市的历史兜底坐标：白点画小，和精确坐标区分开
@@ -7277,7 +7359,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(ok===0){
       mapSetStat("当前没有显示中的客户 → 点「上图管理」选择要显示的客户");
     }else if(ov.length&&mapOverlapSpread){
-      mapSetStat("地图上显示 "+ok+" 家客户 · "+ov.length+" 处坐标重合（共 "+ovN+" 家）已错开显示");
+      mapSetStat("地图上显示 "+ok+" 家客户 · "+ov.length+" 处坐标重合（共 "+ovN+" 家）已错开显示；可在「上图管理 → 纠正重合坐标」改成真实位置");
     }else if(ov.length){
       mapSetStat("地图上显示 "+ok+" 家客户 · 其中 "+ovN+" 家坐标重合（可开「重叠区分」错开显示）");
     }else{
@@ -7331,7 +7413,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       '<h3>选择上图客户 <span id="mapShowModalCount" style="color:#888;font-size:12px;font-weight:normal">'+shown+' 家显示中</span></h3>'+
       '<div style="font-size:12px;color:#888;margin:6px 0">勾选要显示在地图上的客户。无坐标的客户勾选后，点它标记的「移动位置」在地图上选点。</div>'+
       '<input type="text" id="mapShowSearch" class="search" placeholder="搜索客户名…" style="width:100%;box-sizing:border-box;margin:8px 0">'+
-      '<div style="display:flex;gap:8px;margin:0 0 6px;flex-wrap:wrap"><button class="btn" onclick="window.__map.allShow(true)">全部上图</button><button class="btn" onclick="window.__map.allShow(false)">清除全部</button><button class="btn primary" onclick="window.__map.poiLocateAll()" title="按公司名称在高德检索真实地址并标注">按公司名定位</button></div>'+
+      '<div style="display:flex;gap:8px;margin:0 0 6px;flex-wrap:wrap"><button class="btn" onclick="window.__map.allShow(true)">全部上图</button><button class="btn" onclick="window.__map.allShow(false)">清除全部</button><button class="btn primary" onclick="window.__map.poiLocateAll()" title="按公司名称在高德检索真实地址并标注">按公司名定位</button><button class="btn" onclick="window.__map.fixDup()" title="把坐标完全重合的客户逐个重新检索，优先选取不重复的地点">纠正重合坐标</button></div>'+
       '<div id="mapShowList" style="max-height:52vh;overflow:auto"></div>'+
       '<div style="text-align:right;margin-top:12px"><button class="btn" onclick="window.__map.closeShowModal()">关闭</button></div>'+
     '</div>';
@@ -7514,7 +7596,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
     calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
-    calibSave:mapCalibSave,calibCancel:mapCalibCancel,
+    calibSave:mapCalibSave,calibCancel:mapCalibCancel,fixDup:mapFixDupGroups,dupGroups:mapDupGroups,
     reprecise:mapRepreciseAll,
     repreciseTargets:function(){return mapRepreciseTargets().length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
