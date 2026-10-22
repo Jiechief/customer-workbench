@@ -2451,6 +2451,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function aiInitAll(){aiInitProviders();aiLoadSceneModels();aiLoadUsageLog();}
   var searchTerm="", intentionFilterSet=new Set(), regionFilterSet=new Set(), ageFilter="all", sortMode="intention";
   var PAGE_SIZE=60, listEnd=PAGE_SIZE;
+  // 客户列表的滚动位置记忆：切到别的视图再回来时恢复，避免每次都跳回顶部
+  var listScrollMemo=0, listEndMemo=PAGE_SIZE, listRestorePending=false;
   var currentCommCustId=null, currentAiCustId=null;
   var importData=null;
   var accioImportData=null;
@@ -3436,7 +3438,34 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
   // 筛选条件变化时重置分页，从头展示
-  function refreshList(){listEnd=PAGE_SIZE;renderList();if(mapOpened&&mapInst)mapRefresh();}
+  // keep=true：视图切换回来时沿用上次的已加载条数与滚动位置；否则视为筛选变化，回到顶部
+  function refreshList(keep){
+    if(keep&&listRestorePending){
+      var total=getFiltered().length;
+      listEnd=Math.min(Math.max(listEndMemo,PAGE_SIZE),Math.max(total,PAGE_SIZE));
+      renderList();
+      restoreListScroll();
+    }else{
+      listRestorePending=false;
+      listScrollMemo=0;
+      listEnd=PAGE_SIZE;
+      renderList();
+      var lb=$("list");
+      if(lb)lb.scrollTop=0;
+    }
+    if(mapOpened&&mapInst)mapRefresh();
+  }
+  // 恢复滚动位置：渲染后立即设一次，再在下一帧与 60ms 后各校正一次
+  // （卡片展开动画、图片解码等重排会把 scrollTop 拉回顶部）
+  function restoreListScroll(){
+    var lb=$("list");
+    if(!lb)return;
+    var y=listScrollMemo||0;
+    listRestorePending=false;
+    try{lb.scrollTop=y;}catch(e){}
+    requestAnimationFrame(function(){try{lb.scrollTop=y;}catch(e){}});
+    setTimeout(function(){try{if(Math.abs(lb.scrollTop-y)>2)lb.scrollTop=y;}catch(e){}},60);
+  }
 
   // ---------- 总览视图 ----------
   function renderDashboard(){
@@ -5500,6 +5529,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.exportPlanDoc=exportPlanDoc;
 
   function switchView(view){
+    // 离开客户列表前先读 scrollTop：视图一旦 display:none，滚动位置就丢了
+    if(currentView==="customers"&&view!=="customers"){
+      var lbx=$("list");
+      if(lbx)listScrollMemo=lbx.scrollTop||0;
+      listEndMemo=listEnd;
+      listRestorePending=true;
+    }
     currentView=view;
     editingId=null;
     if(typeof closePick=="function")closePick();
@@ -5515,7 +5551,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       el.classList.toggle("active",el.getAttribute("data-view")===view);
     });
     if(view==="dashboard")renderDashboard();
-    else if(view==="customers"){renderStats();refreshList();if(mapOpened&&mapInst)mapRefresh();}
+    else if(view==="customers"){renderStats();refreshList(true);}
     else if(view==="map"){mapBindToolbar();mapAutoOpen();}
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
     else if(view==="prompthelper"){phRender();}
