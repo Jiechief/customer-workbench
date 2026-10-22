@@ -1737,6 +1737,7 @@ body{background:var(--bg);}
             <button class="btn" type="button" onclick="window.__map.openKeySetting()">配置 Key</button>
           </div>
           <div class="map-stats-row" id="mapStatsRow"></div>
+          <div class="map-region-row" id="mapRegionBar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px 8px;font-size:12px;"></div>
           <div class="map-stat-line" id="mapStat"></div>
           <div class="map-selection-bar" id="mapSelBar" style="display:none;">
             <span id="mapSelCount">已选 0 家</span>
@@ -6598,13 +6599,267 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function mapInWz(lng,lat){
     return lng>=MAP_WZ_BOUNDS.minLng&&lng<=MAP_WZ_BOUNDS.maxLng&&lat>=MAP_WZ_BOUNDS.minLat&&lat<=MAP_WZ_BOUNDS.maxLat;
   }
-  // 区域锚点：同名地名歧义时（如「塘下」在瑞安/永嘉都有），给该区域锚定一个已知正确的坐标。
-  // 解析结果必须离锚点足够近才采信，否则判定为同名歧义、直接落到锚点。可继续补充其它区域。
+  // ---------- 区域中心：筛选跳转只显示区域中心，不再拼「温州市+区域名」去 Geocoder 碰运气 ----------
+  // 说明：区域名可能自带市/县/镇层级，或本身不是行政区（开发区、园区）。这里把常见写法固化到
+  // 「中心坐标 + 层级 + 缩放」，先秒开定位，再由高德行政区划库在后台校正；解析不到的可用「校准中心」手动指定。
+  // lvl: city=县级市/县 | district=区 | town=镇/街道 | zone=开发区/园区
   var MAP_REGION_ANCHORS={
-    "塘下":{lng:120.6938,lat:27.8212,name:"瑞安市塘下镇"}
+    "温州经济技术开发区":{lng:120.8016,lat:27.8262,lvl:"zone",zoom:13,name:"温州经济技术开发区（龙湾·滨海十七路）",
+      alias:["温州经开区","经开区","温州湾新区","温州经济技术开发区管委会","浙南产业集聚区"]},
+    "滨海":{lng:120.8300,lat:27.8450,lvl:"zone",zoom:11,name:"温州滨海园区（龙湾沿海一带，近似中心）",
+      alias:["滨海园区","滨海新区","滨海工业园"]},
+    "上塘":{lng:120.6910,lat:28.1539,lvl:"town",zoom:13,name:"永嘉县上塘（县城）",
+      alias:["上塘镇","上塘中心城区","北城街道","南城街道"]},
+    "桥下":{lng:120.5555,lat:28.1692,lvl:"town",zoom:13,name:"永嘉县桥下镇",alias:["桥下镇"]},
+    "三江":{lng:120.6833,lat:28.0501,lvl:"town",zoom:13,name:"永嘉县三江街道",alias:["三江街道","三江商务区"]},
+    "飞云":{lng:120.6160,lat:27.7643,lvl:"town",zoom:13,name:"瑞安市飞云街道",alias:["飞云镇","飞云街道"]},
+    "瑞安":{lng:120.6462,lat:27.7793,lvl:"city",zoom:11,name:"瑞安市",alias:["瑞安市","瑞安市区"]},
+    "北白象":{lng:120.8550,lat:28.0330,lvl:"town",zoom:13,name:"乐清市北白象镇",alias:["北白象镇","白象镇","白象"]},
+    "乐清":{lng:120.9671,lat:28.1161,lvl:"city",zoom:11,name:"乐清市",alias:["乐清市"]},
+    "玉环":{lng:121.2323,lat:28.1284,lvl:"city",zoom:11,name:"玉环市（台州）",alias:["玉环市","玉环县"]},
+    "塘下":{lng:120.6899,lat:27.8245,lvl:"town",zoom:13,name:"瑞安市塘下镇",alias:["塘下镇"]}
   };
-  var MAP_ANCHOR_NEAR_M=15000; // 锚点15km内视为同一区域
-  function mapRegionAnchor(rg){return (rg&&MAP_REGION_ANCHORS[rg])||null;}
+  var MAP_REGION_ANCHOR_KEYS=null;
+  var MAP_LEVEL_ZOOM={country:7,province:7,city:10,district:12,street:13};
+  // 区域名归一：去空格、去括号注释，便于「滨海园区」「滨海（经开区）」之类写法命中
+  function mapNormRegion(v){
+    return String(v==null?"":v).replace(/\s/g,"").replace(/[（(][^）)]*[）)]/g,"").replace(/[·・]/g,"").trim();
+  }
+  function mapRegionBare(v){return mapNormRegion(v).replace(/(市|县|区|镇|乡|街道|开发区|园区|新区)$/,"");}
+  // 锚点查找：全等 → 别名 → 去层级后缀 → 互相包含（至少 2 字，避免单字误命中）
+  function mapRegionAnchor(rg){
+    var k=mapNormRegion(rg);
+    if(!k)return null;
+    if(MAP_REGION_ANCHORS[k])return MAP_REGION_ANCHORS[k];
+    if(!MAP_REGION_ANCHOR_KEYS){
+      MAP_REGION_ANCHOR_KEYS={};
+      Object.keys(MAP_REGION_ANCHORS).forEach(function(n){
+        MAP_REGION_ANCHOR_KEYS[n]=n;
+        (MAP_REGION_ANCHORS[n].alias||[]).forEach(function(a){if(!MAP_REGION_ANCHOR_KEYS[a])MAP_REGION_ANCHOR_KEYS[a]=n;});
+      });
+    }
+    if(MAP_REGION_ANCHOR_KEYS[k])return MAP_REGION_ANCHORS[MAP_REGION_ANCHOR_KEYS[k]];
+    var bare=mapRegionBare(k);
+    if(bare&&bare!==k){
+      if(MAP_REGION_ANCHORS[bare])return MAP_REGION_ANCHORS[bare];
+      if(MAP_REGION_ANCHOR_KEYS[bare])return MAP_REGION_ANCHORS[MAP_REGION_ANCHOR_KEYS[bare]];
+    }
+    var keys=Object.keys(MAP_REGION_ANCHORS);
+    // 复合写法（如「瑞安塘下」「乐清北白象」）：中文地名习惯前上级、后下级，结尾匹配优先且取最长
+    var endKey="",endLen=0;
+    keys.forEach(function(kk){
+      if(kk.length>=2&&k.length>=kk.length&&k.slice(-kk.length)===kk&&kk.length>endLen){endKey=kk;endLen=kk.length;}
+    });
+    if(endKey)return MAP_REGION_ANCHORS[endKey];
+    // 其余包含匹配同样取最长，避免「瑞安塘下」落到「瑞安」
+    var incKey="",incLen=0;
+    keys.forEach(function(kk){
+      if(kk.length>=2&&(k.indexOf(kk)>=0||kk.indexOf(k)>=0)&&kk.length>incLen){incKey=kk;incLen=kk.length;}
+    });
+    return incKey?MAP_REGION_ANCHORS[incKey]:null;
+  }
+  // 客户资料里的地区文本 与 筛选选中的地区 是否算同一区域（宽松匹配，避免「瑞安」筛不出「瑞安塘下」）
+  function mapRegionMatch(a,b){
+    a=mapNormRegion(a);b=mapNormRegion(b);
+    if(!a||!b)return false;
+    if(a===b)return true;
+    var ba=mapRegionBare(a),bb=mapRegionBare(b);
+    if(ba&&bb&&ba===bb)return true;
+    return (a.length>=2&&b.indexOf(a)>=0)||(b.length>=2&&a.indexOf(b)>=0);
+  }
+  // 区域中心缓存：高德解析/手动校准的结果写 localStorage，下次直接秒开
+  var MAP_REGION_CACHE_KEY="cwRegionCenter";
+  function mapRegionCacheAll(){
+    try{var t=localStorage.getItem(MAP_REGION_CACHE_KEY);return t?JSON.parse(t):{};}catch(e){return {};}
+  }
+  function mapRegionCacheGet(rg){
+    var c=mapRegionCacheAll();var k=mapNormRegion(rg);
+    var v=c[k];
+    if(v&&isFinite(v.lng)&&isFinite(v.lat))return v;
+    // 别名互通：缓存了「滨海园区」，选「滨海」也应命中；多个命中时取最贴近（最长）的那个
+    var best=null,bestLen=-1;
+    Object.keys(c).forEach(function(x){
+      var w=c[x];
+      if(!w||!isFinite(w.lng)||!isFinite(w.lat))return;
+      if(!mapRegionMatch(x,k))return;
+      var lv=(mapNormRegion(x)===k)?1000:mapNormRegion(x).length;
+      if(lv>bestLen){best=w;bestLen=lv;}
+    });
+    return best;
+  }
+  function mapRegionCacheSet(rg,v){
+    var c=mapRegionCacheAll();c[mapNormRegion(rg)]=v;
+    try{localStorage.setItem(MAP_REGION_CACHE_KEY,JSON.stringify(c));}catch(e){}
+  }
+  // 用高德行政区划库解析区域中心：层级由高德自己判定（市/县/区/镇/街道），坐标是官方中心点
+  function mapDistrictCenter(name,cb){
+    if(!mapAMap||!name){cb(null);return;}
+    var settled=false,t0=Date.now();
+    var fin=function(v){if(settled)return;settled=true;cb(v);};
+    var run=function(){
+      var kw=String(name);
+      var keys=[kw];
+      var bare=mapRegionBare(kw);
+      if(bare&&bare!==kw)keys.push(bare);
+      if(!/(市|县|区|镇|乡|街道|开发区|园区|新区)/.test(kw)){
+        ["镇","街道","市","县"].forEach(function(suf){keys.push(kw+suf);});
+      }
+      var idx=0;
+      var step=function(){
+        if(settled)return;
+        if(idx>=keys.length||Date.now()-t0>14000){fin(null);return;}
+        var q=keys[idx++];
+        var ds;
+        try{ds=new mapAMap.DistrictSearch({subdistrict:0,extensions:"base"});}catch(e){fin(null);return;}
+        var moved=false;
+        var t=setTimeout(function(){if(!moved){moved=true;step();}},4500);
+        try{
+          ds.search(q,function(status,result){
+            if(moved)return;moved=true;clearTimeout(t);
+            try{
+              var list=(status==="complete"&&result&&result.districtList)||[];
+              for(var i=0;i<list.length;i++){
+                var d=list[i];
+                if(!d||!d.center)continue;
+                var lng=(d.center.lng!=null)?d.center.lng:(typeof d.center.getLng==="function"?d.center.getLng():NaN);
+                var lat=(d.center.lat!=null)?d.center.lat:(typeof d.center.getLat==="function"?d.center.getLat():NaN);
+                if(!isFinite(lng)||!isFinite(lat))continue;
+                if(!mapInWz(lng,lat))continue;           // 出温州的解析结果直接丢弃
+                var lvl=String(d.level||"");
+                fin({lng:lng,lat:lat,lvl:lvl,name:String(d.name||q),adcode:String(d.adcode||""),
+                     zoom:MAP_LEVEL_ZOOM[lvl]||12,src:"district",at:Date.now()});
+                return;
+              }
+            }catch(e){}
+            step();
+          });
+        }catch(e){step();}
+      };
+      step();
+    };
+    if(typeof mapAMap.DistrictSearch!=="function"){
+      mapLoadPlugins(["AMap.DistrictSearch"],function(ok){if(ok)run();else fin(null);});
+      return;
+    }
+    run();
+  }
+  function mapZoomFor(z){z=parseInt(z,10);if(!isFinite(z))z=12;return Math.max(8,Math.min(16,z));}
+  var mapRegionApplied=null;   // 已应用的区域，避免每次刷新视野都被重置
+  function mapSetRegionBar(rg,info,note){
+    var el=$("mapRegionBar");if(!el)return;
+    if(!rg||rg==="all"){el.style.display="none";el.innerHTML="";return;}
+    el.style.display="flex";
+    var nm=(info&&info.name&&info.name!==rg)?(" → "+info.name):"";
+    var prec="";
+    if(info){
+      if(info.src==="manual")prec="手动校准";
+      else if(info.src==="district")prec="高德行政区划";
+      else prec="内置锚点";
+    }
+    el.innerHTML='<span class="map-stat-chip active"><span class="dot" style="background:var(--accent)"></span>区域中心：'+esc(rg)+esc(nm)+'</span>'+
+      (prec?'<span style="font-size:11px;color:#888">'+prec+'</span>':'')+
+      (note?'<span style="font-size:11px;color:#999">'+esc(note)+'</span>':'')+
+      '<button class="btn" type="button" onclick="window.__map.calibrateRegion()" title="在地图上点一下，把该点设为这个区域的中心">校准中心</button>'+
+      '<button class="btn" type="button" onclick="window.__map.clearRegionCenter()" title="清除该区域已缓存的中心，重新按高德行政区划解析">重解析</button>';
+  }
+  // 区域跳转：缓存 → 内置锚点（秒开，后台校正）→ 客户坐标收拢 → 高德行政区划 → POI 兜底
+  function mapApplyRegionCenter(rg,list){
+    if(!mapInst||!rg||rg==="all"){mapSetRegionBar(rg||"all");return;}
+    var cached=mapRegionCacheGet(rg);
+    var an=mapRegionAnchor(rg);
+    var hit=cached||an;
+    if(hit){
+      if(mapRegionApplied!==rg){
+        try{mapInst.setZoomAndCenter(mapZoomFor(hit.zoom),[hit.lng,hit.lat]);}catch(e){}
+        mapRegionApplied=rg;
+      }
+      mapSetRegionBar(rg,hit,"");
+      // 内置锚点：后台用高德行政区划校正一次，结果进缓存，下次直接用
+      if(!cached&&an)mapCorrectRegionAsync(rg,an);
+      return;
+    }
+    if(mapRegionApplied===rg){mapSetRegionBar(rg,mapRegionCacheGet(rg),"");return;}
+    // 没有缓存也没有锚点：先按该区域客户的坐标收拢视野
+    var pts=[];
+    (list||[]).forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
+    if(pts.length){
+      try{
+        if(pts.length===1)mapInst.setZoomAndCenter(13,pts[0]);
+        else mapInst.setFitView(pts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);
+      }catch(e){}
+    }
+    mapRegionApplied=rg;
+    mapSetRegionBar(rg,null,"正在解析区域中心…");
+    mapDistrictCenter(rg,function(d){
+      if(d){
+        mapRegionCacheSet(rg,d);
+        if(mapFilterState.region===rg){
+          try{mapInst.setZoomAndCenter(mapZoomFor(d.zoom),[d.lng,d.lat]);}catch(e){}
+          mapSetRegionBar(rg,d,"已解析");
+        }
+        return;
+      }
+      // 行政区划查不到（非行政名）：用关键字搜索取第一个 POI 中心
+      mapKeywordSearch(rg,function(poi){
+        if(!poi){mapSetRegionBar(rg,null,"未能解析，可点「校准中心」手动指定");return;}
+        var v={lng:poi.lng,lat:poi.lat,zoom:13,lvl:"poi",name:String(poi.poiName||poi.addr||rg),src:"poi",at:Date.now()};
+        mapRegionCacheSet(rg,v);
+        if(mapFilterState.region===rg){
+          try{mapInst.setZoomAndCenter(mapZoomFor(v.zoom),[v.lng,v.lat]);}catch(e){}
+          mapSetRegionBar(rg,v,"按关键字定位");
+        }
+      },{top1:true});
+    });
+  }
+  function mapCorrectRegionAsync(rg,an){
+    if(!mapInst||!an)return;
+    mapDistrictCenter(rg,function(d){
+      if(!d)return;
+      mapRegionCacheSet(rg,d);
+      if(mapFilterState.region!==rg)return;
+      if(Math.abs(d.lng-an.lng)>0.003||Math.abs(d.lat-an.lat)>0.003){
+        try{mapInst.setZoomAndCenter(mapZoomFor(d.zoom),[d.lng,d.lat]);}catch(e){}
+        mapSetRegionBar(rg,d,"已按高德行政区划校正");
+      }else{
+        mapSetRegionBar(rg,d,"");
+      }
+    });
+  }
+  // 手动校准：点地图任意位置，把该点存为该区域的中心
+  function mapCalibrateRegion(){
+    var rg=mapFilterState.region;
+    if(!rg||rg==="all"){toast("请先在「地区」里选择一个区域");return;}
+    if(!mapInst){toast("地图还没就绪");return;}
+    var old=mapPickId;mapPickId="__region__";
+    toast("请在地图上点击「"+rg+"」的中心位置（Esc 不做也按点选执行）");
+    setTimeout(function(){
+      try{
+        mapInst.off("click");
+        mapInst.on("click",function(e){
+          if(mapPickId!=="__region__"||!e.lnglat)return;
+          var v={lng:e.lnglat.lng,lat:e.lnglat.lat,zoom:mapInst.getZoom(),lvl:"manual",name:rg,src:"manual",at:Date.now()};
+          mapRegionCacheSet(rg,v);
+          mapPickId=old||"";
+          try{mapInst.off("click");mapBindClick();}catch(err){}
+          mapSetRegionBar(rg,v,"");
+          toast("已把「"+rg+"」的中心设到当前位置");
+        });
+      }catch(err){mapPickId=old||"";toast("校准失败，请重试");}
+    },150);
+  }
+  function mapClearRegionCenter(){
+    var rg=mapFilterState.region;
+    if(!rg||rg==="all"){toast("请先选择一个区域");return;}
+    try{
+      var c=mapRegionCacheAll(),k=mapNormRegion(rg),changed=false;
+      Object.keys(c).forEach(function(x){if(mapRegionMatch(x,k)){delete c[x];changed=true;}});
+      localStorage.setItem(MAP_REGION_CACHE_KEY,JSON.stringify(c));
+      if(!changed){toast("该区域还没有校准记录");return;}
+    }catch(e){}
+    mapRegionApplied=null;
+    mapApplyRegionCenter(rg,mapFiltered());
+    toast("已清除「"+rg+"」的中心缓存");
+  }
   // ---------- 地图管理能力：筛选/统计/圈选/热力/详情 ----------
   var mapFilterState={intention:"all",status:"all",region:"all",search:"",paused:false};
   var mapSelection={};  // id -> true
@@ -6617,7 +6872,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var els=["mapF_intention","mapF_status","mapF_region"];
     els.forEach(function(id){
       var el=$(id);if(!el)return;
-      el.onchange=function(){mapFilterState[id.replace("mapF_","")]=el.value;mapRefresh();mapRenderStats();};
+      el.onchange=function(){mapFilterState[id.replace("mapF_","")]=el.value;mapRegionApplied=null;mapRefresh();mapRenderStats();};
     });
     var si=$("mapSearch");if(si){si.oninput=function(){mapFilterState.search=si.value.trim().toLowerCase();mapRefresh();};}
     var sb=$("btnMapSpread");if(sb)sb.classList.toggle("primary",mapOverlapSpread);
@@ -6631,10 +6886,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function mapRenderRegionOptions(){
     var sel=$("mapF_region");if(!sel)return;
-    var seen={},opts='<option value="all">地区：全部</option>';
+    var cnt={};
     customers.forEach(function(c){
       var r=(c.region||"").trim();if(!r)return;
-      if(!seen[r]){seen[r]=true;opts+='<option value="'+esc(r)+'">'+esc(r)+'</option>';}
+      cnt[r]=(cnt[r]||0)+1;
+    });
+    // 按客户数降序：客户最多的区域排前面，省得每次翻下拉
+    var regs=Object.keys(cnt).sort(function(a,b){return (cnt[b]-cnt[a])||String(a).localeCompare(String(b),"zh");});
+    var opts='<option value="all">地区：全部（'+customers.length+' 家）</option>';
+    regs.forEach(function(r){
+      var an=mapRegionAnchor(r);
+      var lvl=an&&an.lvl?({'city':'县级市','district':'区','town':'镇/街道','zone':'开发区'}[an.lvl]||''):'';
+      opts+='<option value="'+esc(r)+'">'+esc(r)+'（'+cnt[r]+' 家'+(lvl?'·'+lvl:'')+'）</option>';
     });
     sel.innerHTML=opts;
     if(mapFilterState.region!=="all"&&opts.indexOf('value="'+esc(mapFilterState.region)+'"')<=0)mapFilterState.region="all";
@@ -6648,7 +6911,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(f.status==="active"&&c.status!=="active")return false;
       if(f.status==="pending"&&c.status!=="pending")return false;
       if(f.status==="overdue"){var d=daysSince(c.lastContact);if(d<parseInt(settings.reminderDays||7,10))return false;}
-      if(f.region!=="all"&&(c.region||"")!==f.region)return false;
+      if(f.region!=="all"&&!mapRegionMatch(c.region,f.region))return false;
       if(f.search){var n=(c.name||"").toLowerCase();if(n.indexOf(f.search)<0)return false;}
       return true;
     });
@@ -6679,7 +6942,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     box.innerHTML=html;
   }
   function mapFilterByIntent(v){mapFilterState.intention=v;var el=$("mapF_intention");if(el)el.value=v;mapRefresh();mapRenderStats();}
-  function mapFilterByRegion(v){var r=decodeURIComponent(v);mapFilterState.region=r;var el=$("mapF_region");if(el)el.value=r;mapRefresh();mapRenderStats();}
+  function mapFilterByRegion(v){var r=decodeURIComponent(v);mapFilterState.region=r;mapRegionApplied=null;var el=$("mapF_region");if(el)el.value=r;mapRefresh();mapRenderStats();}
 
   // 点击 marker 显示详情 popover
   function mapBindClick(){
@@ -6915,8 +7178,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function mapToggleCluster(){
     if(!mapInst){toast("地图未就绪");return;}
-    if(mapCluster){try{mapCluster.setGridSize(mapCluster.getGridSize()===60?120:60);}catch(e){}toast("聚合已切换");}
-    else{toast("当前聚合插件不可用");}
+    if(mapCluster&&typeof mapCluster.getGridSize==="function"){
+      try{mapCluster.setGridSize(mapCluster.getGridSize()===60?120:60);}catch(e){}
+      toast("聚合已切换");
+      return;
+    }
+    // 现有标记是自绘 AMap.Marker 数组，接不上 2.0 数据驱动的 MarkerCluster；
+    // 这里把「聚合」退化为「重叠区分」开关（错开同点标记），保证按钮始终有实际作用
+    mapToggleSpread();
   }
 
   function mapRefresh(){
@@ -7042,50 +7311,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     toast(color?("已设置「"+(c.name||"该客户")+"」标记颜色"):"已恢复「"+(c.name||"该客户")+"」默认颜色");
   }
   // 区域筛选自动定位：优先用该区域精确坐标客户定位；无精确坐标时 geocode 地区名
+  // 视野：选了地区就显示区域中心，不选则收拢全部已上图客户
   function mapFitToRegion(list){
     try{
-      if(mapFilterState.region!=="all"&&mapFilterState.region){
-        var rg=mapFilterState.region;
-        // 1) 人工修正标记最优先
-        var manualPts=[];
-        (list||[]).forEach(function(c){
-          if(mapHasGeo(c)&&(c.geo.src==="manual"||c.geo.src==="loc"||c.geo.src==="geo"))manualPts.push([c.geo.lng,c.geo.lat]);
-        });
-        if(manualPts.length>=1){
-          if(manualPts.length===1){try{mapInst.setZoomAndCenter(13,manualPts[0]);}catch(e){}}
-          else{try{mapInst.setFitView(manualPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}}
-          return;
-        }
-        // 2) 区域锚点（同名地名歧义时的已知正确位置，如「塘下」=瑞安市塘下镇）
-        var an=mapRegionAnchor(rg);
-        if(an){try{mapInst.setZoomAndCenter(12,[an.lng,an.lat]);}catch(e){}return;}
-        // 3) 精确地址坐标
-        var autoPts=[];
-        (list||[]).forEach(function(c){
-          if(mapHasGeo(c)&&c.geo.src==="auto")autoPts.push([c.geo.lng,c.geo.lat]);
-        });
-        if(autoPts.length>=1){
-          if(autoPts.length===1){try{mapInst.setZoomAndCenter(13,autoPts[0]);}catch(e){}}
-          else{try{mapInst.setFitView(autoPts.map(function(p){return new mapAMap.LngLat(p[0],p[1]);}),false,[80,80,80,80]);}catch(e){}}
-          return;
-        }
-        // 4) 都没有：geocode 该区域最完整的客户地址
-        var bestAddr="";
-        customers.forEach(function(c){
-          if((c.region||"")!==rg)return;
-          var a=String(c.address||"").trim();
-          if(a&&a.length>(bestAddr.length||0)&&/镇|路|村|街|号|大道|巷|弄/.test(a))bestAddr=a;
-        });
-        var q=bestAddr||(mapCityPrefix()?mapCityPrefix()+rg:rg);
-        mapGeocode(q,function(geo){
-          if(geo&&mapInst){try{mapInst.setZoomAndCenter(13,[geo.lng,geo.lat]);}catch(e){}}
-        });
-        return;
+      var rg=mapFilterState.region;
+      if(rg&&rg!=="all"){mapApplyRegionCenter(rg,list);return;}
+      mapSetRegionBar("all");
+      mapRegionApplied=null;
+      var pts=[];
+      (list||[]).forEach(function(c){if(mapHasGeo(c))pts.push([c.geo.lng,c.geo.lat]);});
+      if(pts.length){
+        try{
+          if(pts.length===1)mapInst.setZoomAndCenter(13,pts[0]);
+          else mapInst.setFitView();
+        }catch(e){}
       }
-      // 未选地区：fitView 全部已定位客户
-      var pts2=[];
-      (list||[]).forEach(function(c){if(mapHasGeo(c))pts2.push([c.geo.lng,c.geo.lat]);});
-      if(pts2.length>0)mapInst.setFitView();
     }catch(e){}
   }
   var mapDirectMarkers=[];
@@ -7120,12 +7360,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(err==="loading"){mapSetStat("地图加载中…");return;}
       if(err||!A){mapSetStat("地图加载失败，请检查 Key 与网络");return;}
       if(!mapInst){
-        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap","AMap.PlaceSearch"],function(){
+        mapLoadPlugins(["AMap.MarkerCluster","AMap.Geocoder","AMap.HeatMap","AMap.PlaceSearch","AMap.DistrictSearch"],function(){
           try{
             // 温州辖区范围（与坐标校验同用一份边界）
             var wzBounds=new A.Bounds(new A.LngLat(MAP_WZ_BOUNDS.minLng,MAP_WZ_BOUNDS.minLat),new A.LngLat(MAP_WZ_BOUNDS.maxLng,MAP_WZ_BOUNDS.maxLat));
             mapInst=new A.Map("mapCanvas",{zoom:10,center:[120.65,27.99],resizeEnable:true,limitBounds:wzBounds});
-            if(typeof A.MarkerCluster=="function"){try{mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});}catch(e){mapCluster=null;}}
+            if(typeof A.MarkerCluster==="function"){
+              try{
+                mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});
+                // 2.0 的聚合是数据驱动（setData），没有 clearMarkers/addMarkers；
+                // 构造出来若两种接口都没有，判定为不可用，避免之后静默把标记吞掉
+                if(!mapCluster||(typeof mapCluster.setData!=="function"&&typeof mapCluster.addMarkers!=="function"))mapCluster=null;
+              }catch(e){mapCluster=null;}
+            }
             window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
           }catch(e){mapSetStat("地图初始化失败："+(e&&e.message||e));return;}
            mapSetStat("地图已就绪");
@@ -7216,6 +7463,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
+    calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
     reprecise:mapRepreciseAll,
     repreciseTargets:function(){return mapRepreciseTargets().length;},
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
