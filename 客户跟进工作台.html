@@ -3205,6 +3205,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!c)return;
     c.showOnMap=!c.showOnMap;c.updatedAt=Date.now();
     try{saveCustomers();}catch(e){}
+    if(c.showOnMap&&mapHasGeo(c))mapPendingFocus=c.id;
     if(mapInst)mapRefresh();
     renderList();
     toast(c.showOnMap?"已标注到客户地图":"已从客户地图移除");
@@ -7406,7 +7407,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }else{
       mapSetStat("地图上显示 "+ok+" 家客户");
     }
-    if(!mapHeatOn){mapFitToRegion(list);}
+    if(mapPendingFocus){
+      var fc=customers.find(function(x){return x.id===mapPendingFocus;});
+      mapPendingFocus=null;
+      if(fc&&mapHasGeo(fc)){
+        try{mapInst.setZoomAndCenter(Math.max(15,mapInst.getZoom()||15),[fc.geo.lng,fc.geo.lat]);}catch(e){}
+      }else if(!mapHeatOn){mapFitToRegion(list);}
+    }else if(!mapHeatOn){mapFitToRegion(list);}
     mapRenderStats();
     mapRenderSelBar();
   }
@@ -7416,6 +7423,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(!c)return;
     c.showOnMap=!c.showOnMap;c.updatedAt=Date.now();
     try{saveCustomers();}catch(e){}
+    if(c.showOnMap&&mapHasGeo(c))mapPendingFocus=c.id;
     mapClosePopover();
     mapRefresh();
     toast(c.showOnMap?("「"+(c.name||"该客户")+"」已显示在地图"):"「"+(c.name||"该客户")+"」已从地图隐藏");
@@ -7502,14 +7510,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }catch(e){}
   }
   var mapDirectMarkers=[];
+  var mapPendingFocus=null;   // 刚上图的客户：下一次刷新后把视野移过去
   function mapAddMarkers(ms,direct){
     if(!mapInst)return;
     // 先清掉上一轮为「重合组」直挂的标记，避免叠加
     if(mapDirectMarkers.length){try{mapInst.remove(mapDirectMarkers);}catch(e){}mapDirectMarkers=[];}
+    var added=false;
     if(mapCluster){
-      try{mapCluster.clearMarkers();mapCluster.addMarkers(ms||[]);}catch(e){}
-    }else{
-      // 聚合插件不可用时降级：直接挂到地图上，保证标记可见
+      try{
+        mapCluster.clearMarkers();
+        mapCluster.addMarkers(ms||[]);
+        added=true;
+      }catch(e){
+        // 接口不兼容：永久降级，避免每次刷新都再次把标记吞掉
+        mapCluster=null;
+      }
+    }
+    if(!added){
+      // 聚合不可用（或刚才抛错）时直接挂到地图上，保证标记一定可见
       try{
         var olds=mapInst.getAllOverlays("marker");
         if(olds&&olds.length)mapInst.remove(olds);
@@ -7543,7 +7561,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
                 mapCluster=new A.MarkerCluster(mapInst,{gridSize:60});
                 // 2.0 的聚合是数据驱动（setData），没有 clearMarkers/addMarkers；
                 // 构造出来若两种接口都没有，判定为不可用，避免之后静默把标记吞掉
-                if(!mapCluster||(typeof mapCluster.setData!=="function"&&typeof mapCluster.addMarkers!=="function"))mapCluster=null;
+                // 高德 2.0 的 MarkerCluster 是数据驱动（setData），没有 addMarkers/clearMarkers。
+                // 之前只判断「有 setData 或 有 addMarkers」，结果 2.0 的实现被当成可用，
+                // 随后 mapAddMarkers 调 clearMarkers 抛错被 catch 吞掉 —— 普通标记全部消失。
+                if(!mapCluster||typeof mapCluster.addMarkers!=="function"||typeof mapCluster.clearMarkers!=="function")mapCluster=null;
               }catch(e){mapCluster=null;}
             }
             window.addEventListener("resize",function(){try{mapInst.resize();}catch(e){}});
