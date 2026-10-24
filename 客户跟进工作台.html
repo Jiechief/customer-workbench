@@ -1341,7 +1341,7 @@ body{background:var(--bg);}
   .map-stat-chip .num{font-weight:700;}
   .map-selection-bar{display:flex;gap:8px;align-items:center;padding:8px 14px;background:var(--accent-weak);font-size:12.5px;color:var(--text);border-top:1px solid var(--border);}
   .map-selection-bar #mapSelCount{font-weight:700;color:var(--accent);}
-  .map-body{display:flex;height:calc(100vh - 280px);min-height:460px;}
+  .map-body{display:flex;height:calc(100vh - 280px);min-height:460px;position:relative;}
   .map-canvas{flex:1 1 auto;min-width:0;height:100%;background:var(--panel2);position:relative;}
   .map-side{width:280px;flex:0 0 280px;border-left:1px solid var(--border);overflow:auto;padding:12px 14px;background:var(--panel);}
   .map-side-head{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
@@ -1356,6 +1356,19 @@ body{background:var(--bg);}
   .map-popover .mp-row b{color:var(--text);font-weight:600;}
   .map-popover .mp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
   .map-popover .mp-actions .btn{font-size:11px;padding:4px 10px;}
+  /* 客户信息浮层：可拖动、限高内部滚动，不再跟随标记固定遮挡 */
+  .map-float{position:absolute;z-index:60;display:none;flex-direction:column;width:330px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.24);font-size:12.5px;overflow:hidden;}
+  .map-float .mf-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--panel2);cursor:move;user-select:none;}
+  .map-float .mf-title{flex:1 1 auto;font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .map-float .mf-x{cursor:pointer;color:var(--muted);font-size:19px;line-height:1;padding:0 2px;flex:0 0 auto;}
+  .map-float .mf-x:hover{color:var(--text);}
+  .map-float .mf-body{padding:10px 12px 12px;overflow:auto;flex:1 1 auto;min-height:0;}
+  .map-float .mf-more{margin-top:10px;border-top:1px dashed var(--border);padding-top:6px;}
+  .map-float .mf-more summary{cursor:pointer;font-size:12px;color:var(--muted);outline:none;list-style:none;}
+  .map-float .mf-more summary::-webkit-details-marker{display:none;}
+  .map-float .mf-more summary:before{content:"▸ ";}
+  .map-float .mf-more[open] summary:before{content:"▾ ";}
+  .map-float .mf-more summary:hover{color:var(--text);}
   @media (max-width:680px){.map-body{flex-direction:column;height:auto;}.map-canvas{height:300px;}.map-side{width:auto;flex:none;border-left:none;border-top:1px solid var(--border);max-height:190px;}}
    .ph-scenes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
    .ph-scene{padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;transition:background-color .15s var(--ease),color .15s var(--ease),border-color .15s var(--ease);white-space:nowrap;}
@@ -1750,6 +1763,7 @@ body{background:var(--bg);}
         </div>
         <div class="map-body" id="mapBody" style="display:flex;">
           <div class="map-canvas" id="mapCanvas"></div>
+          <div class="map-float" id="mapFloat"></div>
           <div class="map-side" id="mapSide">
             <div class="map-side-head" id="mapSideHead">客户地图</div>
             <div class="map-hint" id="mapHint">请先点「配置 Key」填写高德地图 Key，保存后自动加载地图。</div>
@@ -7057,6 +7071,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var MAP_REP_STATE_KEY="cwRepreciseState";  // 断点续跑持久化键
   var mapHeatOn=false, mapHeatLayer=null;
   var mapPopover=null;
+  var mapLastMarkerClickAt=0;   // 双击时的第二次 click 要忽略，避免弹层重建闪烁
+  var mapFloatPos=null;         // 浮层位置：拖过之后记住，重开沿用
   var mapMarkerClickGuard=0; // 点标记的时间戳：防止标记click冒泡到地图click时误关详情
 
   function mapBindToolbar(){
@@ -7176,46 +7192,106 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
       else prec=((c.geo.score||0)>=92)?"精确":((c.geo.score||0)>=70?"较精确":"粗略（建议重解析）");
     }
-    var html='<div class="map-popover" id="mapPop">'+
-      '<div class="mp-name">'+esc(c.name||"未命名")+'</div>'+
+    var coreHtml=
       '<div class="mp-row"><span>意向</span><b>'+esc(c.intention==="high"?"高":c.intention==="mid"?"中":"低")+'</b></div>'+
       '<div class="mp-row"><span>状态</span><b>'+esc(c.status==="active"?"已合作":c.status==="pending"?"待跟进":"逾期")+'</b></div>'+
       '<div class="mp-row"><span>地区</span><b>'+esc(c.region||"-")+'</b></div>'+
       '<div class="mp-row"><span>最近沟通</span><b>'+(c.lastContact?days+" 天前":"无记录")+'</b></div>'+
-      (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'')+
+      (c.address?'<div class="mp-row"><span>地址</span><b>'+esc(c.address)+'</b></div>':'');
+    var quickHtml=
+      '<div class="mp-actions">'+
+        '<button class="btn primary" onclick="window.__map.locate(&#39;'+c.id+'&#39;)">飞到</button>'+
+        '<button class="btn" onclick="window.__map.preciseOne(&#39;'+c.id+'&#39;)" title="按该客户填写的真实地址重新解析坐标">重解析地址</button>'+
+        '<button class="btn" onclick="window.__map.moveMarker(&#39;'+c.id+'&#39;)">移动位置</button>'+
+        '<button class="btn" onclick="window.__map.gotoCustomer(&#39;'+c.id+'&#39;)">查看客户</button>'+
+      '</div>';
+    var moreHtml=
       (c.geo&&c.geo.addr&&c.geo.addr!==c.address?'<div class="mp-row"><span>解析地址</span><b>'+esc(c.geo.addr)+'</b></div>':'')+
       (c.geo?'<div class="mp-row"><span>经纬度</span><b>'+c.geo.lng.toFixed(6)+', '+c.geo.lat.toFixed(6)+'</b></div>':'')+
+      '<div class="mp-row"><span>坐标精度</span><b>'+esc(prec)+'</b></div>'+
+      ovHtml+
       '<div class="mp-manual">'+
-        '<div class="mp-manual-row"><input type="text" id="mapKw_'+c.id+'" class="search" placeholder="在高德搜索框输入你到过的准确地址…" onkeydown="if(event.key===\'Enter\')window.__map.kwSearch(\''+c.id+'\')">'+
-        '<button class="btn primary" onclick="window.__map.kwSearch(\''+c.id+'\')">搜索定位</button></div>'+
+        '<div class="mp-manual-row"><input type="text" id="mapKw_'+c.id+'" class="search" placeholder="在高德搜索框输入你到过的准确地址…" onkeydown="if(event.key===&#39;Enter&#39;)window.__map.kwSearch(&#39;'+c.id+'&#39;)">'+
+        '<button class="btn primary" onclick="window.__map.kwSearch(&#39;'+c.id+'&#39;)">搜索定位</button></div>'+
         '<div class="mp-kw-list" id="mapKwList_'+c.id+'"></div>'+
         '<div class="mp-manual-tip">在高德能搜到的准确地址，搜出来点一下即可落到标记上，比自动解析准得多</div>'+
       '</div>'+
-      '<div class="mp-row"><span>坐标精度</span><b>'+esc(prec)+'</b></div>'+
-      ovHtml+
       '<div style="margin:6px 0 2px"><span style="font-size:12px;color:#999">标记颜色</span><div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center">'+
         '<span title="默认(按意向)" onclick="window.__map.setColor(&#39;'+c.id+'&#39;,&#39;&#39;)" style="width:18px;height:18px;border-radius:50%;background:#999;cursor:pointer;box-shadow:0 0 0 2px '+(c.markerColor?"transparent":"#fff")+'"></span>'+
         ["#e06c6c","#e0925a","#d8c040","#5cb85c","#5a9bd4","#9b6dd4","#e06ca8"].map(function(cc){return '<span title="'+cc+'" onclick="window.__map.setColor(&#39;'+c.id+'&#39;,&#39;'+cc+'&#39;)" style="width:18px;height:18px;border-radius:50%;background:'+cc+';cursor:pointer;box-shadow:0 0 0 2px '+(c.markerColor===cc?"#fff":"transparent")+'"></span>';}).join('')+
         '<input type="color" value="'+(c.markerColor||"#e06c6c")+'" onchange="window.__map.setColor(&#39;'+c.id+'&#39;,this.value)" title="自定义颜色" style="width:24px;height:20px;border:none;padding:0;cursor:pointer;background:none">'+
       '</div></div>'+
       '<div class="mp-actions">'+
-        '<button class="btn primary" onclick="window.__map.locate(&#39;'+c.id+'&#39;)">飞到</button>'+
-        '<button class="btn" onclick="window.__map.preciseOne(&#39;'+c.id+'&#39;)" title="按该客户填写的真实地址重新解析坐标">重解析地址</button>'+
         '<button class="btn" onclick="window.__map.toggleSelect(&#39;'+c.id+'&#39;)">'+(mapSelection[c.id]?"取消选择":"选中")+'</button>'+
-        '<button class="btn" onclick="window.__map.moveMarker(&#39;'+c.id+'&#39;)">移动位置</button>'+
         '<button class="btn" onclick="window.__map.toggleShow(&#39;'+c.id+'&#39;)">'+(c.showOnMap?"从地图隐藏":"显示到地图")+'</button>'+
         '<button class="btn" onclick="window.__map.deleteMarker(&#39;'+c.id+'&#39;)">删除标记</button>'+
-        '<button class="btn" onclick="window.__map.gotoCustomer(&#39;'+c.id+'&#39;)">查看客户</button>'+
-      '</div>'+
       '</div>';
-    mapPopover=new mapAMap.InfoWindow({
-      content:html,
-      offset:new mapAMap.Pixel(0,-30),
-      isCustom:true
-    });
-    mapPopover.open(mapInst,[lnglat.lng,lnglat.lat]);
+    var html='<div class="mf-head" id="mapFloatHead"><span class="mf-title">'+esc(c.name||"未命名")+'</span>'+
+      '<span class="mf-x" title="关闭" onclick="window.__map.closePopover()">&times;</span></div>'+
+      '<div class="mf-body">'+coreHtml+quickHtml+
+      '<details class="mf-more"><summary>更多信息与操作</summary>'+moreHtml+'</details>'+
+      '</div>';
+    mapFloatShow(html,c.id);
   }
-  function mapClosePopover(){if(mapPopover){try{mapPopover.close();}catch(e){}mapPopover=null;}}
+  function mapClosePopover(){
+    var box=$("mapFloat");
+    if(box){box.style.display="none";box.innerHTML="";}
+    mapPopover=null;
+  }
+  function mapZoomToCustomer(id){
+    var c=customers.find(function(x){return x.id===id;});
+    if(!c||!mapHasGeo(c)||!mapInst)return;
+    try{
+      var z=Math.max(18,Math.min(19,(mapInst.getZoom()||0)+2));
+      mapInst.setZoomAndCenter(z,[c.geo.lng,c.geo.lat]);
+    }catch(e){}
+  }
+  function mapFloatShow(html,cid){
+    var box=$("mapFloat");if(!box)return;
+    box.innerHTML=html;
+    box.style.display="flex";
+    mapPopover={id:cid};
+    // 首次打开放在地图右侧；拖动过之后沿用上次的位置
+    if(!mapFloatPos){
+      var body=$("mapBody");
+      var w=box.offsetWidth||330;
+      var bw=body?body.clientWidth:0;
+      mapFloatPos={left:Math.max(12,(bw||w+24)-w-16),top:16};
+    }
+    mapFloatPlace();
+    mapFloatBindDrag();
+  }
+  function mapFloatPlace(){
+    var box=$("mapFloat");if(!box||!mapFloatPos)return;
+    box.style.left=mapFloatPos.left+"px";
+    box.style.top=mapFloatPos.top+"px";
+  }
+  function mapFloatBindDrag(){
+    var head=$("mapFloatHead"),box=$("mapFloat"),body=$("mapBody");
+    if(!head||!box)return;
+    var sx=0,sy=0,sl=0,st=0,drag=false;
+    var onMove=function(e){
+      if(!drag)return;
+      var nl=sl+(e.clientX-sx),nt=st+(e.clientY-sy);
+      var maxL=body?Math.max(0,body.clientWidth-box.offsetWidth):nl;
+      var maxT=body?Math.max(0,body.clientHeight-56):nt;
+      mapFloatPos={left:Math.min(Math.max(0,nl),maxL),top:Math.min(Math.max(0,nt),maxT)};
+      mapFloatPlace();
+      if(e.preventDefault)e.preventDefault();
+    };
+    var onUp=function(){
+      drag=false;
+      document.removeEventListener("mousemove",onMove);
+      document.removeEventListener("mouseup",onUp);
+    };
+    head.addEventListener("mousedown",function(e){
+      if(e.target&&String(e.target.className||"").indexOf("mf-x")>=0)return;
+      drag=true;sx=e.clientX;sy=e.clientY;sl=box.offsetLeft;st=box.offsetTop;
+      document.addEventListener("mousemove",onMove);
+      document.addEventListener("mouseup",onUp);
+      if(e.preventDefault)e.preventDefault();
+    });
+  }
   function mapGotoCustomer(id){
     switchView("customers");
     setTimeout(function(){mapFocus(id);},200);
@@ -7461,7 +7537,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         label:mapMarkerLabelOpt(c,isSel,pl)
       });
       mapMarkerIndex.push({m:m,c:c,isSel:isSel,pl:pl});
-      m.on("click",function(){mapMarkerClickGuard=Date.now();mapShowPopover(c,{lng:pl.lng,lat:pl.lat},pl.grp);});
+      m.on("click",function(){
+        var now=Date.now();
+        // 双击会先发两次 click，第二次直接忽略，否则弹层会被重建两次
+        if(now-mapLastMarkerClickAt<260){mapLastMarkerClickAt=now;return;}
+        mapLastMarkerClickAt=now;
+        mapMarkerClickGuard=Date.now();
+        mapShowPopover(c,{lng:pl.lng,lat:pl.lat},pl.grp);
+      });
+      // 双击标记：直接放大到能看清门牌的级别，不用一格格滚轮
+      m.on("dblclick",function(){
+        mapMarkerClickGuard=Date.now();
+        try{
+          var z=Math.max(18,Math.min(19,(mapInst.getZoom()||0)+2));
+          mapInst.setZoomAndCenter(z,[pl.lng,pl.lat]);
+        }catch(e){}
+      });
       if(pl.gn>1)direct.push(m);else ms.push(m);
     });
     mapAddMarkers(ms,direct);
@@ -7778,6 +7869,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     reprecisePending:function(){return mapRepreciseState&&mapRepreciseState.queue?mapRepreciseState.queue.length:0;},
     toggleSelect:mapToggleSelect,clearSelection:mapClearSelection,selAction:mapSelAction,
     toggleHeat:mapToggleHeat,toggleCluster:mapToggleCluster,gotoCustomer:mapGotoCustomer,
+    closePopover:mapClosePopover,zoomTo:mapZoomToCustomer,
     calibrateRegion:mapCalibrateRegion,clearRegionCenter:mapClearRegionCenter,regionAnchor:mapRegionAnchor,districtCenter:mapDistrictCenter,
     calibSave:mapCalibSave,calibCancel:mapCalibCancel,fixDup:mapFixDupGroups,dupGroups:mapDupGroups,
     applyLabels:mapApplyLabels,resolve:mapResolveForCustomer,
