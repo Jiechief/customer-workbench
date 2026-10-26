@@ -697,6 +697,21 @@
   .sheet{background:var(--panel);border-radius:18px;width:100%;max-width:620px;padding:22px;
     box-shadow:0 20px 60px rgba(0,0,0,.35);}
   .sheet h3{margin:0 0 16px;font-size:17px;}
+  .px-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;}
+  .px-count{font-size:12px;color:var(--muted);margin-left:auto;}
+  .px-list,.px-preview{border:1px solid var(--border);border-radius:10px;max-height:44vh;overflow:auto;padding:6px 10px;}
+  .px-group{margin:6px 0 10px;}
+  .px-group-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border);margin-bottom:4px;cursor:pointer;}
+  .px-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0 4px 18px;font-size:13px;cursor:pointer;}
+  .px-item small{color:var(--muted);}
+  .px-map{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
+  .px-map label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+  .px-map select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:12.5px;}
+  .px-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .px-table th{position:sticky;top:0;background:var(--panel);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:600;z-index:1;}
+  .px-table td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+  .px-dup{color:#c77;white-space:nowrap;}
+  .px-new{color:#5cb85c;white-space:nowrap;}
   .field{margin-bottom:13px;}
   .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;}
   .field input[type=text],.field input[type=date],.field textarea,.field select{
@@ -2012,6 +2027,50 @@ body{background:var(--bg);}
       <button class="btn" onclick="toggleFollowList(currentCustDetailId);renderCustDetailFollowState()">加入/移出待跟进</button>
       <button class="btn" onclick="copyCustomerBasic(currentCustDetailId)">复制基础</button>
       <button class="btn" onclick="copyCustomerFull(currentCustDetailId)">复制详情</button>
+    </div>
+  </div>
+</div>
+
+<!-- 指令集合导出：勾选要导出的条目 -->
+<div class="modal" id="modalPExport">
+  <div class="sheet" style="max-width:780px;">
+    <h3>集合导出 · 选择要导出的指令</h3>
+    <div class="modal-hint">勾选需要导出的条目；一个条目下的多条指令会各占一行。Excel 列：分类名称 / 智能体 / 指令词 / 标题。</div>
+    <div class="px-tools">
+      <button class="btn" type="button" onclick="window.__pio.pickAll(true)">全选</button>
+      <button class="btn" type="button" onclick="window.__pio.pickAll(false)">全不选</button>
+      <button class="btn" type="button" onclick="window.__pio.pickInvert()">反选</button>
+      <span class="px-count" id="pxCount">已选 0 条</span>
+    </div>
+    <div class="px-list" id="pxList"></div>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modalPExport')">取消</button>
+      <button class="btn primary" type="button" onclick="window.__pio.doExport()">导出选中</button>
+    </div>
+  </div>
+</div>
+
+<!-- 指令导入：先选列，再挑行 -->
+<div class="modal" id="modalPImport">
+  <div class="sheet" style="max-width:980px;">
+    <h3>导入识别 · <span id="pxFileName" style="font-size:13px;color:var(--muted);"></span></h3>
+    <div class="modal-hint">先确认每列对应什么字段，再勾选要导入的行。默认只勾选未重复的行，重复的会标红。</div>
+    <div class="px-map">
+      <div><label>分类列</label><select id="pxmCat"></select></div>
+      <div><label>智能体列</label><select id="pxmAgents"></select></div>
+      <div><label>指令词列</label><select id="pxmText"></select></div>
+      <div><label>标题列</label><select id="pxmTitle"></select></div>
+    </div>
+    <div class="px-tools">
+      <button class="btn" type="button" onclick="window.__pio.rowAll(true)">全选</button>
+      <button class="btn" type="button" onclick="window.__pio.rowAll(false)">全不选</button>
+      <button class="btn" type="button" onclick="window.__pio.rowNewOnly()">只选未重复</button>
+      <span class="px-count" id="pxCount2">已选 0 行</span>
+    </div>
+    <div class="px-preview" id="pxPreview"></div>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modalPImport')">取消</button>
+      <button class="btn primary" type="button" onclick="window.__pio.doImport()">导入选中</button>
     </div>
   </div>
 </div>
@@ -5773,76 +5832,257 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     return {idx:{cat:0,agents:1,text:2,title:3},start:0};
   }
-  function promptApplyRows(aoa){
-    var out={added:0,dup:0,skip:0};
-    if(!aoa||!aoa.length)return out;
-    var cm=promptColumnMap((aoa[0]||[]).map(function(v){return String(v==null?"":v);}));
-    var idx=cm.idx;
-    if(idx.cat<0||idx.text<0)throw new Error("找不到「分类名称」或「指令词」列");
-    for(var r=cm.start;r<aoa.length;r++){
-      var row=aoa[r]||[];
-      var cat=String(row[idx.cat]==null?"":row[idx.cat]).trim();
-      var text=String(row[idx.text]==null?"":row[idx.text]).trim();
-      var agentsRaw=idx.agents>=0?String(row[idx.agents]==null?"":row[idx.agents]).trim():"";
-      var title=idx.title>=0?String(row[idx.title]==null?"":row[idx.title]).trim():"";
-      if(!cat&&!text){out.skip++;continue;}
-      if(!cat||!text){out.skip++;continue;}
-      if(!title)title=text.slice(0,18);
-      var agents=agentsRaw?agentsRaw.split(/[、,，;；\/]+/).map(function(x){return x.trim();}).filter(Boolean):[];
-      var g=promptGroups.find(function(x){return x.cat===cat;});
-      if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
-      var it=g.items.find(function(x){return x.title===title;});
-      if(!it){it={title:title,agents:[],prompts:[]};g.items.push(it);}
-      agents.forEach(function(a){if(a&&it.agents.indexOf(a)<0)it.agents.push(a);});
-      if(it.prompts.indexOf(text)<0){it.prompts.push(text);out.added++;}
-      else out.dup++;
-    }
-    return out;
+  // ---------- 导出：勾选式 ----------
+  var pxExportData=null;
+  var pxImportState=null;
+
+  function promptExportOpen(){
+    var data=promptFilter();
+    var has=false;
+    (data||[]).forEach(function(g){if((g.items||[]).length)has=true;});
+    if(!has){toast("当前筛选下没有可导出的指令");return;}
+    pxExportData=data;
+    promptExportRender();
+    openModal("modalPExport");
   }
-  function promptImportOne(file,cb){
-    if(!window.XLSX){toast("表格库未加载，无法导入");cb(null);return;}
+  function promptExportRender(){
+    var root=$("pxList");if(!root)return;
+    var html="";
+    (pxExportData||[]).forEach(function(g,gi){
+      html+='<div class="px-group"><label class="px-group-h"><input type="checkbox" checked data-g="'+gi+'" onchange="window.__pio.gToggle('+gi+',this.checked)"> '+esc(g.cat||"（未分类）")+'</label>';
+      (g.items||[]).forEach(function(it,ii){
+        var n=(it.prompts||[]).length;
+        html+='<label class="px-item"><input type="checkbox" checked data-g="'+gi+'" data-i="'+ii+'"> <span>'+esc(it.title||"（无标题）")+'</span> <small>'+n+' 条指令</small></label>';
+      });
+      html+='</div>';
+    });
+    root.innerHTML=html;
+    promptExportCount();
+  }
+  function promptExportBoxes(){
+    return Array.prototype.slice.call(document.querySelectorAll('#pxList input[data-i]'));
+  }
+  function promptExportCount(){
+    var n=promptExportBoxes().filter(function(b){return b.checked;}).length;
+    var el=$("pxCount");if(el)el.textContent="已选 "+n+" 条";
+  }
+  function promptExportPickAll(on){
+    promptExportBoxes().forEach(function(b){b.checked=!!on;});
+    Array.prototype.forEach.call(document.querySelectorAll('#pxList input[data-g]:not([data-i])'),function(b){b.checked=!!on;});
+    promptExportCount();
+  }
+  function promptExportPickInvert(){
+    promptExportBoxes().forEach(function(b){b.checked=!b.checked;});
+    promptExportCount();
+  }
+  function promptExportGroupToggle(gi,on){
+    promptExportBoxes().forEach(function(b){
+      if(Number(b.getAttribute("data-g"))===Number(gi))b.checked=!!on;
+    });
+    promptExportCount();
+  }
+  function promptExportDo(){
+    var picked={};
+    promptExportBoxes().forEach(function(b){
+      if(b.checked)picked[b.getAttribute("data-g")+"::"+b.getAttribute("data-i")]=1;
+    });
+    var rows=[];
+    (pxExportData||[]).forEach(function(g,gi){
+      (g.items||[]).forEach(function(it,ii){
+        if(!picked[gi+"::"+ii])return;
+        var agents=(it.agents||[]).join("、");
+        var list=(it.prompts&&it.prompts.length)?it.prompts:[""];
+        list.forEach(function(p){rows.push([g.cat||"",agents,it.title||"",p||""]);});
+      });
+    });
+    if(!rows.length){toast("还没勾选任何条目");return;}
+    if(!window.XLSX){toast("表格库未加载，无法导出");return;}
+    var aoa=[["分类名称","智能体","指令词","标题"]];
+    rows.forEach(function(r){aoa.push([r[0],r[1],r[3],r[2]]);});
+    var ws=window.XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=[{wch:18},{wch:16},{wch:64},{wch:26}];
+    ws["!autofilter"]={ref:"A1:D"+aoa.length};
+    var wb=window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb,ws,"指令提示词");
+    var fn="指令提示词_"+promptStamp()+"_"+rows.length+"条.xlsx";
+    window.XLSX.writeFile(wb,fn);
+    closeModal("modalPExport");
+    toast("已导出 "+rows.length+" 条指令 → "+fn);
+  }
+
+  // ---------- 导入：先解析预览，再选列选行 ----------
+  function promptReadAoa(file,cb){
     var isCsv=/\.csv$/i.test(String(file.name||""));
     var reader=new FileReader();
     reader.onload=function(){
-      var res=null;
       try{
         var wb=isCsv
           ? window.XLSX.read(String(reader.result||""),{type:"string"})
           : window.XLSX.read(new Uint8Array(reader.result),{type:"array"});
         var nm=(wb.SheetNames||[])[0];
         var ws=nm?wb.Sheets[nm]:null;
-        if(!ws){toast(file.name+" 里没有可读的工作表");cb(null);return;}
+        if(!ws){toast((file.name||"文件")+" 里没有可读的工作表");cb(null);return;}
         var aoa=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false,blankrows:false});
-        res=promptApplyRows(aoa);
-        if(res.added||res.dup){savePrompts();}
+        cb(aoa||[]);
       }catch(e){
-        toast((file.name||"文件")+" 导入失败："+(e&&e.message?e.message:"格式不支持"));
-        cb(null);return;
+        toast((file.name||"文件")+" 读取失败："+(e&&e.message?e.message:"格式不支持"));
+        cb(null);
       }
-      cb(res);
     };
     reader.onerror=function(){toast((file.name||"文件")+" 读取失败");cb(null);};
     if(isCsv)reader.readAsText(file,"utf-8");
     else reader.readAsArrayBuffer(file);
   }
-  function promptImportFiles(files){
+  function promptImportPick(files){
     var arr=Array.prototype.slice.call(files||[]);
     if(!arr.length)return;
-    var total={added:0,dup:0,skip:0,files:0};
+    if(!window.XLSX){toast("表格库未加载，无法导入");return;}
+    var st={files:[],rows:[],header:null,map:{cat:0,agents:1,text:2,title:3},maxCol:0,checked:{}};
     var i=0;
     var next=function(){
-      if(i>=arr.length){
-        renderPromptTabs();renderPrompts();
-        toast("导入完成："+total.files+" 个文件，新增 "+total.added+" 条，跳过重复 "+total.dup+" 条，忽略 "+total.skip+" 行");
-        return;
-      }
-      promptImportOne(arr[i++],function(res){
-        if(res){total.added+=res.added;total.dup+=res.dup;total.skip+=res.skip;total.files++;}
+      if(i>=arr.length){pxImportState=st;promptImportOpen();return;}
+      var f=arr[i++];
+      promptReadAoa(f,function(aoa){
+        if(aoa&&aoa.length){
+          st.files.push(f.name);
+          var head=(aoa[0]||[]).map(function(v){return String(v==null?"":v);});
+          var cm=promptColumnMap(head);
+          if(st.header===null){
+            st.header=(cm.start===1)?head:null;
+            st.map=cm.idx;
+          }
+          var skip=cm.start;
+          if(st.header&&head.join("|")===st.header.join("|"))skip=1;
+          aoa.slice(skip).forEach(function(r0){
+            var row=(r0||[]).map(function(v){return v==null?"":v;});
+            if(row.length>st.maxCol)st.maxCol=row.length;
+            var empty=true;
+            for(var k=0;k<row.length;k++){if(String(row[k]).trim()!==""){empty=false;break;}}
+            if(empty)return;
+            st.rows.push({file:f.name,raw:row});
+          });
+        }
         next();
       });
     };
     next();
   }
+  function promptImportOpen(){
+    var st=pxImportState;if(!st)return;
+    var fn=$("pxFileName");
+    if(fn)fn.textContent=st.files.join("、")+" · 共 "+st.rows.length+" 行";
+    var cols=Math.max(st.maxCol,st.header?st.header.length:0);
+    var optAll="";
+    for(var c=0;c<cols;c++){
+      var label=(st.header&&st.header[c])?st.header[c]:"第 "+(c+1)+" 列";
+      optAll+='<option value="'+c+'">'+esc(String(label))+'（第'+(c+1)+'列）</option>';
+    }
+    var pairs=[["pxmCat","cat",true],["pxmAgents","agents",false],["pxmText","text",true],["pxmTitle","title",false]];
+    pairs.forEach(function(p){
+      var el=$(p[0]);if(!el)return;
+      el.innerHTML=(p[2]?"":'<option value="-1">（不使用）</option>')+optAll;
+      var v=st.map[p[1]];
+      el.value=String(v==null?-1:v);
+      var key=p[1];
+      el.onchange=function(){
+        var n=parseInt(this.value,10);
+        st.map[key]=isNaN(n)?-1:n;
+        promptImportRender(true);
+      };
+    });
+    promptImportRender(true);
+    openModal("modalPImport");
+  }
+  function promptImportVal(row,key){
+    var st=pxImportState;if(!st)return "";
+    var idx=st.map[key];
+    if(idx==null||idx<0)return "";
+    var v=row.raw[idx];
+    return String(v==null?"":v).trim();
+  }
+  function promptImportIsDup(cat,text){
+    if(!cat||!text)return false;
+    var g=promptGroups.find(function(x){return x.cat===cat;});
+    if(!g)return false;
+    return (g.items||[]).some(function(it){return (it.prompts||[]).indexOf(text)>=0;});
+  }
+  function promptImportRender(reset){
+    var st=pxImportState;if(!st)return;
+    var box=$("pxPreview");if(!box)return;
+    var html='<table class="px-table"><thead><tr><th style="width:34px"></th><th>分类</th><th>智能体</th><th>指令词</th><th>标题</th><th style="width:56px">状态</th></tr></thead><tbody>';
+    st.rows.forEach(function(r,ri){
+      var cat=promptImportVal(r,"cat"),agents=promptImportVal(r,"agents");
+      var text=promptImportVal(r,"text"),title=promptImportVal(r,"title");
+      var dup=promptImportIsDup(cat,text);
+      var on=reset?(!dup):!!st.checked[ri];
+      st.checked[ri]=on;
+      html+='<tr>'+
+        '<td><input type="checkbox" '+(on?"checked":"")+' onchange="window.__pio.rowCheck('+ri+',this.checked)"></td>'+
+        '<td>'+esc(cat||"—")+'</td>'+
+        '<td>'+esc(agents||"—")+'</td>'+
+        '<td>'+esc(text||"—")+'</td>'+
+        '<td>'+esc(title||"—")+'</td>'+
+        '<td>'+(dup?'<span class="px-dup">重复</span>':'<span class="px-new">新增</span>')+'</td>'+
+        '</tr>';
+    });
+    box.innerHTML=html+'</tbody></table>';
+    promptImportCount();
+  }
+  function promptImportCount(){
+    var st=pxImportState;if(!st)return;
+    var n=0;
+    Object.keys(st.checked).forEach(function(k){if(st.checked[k])n++;});
+    var el=$("pxCount2");if(el)el.textContent="已选 "+n+" 行";
+  }
+  function promptImportRowCheck(ri,on){
+    var st=pxImportState;if(!st)return;
+    st.checked[ri]=!!on;
+    promptImportCount();
+  }
+  function promptImportRowsAll(on){
+    var st=pxImportState;if(!st)return;
+    st.rows.forEach(function(r,ri){st.checked[ri]=!!on;});
+    promptImportRender(false);
+  }
+  function promptImportOnlyNew(){
+    var st=pxImportState;if(!st)return;
+    st.rows.forEach(function(r,ri){
+      st.checked[ri]=!promptImportIsDup(promptImportVal(r,"cat"),promptImportVal(r,"text"));
+    });
+    promptImportRender(false);
+  }
+  function promptMergeOne(cat,title,agentsRaw,text){
+    var agents=agentsRaw?String(agentsRaw).split(/[、,，;；\/]+/).map(function(x){return x.trim();}).filter(Boolean):[];
+    var g=promptGroups.find(function(x){return x.cat===cat;});
+    if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
+    var it=(g.items||[]).find(function(x){return x.title===title;});
+    if(!it){it={title:title,agents:[],prompts:[]};g.items.push(it);}
+    agents.forEach(function(a){if(a&&it.agents.indexOf(a)<0)it.agents.push(a);});
+    if(it.prompts.indexOf(text)>=0)return "dup";
+    it.prompts.push(text);return "add";
+  }
+  function promptImportDo(){
+    var st=pxImportState;if(!st)return;
+    var added=0,dup=0,skip=0;
+    st.rows.forEach(function(r,ri){
+      if(!st.checked[ri]){skip++;return;}
+      var cat=promptImportVal(r,"cat"),text=promptImportVal(r,"text");
+      var agentsRaw=promptImportVal(r,"agents"),title=promptImportVal(r,"title");
+      if(!cat||!text){skip++;return;}
+      if(!title)title=text.slice(0,18);
+      if(promptMergeOne(cat,title,agentsRaw,text)==="add")added++;else dup++;
+    });
+    if(added){savePrompts();}
+    renderPromptTabs();
+    renderPrompts();
+    closeModal("modalPImport");
+    toast("导入完成：新增 "+added+" 条，跳过重复 "+dup+" 条，未勾选/忽略 "+skip+" 行");
+  }
+  window.__pio={
+    pickAll:promptExportPickAll,pickInvert:promptExportPickInvert,gToggle:promptExportGroupToggle,
+    doExport:promptExportDo,rowAll:promptImportRowsAll,rowNewOnly:promptImportOnlyNew,
+    rowCheck:promptImportRowCheck,doImport:promptImportDo,exportAll:promptExportXlsx
+  };
 
   // 暴露给自动化冒烟测试
   window.switchView=switchView;
@@ -9005,9 +9245,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   if($("btnAddPrompt"))$("btnAddPrompt").onclick=function(){promptAdding=true;promptKeyword="";var s=$("promptSearch");if(s)s.value="";renderPromptTabs();renderPrompts();};
   if($("btnResetPrompts"))$("btnResetPrompts").onclick=resetPrompts;
   if($("promptSearch"))$("promptSearch").oninput=function(){promptKeyword=this.value;renderPrompts();};
-  if($("btnExportPrompts"))$("btnExportPrompts").onclick=promptExportXlsx;
+  if($("btnExportPrompts"))$("btnExportPrompts").onclick=promptExportOpen;
   if($("btnImportPrompts"))$("btnImportPrompts").onclick=function(){var f=$("promptImportFile");if(f){f.value="";f.click();}};
-  if($("promptImportFile"))$("promptImportFile").onchange=function(){promptImportFiles(this.files);};
+  if($("promptImportFile"))$("promptImportFile").onchange=function(){promptImportPick(this.files);};
   // 指令提示词吸顶条：滚动后出现底边分隔线（仅该视图生效）
   (function(){
     if(typeof document==="undefined"||!document.querySelector)return;
