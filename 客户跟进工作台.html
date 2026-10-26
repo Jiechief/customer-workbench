@@ -1217,8 +1217,18 @@ body{background:var(--bg);}
 .prompt-form label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
 .prompt-form input,.prompt-form textarea,.prompt-form select{width:100%;box-sizing:border-box;}
 .prompt-form textarea{min-height:84px;resize:vertical;}
-.prompt-form .row2{display:flex;gap:10px;flex-wrap:wrap;}
-/* ===== 合作方案板块 ===== */
+ .prompt-form .row2{display:flex;gap:10px;flex-wrap:wrap;}
+ /* ===== 分组管理 + 条目二次编辑 ===== */
+ .prompt-group-title{flex-wrap:wrap;}
+ .prompt-group-title .pg-name{font-size:15px;color:var(--text);letter-spacing:.2px;}
+ .prompt-group-title .pg-count{font-size:12px;font-weight:500;color:var(--muted2);padding:1px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border2);}
+ .pg-btn{height:29px;padding:0 11px;font-size:12.5px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:3px;line-height:1;font-family:inherit;}
+ .pg-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-weak);}
+ .prompt-group-empty{border:1px dashed var(--border2);border-radius:12px;padding:14px 16px;color:var(--muted2);font-size:13.5px;margin-bottom:12px;background:var(--panel2);line-height:1.7;}
+ .prompt-form .pf-mode{font-size:13px;color:var(--accent);background:var(--accent-weak);border:1px solid var(--accent-soft);border-radius:9px;padding:9px 12px;margin-bottom:14px;font-weight:600;line-height:1.6;}
+ .prompt-form .pf-mode b{font-weight:700;}
+ .prompt-move{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted2);margin-top:10px;}
+ /* ===== 合作方案板块 ===== */
 /* ===== 合作方案板块：精排版 ===== */
 .plans-wrap{max-width:1240px;margin:0 auto;padding:18px 20px 48px;}
 .plans-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
@@ -1829,6 +1839,7 @@ body{background:var(--bg);}
               <select id="promptCatFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:14px;"><option value="all">全部分类</option></select>
               <input type="text" class="search" id="promptSearch" placeholder="搜索指令 / 智能体 / 关键词...">
               <button class="btn primary" id="btnAddPrompt" type="button">+ 添加指令</button>
+              <button class="btn" id="btnAddGroup" type="button" title="新增一个指令分组，之后可把任意指令移动进去">+ 新建分组</button>
               <button class="btn" id="btnResetPrompts" type="button" title="清空自定义内容并恢复默认清单">恢复默认</button>
           <button class="btn" id="btnExportPrompts" type="button" title="把当前筛选范围内的指令按集合导出为 Excel">集合导出</button>
           <button class="btn" id="btnImportPrompts" type="button" title="从 Excel / CSV 批量导入指令（可多选文件）">导入文件</button>
@@ -2106,6 +2117,23 @@ body{background:var(--bg);}
     <div class="foot">
       <button class="btn" onclick="closeModal('modalPImport')">取消</button>
       <button class="btn primary" type="button" onclick="window.__pio.doImport()">导入选中</button>
+    </div>
+  </div>
+</div>
+
+<!-- 指令分组：新增 / 重命名 -->
+<div class="modal" id="modalPGroup">
+  <div class="sheet" style="max-width:480px;">
+    <h3 id="pgTitle">新增分组</h3>
+    <div class="modal-hint" id="pgHint">分组只是分类容器，建好后可以把任意指令移动进来。</div>
+    <div class="field">
+      <label>分组名称</label>
+      <input id="pgName" placeholder="如：售后客服" maxlength="40">
+    </div>
+    <div class="foot">
+      <button class="btn danger" id="pgDel" type="button" style="display:none;margin-right:auto;">删除该分组</button>
+      <button class="btn" onclick="closeModal('modalPGroup')">取消</button>
+      <button class="btn primary" type="button" id="pgSave">保存</button>
     </div>
   </div>
 </div>
@@ -2650,6 +2678,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var promptTab="all";
   var promptKeyword="";
   var promptAdding=false;
+  var promptAddCat="";        // 添加时预选的分组（从分组标题「+ 指令」进来时带上）
+  var promptEditingId="";     // 正在编辑的条目 id，空表示新增
+  var pgMode="",pgTarget="";  // 分组弹窗：add / rename + 目标分组名
+  var promptIdSeq=0;
   // seed 由 https://awb-checklist.site.accio.ai/ （AWB 新手上手清单 · Accio Work × Agent Hub）提炼
   var promptSeed=[
     {cat:"商品运营",items:[
@@ -5710,20 +5742,54 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(data&&Array.isArray(data)&&data.length){promptGroups=data;}
       else{promptGroups=JSON.parse(JSON.stringify(promptSeed));savePrompts();}
     }catch(e){promptGroups=JSON.parse(JSON.stringify(promptSeed));}
+    promptEnsureIds();
   }
   function savePrompts(){try{lsSet(PROMPT_KEY,JSON.stringify(promptGroups));}catch(e){}}
+  // 每条指令一个稳定 id：编辑 / 删除 / 移动都按 id 定位，避免同名标题互相顶掉
+  function promptNewId(){
+    promptIdSeq++;
+    return "p"+Date.now().toString(36)+promptIdSeq.toString(36)+Math.floor(Math.random()*1296).toString(36);
+  }
+  function promptEnsureIds(){
+    (promptGroups||[]).forEach(function(g){
+      if(!Array.isArray(g.items))g.items=[];
+      g.items.forEach(function(it){
+        if(!it._id)it._id=promptNewId();
+        if(!Array.isArray(it.agents))it.agents=it.agents?String(it.agents).split(/[,，、;；]+/).map(function(s){return s.trim();}).filter(Boolean):[];
+        if(!Array.isArray(it.prompts))it.prompts=(it.prompts==null||it.prompts==="")?[]:[String(it.prompts)];
+      });
+    });
+    return promptGroups;
+  }
+  function promptItemById(id){
+    if(!id)return null;
+    for(var i=0;i<(promptGroups||[]).length;i++){
+      var g=promptGroups[i];
+      for(var j=0;j<(g.items||[]).length;j++){
+        if(g.items[j]._id===id)return {g:g,it:g.items[j],gi:i,ii:j};
+      }
+    }
+    return null;
+  }
+  function promptGroupByName(cat){
+    var hit=null;
+    (promptGroups||[]).forEach(function(g){if(!hit&&g.cat===cat)hit=g;});
+    return hit;
+  }
+  function promptGroupCount(cat){var g=promptGroupByName(cat);return g?(g.items||[]).length:0;}
 
-  function promptFilter(){
+  // keepEmpty=true 时保留空分组（分组是固定的，空分组也要显示出来才能重命名 / 往里加指令）
+  function promptFilter(keepEmpty){
     var kw=String(promptKeyword||"").trim().toLowerCase();
     var out=[];
     promptGroups.forEach(function(g){
       if(promptTab!=="all"&&g.cat!==promptTab) return;
-      var items=g.items.filter(function(it){
+      var items=(g.items||[]).filter(function(it){
         if(!kw) return true;
-        var hay=(it.title+" "+(it.agents||[]).join(" ")+" "+(it.prompts||[]).join(" ")).toLowerCase();
+        var hay=(String(it.title||"")+" "+(it.agents||[]).join(" ")+" "+(it.prompts||[]).join(" ")).toLowerCase();
         return hay.indexOf(kw)>=0;
       });
-      if(items.length) out.push({cat:g.cat,items:items});
+      if(items.length||(keepEmpty&&!kw)) out.push({cat:g.cat,items:items});
     });
     return out;
   }
@@ -5735,79 +5801,247 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return '<option value="'+esc(c)+'"'+(c===promptTab?' selected':'')+'>'+(c==="all"?"全部分类":esc(c))+'</option>';
     }).join("");
     sel.innerHTML=html;
-    sel.onchange=function(){promptTab=sel.value;renderPrompts();};
+     sel.onchange=function(){promptTab=sel.value;renderPrompts(true);};
   }
 
-  function renderPrompts(){
+  function renderPrompts(keepDraft){
     var root=$("promptsRoot"); if(!root)return;
-    var data=promptFilter();
+    var draft=keepDraft?promptFormSnapshot():null;
+    var data=promptFilter(true);
     var html="";
-    if(promptAdding){html+=promptFormHtml();}
+    if(promptAdding||promptEditingId){html+=promptFormHtml(promptFormCurrent());}
     if(!data.length){
       html+='<div class="prompt-empty">没有匹配的指令，换个关键词或分类试试。</div>';
     }else{
       data.forEach(function(g){
-        html+='<div class="prompt-group"><div class="prompt-group-title">'+esc(g.cat)+'</div>';
+        html+='<div class="prompt-group"><div class="prompt-group-title">'+
+          '<span class="pg-name">'+esc(g.cat)+'</span>'+
+          '<span class="pg-count">'+g.items.length+' 条</span>'+
+          '<button type="button" class="pg-btn" data-grename="'+esc(g.cat)+'" title="修改这个分组的名称">重命名</button>'+
+          '<button type="button" class="pg-btn" data-gadd="'+esc(g.cat)+'" title="在这个分组里新增一条指令">+ 指令</button>'+
+          '</div>';
+        if(!g.items.length){
+          html+='<div class="prompt-group-empty">「'+esc(g.cat)+'」目前是空分组。可以点上面的「+ 指令」直接往里加，也可以在其它条目上点「编辑」，把分组改成这里。</div>';
+        }
         g.items.forEach(function(it){
           var agents=(it.agents||[]).map(function(a){return '<span class="prompt-agent">'+esc(a)+'</span>';}).join("");
-          (it.prompts||[]).forEach(function(p){
-            html+='<div class="prompt-card"><h4>'+esc(it.title)+'</h4>'+
+          var iid=esc(it._id||"");
+          var total=(it.prompts||[]).length;
+          (it.prompts||[]).forEach(function(p,pi){
+            html+='<div class="prompt-card"><h4>'+esc(it.title)+(total>1?' <span class="pg-count">'+(pi+1)+'/'+total+'</span>':'')+'</h4>'+
               (agents?'<div class="prompt-agents">'+agents+'</div>':'')+
               '<div class="prompt-text">'+esc(p)+'</div>'+
               '<div class="prompt-actions"><button type="button" class="btn" data-copy="'+esc(p)+'">复制指令</button>'+
-              '<button type="button" class="btn danger" data-del="'+esc(g.cat)+'::'+esc(it.title)+'">删除</button></div></div>';
+              '<button type="button" class="btn" data-edit="'+iid+'">编辑</button>'+
+              '<button type="button" class="btn danger" data-del="'+iid+'">删除</button></div></div>';
           });
         });
         html+='</div>';
       });
     }
     root.innerHTML=html;
+    if(draft)promptFormRestore(draft);
     Array.prototype.forEach.call(root.querySelectorAll("[data-copy]"),function(b){
       b.onclick=function(){copyText(b.getAttribute("data-copy"));};
     });
     Array.prototype.forEach.call(root.querySelectorAll("[data-del]"),function(b){
-      b.onclick=function(){var parts=b.getAttribute("data-del").split("::");delPrompt(parts[0],parts[1]);};
+      b.onclick=function(){delPrompt(b.getAttribute("data-del"));};
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-edit]"),function(b){
+      b.onclick=function(){promptEditOpen(b.getAttribute("data-edit"));};
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-grename]"),function(b){
+      b.onclick=function(){promptGroupOpen("rename",b.getAttribute("data-grename"));};
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-gadd]"),function(b){
+      b.onclick=function(){promptAddOpen(b.getAttribute("data-gadd"));};
     });
     var pfCat=$("pfCat");
-    if(pfCat)pfCat.onchange=function(){var w=$("pfNewCatWrap");if(w)w.style.display=this.value==="__new__"?"block":"none";};
+    if(pfCat){
+      pfCat.onchange=function(){var w=$("pfNewCatWrap");if(w)w.style.display=this.value==="__new__"?"block":"none";};
+      var w0=$("pfNewCatWrap");if(w0)w0.style.display=pfCat.value==="__new__"?"block":"none";
+    }
     var saveBtn=$("promptSave"); if(saveBtn)saveBtn.onclick=savePromptForm;
-    var cancelBtn=$("promptCancel"); if(cancelBtn)cancelBtn.onclick=function(){promptAdding=false;renderPrompts();};
+    var cancelBtn=$("promptCancel");
+    if(cancelBtn)cancelBtn.onclick=function(){promptAdding=false;promptEditingId="";promptAddCat="";renderPrompts();};
   }
 
-  function promptFormHtml(){
+  // 表单未保存内容快照：搜索 / 切分类重绘列表时不要把人正在输入的东西冲掉
+  function promptFormSnapshot(){
+    if(!$("promptForm"))return null;
+    return {
+      catSel:($("pfCat")&&$("pfCat").value)||"",
+      newCat:($("pfNewCat")&&$("pfNewCat").value)||"",
+      title:($("pfTitle")&&$("pfTitle").value)||"",
+      agents:($("pfAgents")&&$("pfAgents").value)||"",
+      prompts:($("pfPrompts")&&$("pfPrompts").value)||""
+    };
+  }
+  function promptFormRestore(d){
+    if(!d)return;
+    var el;
+    el=$("pfCat");if(el)el.value=d.catSel;
+    el=$("pfNewCat");if(el)el.value=d.newCat;
+    el=$("pfTitle");if(el)el.value=d.title;
+    el=$("pfAgents");if(el)el.value=d.agents;
+    el=$("pfPrompts");if(el)el.value=d.prompts;
+    var w=$("pfNewCatWrap");if(w)w.style.display=d.catSel==="__new__"?"block":"none";
+    var pf=$("pfCat");
+    if(pf)pf.onchange=function(){var x=$("pfNewCatWrap");if(x)x.style.display=this.value==="__new__"?"block":"none";};
+    var sb=$("promptSave");if(sb)sb.onclick=savePromptForm;
+    var cb=$("promptCancel");if(cb)cb.onclick=function(){promptAdding=false;promptEditingId="";promptAddCat="";renderPrompts();};
+  }
+  // 表单当前值：编辑态取原条目，新增态取预选分组
+  function promptFormCurrent(){
+    if(promptEditingId){
+      var loc=promptItemById(promptEditingId);
+      if(loc)return {
+        editing:true,
+        cat:loc.g.cat,
+        title:loc.it.title||"",
+        agents:(loc.it.agents||[]).join(", "),
+        prompts:(loc.it.prompts||[]).join("\n"),
+        n:(loc.it.prompts||[]).length
+      };
+    }
+    return {editing:false,cat:promptAddCat||"",title:"",agents:"",prompts:"",n:0};
+  }
+  function promptFormHtml(pre){
+    pre=pre||{};
+    var cur=pre.cat||"";
     var cats=promptGroups.map(function(g){return g.cat;});
-    var opts='<option value="">选择分类...</option>'+cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join("")+'<option value="__new__">+ 新建分类</option>';
+    var opts='<option value="">选择分组...</option>'+cats.map(function(c){
+      return '<option value="'+esc(c)+'"'+(c===cur?' selected':'')+'>'+esc(c)+'</option>';
+    }).join("")+'<option value="__new__">+ 新建分组</option>';
     return '<div class="prompt-form" id="promptForm">'+
-      '<div class="field"><label>分类（维度）</label><select id="pfCat">'+opts+'</select></div>'+
-      '<div class="field" id="pfNewCatWrap" style="display:none;"><label>新建分类名称</label><input id="pfNewCat" placeholder="如：售后客服"></div>'+
-      '<div class="field"><label>需求 / 指令标题</label><input id="pfTitle" placeholder="如：RFQ 英文报价"></div>'+
-      '<div class="field"><label>推荐智能体（逗号分隔，可空）</label><input id="pfAgents" placeholder="如：RFQ狙击手"></div>'+
-      '<div class="field"><label>指令提示词（每行一条）</label><textarea id="pfPrompts" placeholder="粘贴或撰写你的 prompt，每行一条"></textarea></div>'+
-      '<div class="prompt-actions"><button type="button" class="btn primary" id="promptSave">保存</button><button type="button" class="btn" id="promptCancel">取消</button></div>'+
+      (pre.editing?('<div class="pf-mode">正在编辑「<b>'+esc(pre.title||"（无标题）")+'</b>」'+(pre.n>1?('，该条目下有 <b>'+pre.n+'</b> 条指令'):'')+'。改完点「保存修改」；把分组改掉就会整条移动到新分组。</div>'):'')+
+      '<div class="field"><label>分类 / 分组（改分组 = 把这条指令移到新分组）</label><select id="pfCat">'+opts+'</select></div>'+
+      '<div class="field" id="pfNewCatWrap" style="display:none;"><label>新建分组名称</label><input id="pfNewCat" placeholder="如：售后客服" maxlength="40"></div>'+
+      '<div class="field"><label>需求 / 指令标题</label><input id="pfTitle" value="'+esc(pre.title||"")+'" placeholder="如：RFQ 英文报价"></div>'+
+      '<div class="field"><label>推荐智能体（逗号分隔，可空）</label><input id="pfAgents" value="'+esc(pre.agents||"")+'" placeholder="如：RFQ狙击手"></div>'+
+      '<div class="field"><label>指令提示词（每行一条）</label><textarea id="pfPrompts" placeholder="粘贴或撰写你的 prompt，每行一条">'+esc(pre.prompts||"")+'</textarea></div>'+
+      '<div class="prompt-actions"><button type="button" class="btn primary" id="promptSave">'+(pre.editing?"保存修改":"保存")+'</button><button type="button" class="btn" id="promptCancel">取消</button></div>'+
       '</div>';
   }
-  function savePromptForm(){
-    var cat=$("pfCat").value;
-    if(cat==="__new__"){cat=($("pfNewCat").value||"").trim();}
-    var title=$("pfTitle").value.trim();
-    var agents=($("pfAgents").value||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
-    var prompts=($("pfPrompts").value||"").split("\n").map(function(s){return s.trim();}).filter(Boolean);
-    if(!cat||!title||!prompts.length){toast("请填全分类、标题和至少一条指令");return;}
-    var g=promptGroups.find(function(x){return x.cat===cat;});
-    if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
-    g.items.push({title:title,agents:agents,prompts:prompts});
-    savePrompts();promptAdding=false;renderPromptTabs();renderPrompts();toast("已添加指令");
+  function promptFocusForm(){
+    var f=$("promptForm");if(!f)return;
+    // 表单在最上方，但粘性工具条会盖住它，所以按工具条实际高度留出空隙
+    var sc=document.querySelector(".main-scroll");
+    var bar=document.querySelector(".prompts-sticky");
+    if(sc&&f.getBoundingClientRect){
+      var fr=f.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+      var barH=bar&&bar.getBoundingClientRect?bar.getBoundingClientRect().height:0;
+      var needTop=sr.top+barH+10;
+      if(fr.top<needTop||fr.top>sr.bottom-140){sc.scrollTop+=Math.round(fr.top-needTop);}
+    }else{
+      try{f.scrollIntoView({block:"start"});}catch(e){try{f.scrollIntoView(true);}catch(e2){}}
+    }
+    var t=$("pfTitle");
+    if(t&&t.focus){try{t.focus({preventScroll:true});}catch(e3){try{t.focus();}catch(e4){}}}
   }
-  function delPrompt(cat,title){
-    var g=promptGroups.find(function(x){return x.cat===cat;});
-    if(!g)return;
-    g.items=g.items.filter(function(it){return it.title!==title;});
-    if(!g.items.length){promptGroups=promptGroups.filter(function(x){return x.cat!==cat;});}
-    savePrompts();renderPromptTabs();renderPrompts();toast("已删除");
+  function promptAddOpen(cat){
+    promptEditingId="";promptAddCat=cat||"";promptAdding=true;
+    renderPrompts();promptFocusForm();
+  }
+  function promptEditOpen(id){
+    var loc=promptItemById(id);
+    if(!loc){toast("找不到该条目，列表可能已刷新");renderPrompts();return;}
+    promptAdding=false;promptEditingId=id;promptAddCat="";
+    renderPrompts();promptFocusForm();
+  }
+  function savePromptForm(){
+    var catSel=$("pfCat")?$("pfCat").value:"";
+    var cat=(catSel==="__new__")?(($("pfNewCat")&&$("pfNewCat").value)||""):catSel;
+    cat=String(cat||"").trim();
+    var title=String(($("pfTitle")&&$("pfTitle").value)||"").trim();
+    var agents=String(($("pfAgents")&&$("pfAgents").value)||"").split(/[,，、;；]+/).map(function(s){return s.trim();}).filter(Boolean);
+    var prompts=String(($("pfPrompts")&&$("pfPrompts").value)||"").split("\n").map(function(s){return s.trim();}).filter(Boolean);
+    if(!cat){toast("请选择分组，或在下面填一个新分组名");return;}
+    if(!title||!prompts.length){toast("请填全标题和至少一条指令");return;}
+    // 编辑：就地更新，改分组则整条搬到目标分组
+    if(promptEditingId){
+      var loc=promptItemById(promptEditingId);
+      if(!loc){toast("找不到要编辑的条目，请重试");promptEditingId="";renderPrompts();return;}
+      var moved=(loc.g.cat!==cat);
+      loc.it.title=title;loc.it.agents=agents;loc.it.prompts=prompts;
+      if(moved){
+        loc.g.items.splice(loc.ii,1);
+        var tg=promptGroupByName(cat);
+        if(!tg){tg={cat:cat,items:[]};promptGroups.push(tg);}
+        tg.items.push(loc.it);
+      }
+      promptAdding=false;promptEditingId="";promptAddCat="";
+      savePrompts();renderPromptTabs();renderPrompts();
+      toast(moved?("已保存，并移动到「"+cat+"」"):"已保存修改");
+      return;
+    }
+    var g=promptGroupByName(cat);
+    if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
+    g.items.push({_id:promptNewId(),title:title,agents:agents,prompts:prompts});
+    promptAdding=false;promptAddCat="";
+    savePrompts();renderPromptTabs();renderPrompts();toast("已添加指令");
+  }
+  // 按 id 删：同名标题不会被连带删除；分组保留不自动消失
+  function delPrompt(id){
+    var loc=promptItemById(id);
+    if(!loc){toast("找不到该条目，列表可能已刷新");renderPrompts();return;}
+    loc.g.items.splice(loc.ii,1);
+    savePrompts();renderPromptTabs();renderPrompts();toast("已删除（分组保留）");
+  }
+  // ---------- 分组：新增 / 重命名 / 删除空分组 ----------
+  function promptGroupOpen(mode,cat){
+    pgMode=(mode==="rename")?"rename":"add";
+    pgTarget=cat||"";
+    var t=$("pgTitle"),h=$("pgHint"),n=$("pgName"),d=$("pgDel");
+    if(pgMode==="rename"){
+      var cnt=promptGroupCount(cat);
+      if(t)t.textContent="重命名分组";
+      if(h)h.textContent="改名后，该分组下的 "+cnt+" 条指令会一起挂到新名字下，指令内容不变。";
+      if(n)n.value=cat||"";
+      if(d)d.style.display=cnt?"none":"inline-flex";
+    }else{
+      if(t)t.textContent="新增分组";
+      if(h)h.textContent="分组只是分类容器；建好后可以用任意条目的「编辑」把指令移动进来。";
+      if(n)n.value="";
+      if(d)d.style.display="none";
+    }
+    openModal("modalPGroup");
+    setTimeout(function(){var el=$("pgName");if(el&&el.focus){el.focus();if(el.select)el.select();}},60);
+  }
+  function promptGroupSave(){
+    var v=String(($("pgName")&&$("pgName").value)||"").trim();
+    if(!v){toast("请填写分组名称");return;}
+    if(pgMode==="rename"){
+      var g=promptGroupByName(pgTarget);
+      if(!g){toast("找不到该分组");closeModal("modalPGroup");renderPrompts();return;}
+      if(v===pgTarget){closeModal("modalPGroup");return;}
+      if(promptGroupByName(v)){toast("已有同名分组「"+v+"」");return;}
+      g.cat=v;
+      if(promptTab===pgTarget)promptTab=v;
+      savePrompts();closeModal("modalPGroup");renderPromptTabs();renderPrompts();
+      toast("已重命名为「"+v+"」");
+      return;
+    }
+    if(promptGroupByName(v)){toast("已有同名分组「"+v+"」，换个名字");return;}
+    promptGroups.push({cat:v,items:[]});
+    promptTab=v;promptAddCat=v;promptEditingId="";promptAdding=true;
+    savePrompts();closeModal("modalPGroup");renderPromptTabs();renderPrompts();promptFocusForm();
+    toast("已新增分组「"+v+"」，可直接往里加指令");
+  }
+  function promptGroupDel(){
+    var g=promptGroupByName(pgTarget);
+    if(!g){closeModal("modalPGroup");return;}
+    if((g.items||[]).length){toast("分组里还有指令，请先把它们移到别的分组");return;}
+    promptGroups=promptGroups.filter(function(x){return x.cat!==pgTarget;});
+    if(promptTab===pgTarget)promptTab="all";
+    savePrompts();closeModal("modalPGroup");renderPromptTabs();renderPrompts();
+    toast("已删除空分组");
   }
   function resetPrompts(){
     promptGroups=JSON.parse(JSON.stringify(promptSeed));
+    promptEnsureIds();
     promptTab="all";promptKeyword="";
+    promptAdding=false;promptEditingId="";promptAddCat="";
     var s=$("promptSearch");if(s)s.value="";
     savePrompts();renderPromptTabs();renderPrompts();toast("已恢复默认清单");
   }
@@ -6135,7 +6369,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var g=promptGroups.find(function(x){return x.cat===cat;});
     if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
     var it=(g.items||[]).find(function(x){return x.title===title;});
-    if(!it){it={title:title,agents:[],prompts:[]};g.items.push(it);}
+    if(!it){it={_id:promptNewId(),title:title,agents:[],prompts:[]};g.items.push(it);}
     agents.forEach(function(a){if(a&&it.agents.indexOf(a)<0)it.agents.push(a);});
     if(it.prompts.indexOf(text)>=0)return "dup";
     it.prompts.push(text);return "add";
@@ -6158,7 +6392,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(!title)title=text.slice(0,18);
       if(promptMergeOne(cat,title,agentsRaw,text)==="add")added++;else dup++;
     });
-    if(added){savePrompts();}
+    if(added){promptEnsureIds();savePrompts();}
     renderPromptTabs();
     renderPrompts();
     closeModal("modalPImport");
@@ -6168,7 +6402,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     pickAll:promptExportPickAll,pickInvert:promptExportPickInvert,gToggle:promptExportGroupToggle,
     doExport:promptExportDo,rowAll:promptImportRowsAll,rowNewOnly:promptImportOnlyNew,
     rowCheck:promptImportRowCheck,doImport:promptImportDo,exportAll:promptExportXlsx,
-    colToggle:promptImportColToggle,colRole:promptImportColRole
+    colToggle:promptImportColToggle,colRole:promptImportColRole,
+    // 分组与二次编辑
+    addOpen:promptAddOpen,editOpen:promptEditOpen,saveForm:savePromptForm,del:delPrompt,
+    groupOpen:promptGroupOpen,groupSave:promptGroupSave,groupDel:promptGroupDel,
+    itemById:promptItemById,formCurrent:promptFormCurrent,
+    getGroups:function(){return promptGroups;},
+    setGroups:function(g){promptGroups=g||[];promptEnsureIds();},
+    state:function(){return {adding:promptAdding,editingId:promptEditingId,addCat:promptAddCat,tab:promptTab,pgMode:pgMode,pgTarget:pgTarget};}
   };
 
   // 暴露给自动化冒烟测试
@@ -6471,7 +6712,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var src=s.mode==="ai"?"AI生成":"本地模板";
     var g=promptGroups.find(function(x){return x.cat===cat;});
     if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
-    g.items.push({title:title,agents:["Prompt助手",src],prompts:[txt]});
+     g.items.push({_id:promptNewId(),title:title,agents:["Prompt助手",src],prompts:[txt]});
     savePrompts();
     if(typeof renderPromptTabs==="function"){renderPromptTabs();renderPrompts();}
     phLibCancel();
@@ -9329,9 +9570,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   if($("coverDate"))$("coverDate").oninput=function(){planCover.date=this.value;savePlans();};
   if($("tplSelect"))$("tplSelect").onchange=function(){if(this.value!=="")loadPlanTemplate(parseInt(this.value,10));};
   if($("btnDelTpl"))$("btnDelTpl").onclick=function(){var sel=$("tplSelect");if(sel&&sel.value!=="")delPlanTemplate(parseInt(sel.value,10));};
-  if($("btnAddPrompt"))$("btnAddPrompt").onclick=function(){promptAdding=true;promptKeyword="";var s=$("promptSearch");if(s)s.value="";renderPromptTabs();renderPrompts();};
+   if($("btnAddPrompt"))$("btnAddPrompt").onclick=function(){promptAdding=true;promptEditingId="";promptAddCat="";promptKeyword="";var s=$("promptSearch");if(s)s.value="";renderPromptTabs();renderPrompts();promptFocusForm();};
+   if($("btnAddGroup"))$("btnAddGroup").onclick=function(){promptGroupOpen("add","");};
+   if($("pgSave"))$("pgSave").onclick=promptGroupSave;
+   if($("pgDel"))$("pgDel").onclick=promptGroupDel;
+   if($("pgName"))$("pgName").onkeydown=function(e){if(e&&e.key==="Enter"){e.preventDefault();promptGroupSave();}};
   if($("btnResetPrompts"))$("btnResetPrompts").onclick=resetPrompts;
-  if($("promptSearch"))$("promptSearch").oninput=function(){promptKeyword=this.value;renderPrompts();};
+   if($("promptSearch"))$("promptSearch").oninput=function(){promptKeyword=this.value;renderPrompts(true);};
   if($("btnExportPrompts"))$("btnExportPrompts").onclick=promptExportOpen;
   if($("btnImportPrompts"))$("btnImportPrompts").onclick=function(){var f=$("promptImportFile");if(f){f.value="";f.click();}};
   if($("promptImportFile"))$("promptImportFile").onchange=function(){promptImportPick(this.files);};
