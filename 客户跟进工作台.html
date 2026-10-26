@@ -1778,6 +1778,9 @@ body{background:var(--bg);}
               <input type="text" class="search" id="promptSearch" placeholder="搜索指令 / 智能体 / 关键词...">
               <button class="btn primary" id="btnAddPrompt" type="button">+ 添加指令</button>
               <button class="btn" id="btnResetPrompts" type="button" title="清空自定义内容并恢复默认清单">恢复默认</button>
+          <button class="btn" id="btnExportPrompts" type="button" title="把当前筛选范围内的指令按集合导出为 Excel">集合导出</button>
+          <button class="btn" id="btnImportPrompts" type="button" title="从 Excel / CSV 批量导入指令（可多选文件）">导入文件</button>
+          <input type="file" id="promptImportFile" accept=".xlsx,.xls,.csv" multiple style="display:none">
             </div>
           </div>
           <div id="promptsRoot"></div>
@@ -5714,6 +5717,133 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var s=$("promptSearch");if(s)s.value="";
     savePrompts();renderPromptTabs();renderPrompts();toast("已恢复默认清单");
   }
+  // ---------- 指令集合导出 / 导入 ----------
+  function promptStamp(){
+    var d=new Date();
+    function p(n){return (n<10?"0":"")+n;}
+    return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"_"+p(d.getHours())+p(d.getMinutes());
+  }
+  // 展开成「一行一条指令」：分类名称 / 智能体 / 指令词 / 标题
+  function promptExportRows(){
+    var rows=[];
+    promptFilter().forEach(function(g){
+      (g.items||[]).forEach(function(it){
+        var agents=(it.agents||[]).join("、");
+        var list=(it.prompts&&it.prompts.length)?it.prompts:[""];
+        list.forEach(function(p){
+          rows.push([g.cat||"",agents,it.title||"",p||""]);
+        });
+      });
+    });
+    return rows;
+  }
+  function promptExportXlsx(){
+    if(!window.XLSX){toast("表格库未加载，无法导出");return;}
+    var rows=promptExportRows();
+    if(!rows.length){toast("当前筛选下没有可导出的指令");return;}
+    var aoa=[["分类名称","智能体","指令词","标题"]];
+    rows.forEach(function(r){aoa.push([r[0],r[1],r[3],r[2]]);});
+    var ws=window.XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=[{wch:18},{wch:16},{wch:64},{wch:26}];
+    ws["!autofilter"]={ref:"A1:D"+aoa.length};
+    var wb=window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb,ws,"指令提示词");
+    var scoped=(promptTab!=="all"||String(promptKeyword||"").trim()!=="");
+    var fn="指令提示词_"+promptStamp()+(scoped?"_筛选":"_全部")+".xlsx";
+    window.XLSX.writeFile(wb,fn);
+    toast("已导出 "+rows.length+" 条指令 → "+fn);
+  }
+  // 表头识别：先按列名找，找不到再按「分类/智能体/指令词/标题」的默认列序
+  function promptColumnMap(head){
+    var idx={cat:-1,agents:-1,title:-1,text:-1};
+    var H=/分类|集合|维度|智能体|代理|指令词|指令|提示词|标题|需求|category|agent|prompt|title/i;
+    var hits=0;
+    head.forEach(function(h){if(H.test(String(h==null?"":h)))hits++;});
+    // 至少两个单元格像列名才算表头：否则「帮我写一个标题」这种内容行会被误判
+    if(hits>=2){
+      head.forEach(function(h,i){
+        var t=String(h==null?"":h).trim();
+        if(!t)return;
+        if(idx.cat<0&&/分类|集合|维度|category/i.test(t)){idx.cat=i;return;}
+        if(idx.agents<0&&/智能体|代理|agent/i.test(t)){idx.agents=i;return;}
+        if(idx.text<0&&/指令词|指令|提示词|prompt/i.test(t)){idx.text=i;return;}
+        if(idx.title<0&&/标题|需求|名称|title/i.test(t)){idx.title=i;return;}
+      });
+      return {idx:idx,start:1};
+    }
+    return {idx:{cat:0,agents:1,text:2,title:3},start:0};
+  }
+  function promptApplyRows(aoa){
+    var out={added:0,dup:0,skip:0};
+    if(!aoa||!aoa.length)return out;
+    var cm=promptColumnMap((aoa[0]||[]).map(function(v){return String(v==null?"":v);}));
+    var idx=cm.idx;
+    if(idx.cat<0||idx.text<0)throw new Error("找不到「分类名称」或「指令词」列");
+    for(var r=cm.start;r<aoa.length;r++){
+      var row=aoa[r]||[];
+      var cat=String(row[idx.cat]==null?"":row[idx.cat]).trim();
+      var text=String(row[idx.text]==null?"":row[idx.text]).trim();
+      var agentsRaw=idx.agents>=0?String(row[idx.agents]==null?"":row[idx.agents]).trim():"";
+      var title=idx.title>=0?String(row[idx.title]==null?"":row[idx.title]).trim():"";
+      if(!cat&&!text){out.skip++;continue;}
+      if(!cat||!text){out.skip++;continue;}
+      if(!title)title=text.slice(0,18);
+      var agents=agentsRaw?agentsRaw.split(/[、,，;；\/]+/).map(function(x){return x.trim();}).filter(Boolean):[];
+      var g=promptGroups.find(function(x){return x.cat===cat;});
+      if(!g){g={cat:cat,items:[]};promptGroups.push(g);}
+      var it=g.items.find(function(x){return x.title===title;});
+      if(!it){it={title:title,agents:[],prompts:[]};g.items.push(it);}
+      agents.forEach(function(a){if(a&&it.agents.indexOf(a)<0)it.agents.push(a);});
+      if(it.prompts.indexOf(text)<0){it.prompts.push(text);out.added++;}
+      else out.dup++;
+    }
+    return out;
+  }
+  function promptImportOne(file,cb){
+    if(!window.XLSX){toast("表格库未加载，无法导入");cb(null);return;}
+    var isCsv=/\.csv$/i.test(String(file.name||""));
+    var reader=new FileReader();
+    reader.onload=function(){
+      var res=null;
+      try{
+        var wb=isCsv
+          ? window.XLSX.read(String(reader.result||""),{type:"string"})
+          : window.XLSX.read(new Uint8Array(reader.result),{type:"array"});
+        var nm=(wb.SheetNames||[])[0];
+        var ws=nm?wb.Sheets[nm]:null;
+        if(!ws){toast(file.name+" 里没有可读的工作表");cb(null);return;}
+        var aoa=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false,blankrows:false});
+        res=promptApplyRows(aoa);
+        if(res.added||res.dup){savePrompts();}
+      }catch(e){
+        toast((file.name||"文件")+" 导入失败："+(e&&e.message?e.message:"格式不支持"));
+        cb(null);return;
+      }
+      cb(res);
+    };
+    reader.onerror=function(){toast((file.name||"文件")+" 读取失败");cb(null);};
+    if(isCsv)reader.readAsText(file,"utf-8");
+    else reader.readAsArrayBuffer(file);
+  }
+  function promptImportFiles(files){
+    var arr=Array.prototype.slice.call(files||[]);
+    if(!arr.length)return;
+    var total={added:0,dup:0,skip:0,files:0};
+    var i=0;
+    var next=function(){
+      if(i>=arr.length){
+        renderPromptTabs();renderPrompts();
+        toast("导入完成："+total.files+" 个文件，新增 "+total.added+" 条，跳过重复 "+total.dup+" 条，忽略 "+total.skip+" 行");
+        return;
+      }
+      promptImportOne(arr[i++],function(res){
+        if(res){total.added+=res.added;total.dup+=res.dup;total.skip+=res.skip;total.files++;}
+        next();
+      });
+    };
+    next();
+  }
+
   // 暴露给自动化冒烟测试
   window.switchView=switchView;
   // ---------- Prompt 助手：协商式生成专业 Prompt + 历史 + 场景预设 + 存指令库 ----------
@@ -8875,6 +9005,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   if($("btnAddPrompt"))$("btnAddPrompt").onclick=function(){promptAdding=true;promptKeyword="";var s=$("promptSearch");if(s)s.value="";renderPromptTabs();renderPrompts();};
   if($("btnResetPrompts"))$("btnResetPrompts").onclick=resetPrompts;
   if($("promptSearch"))$("promptSearch").oninput=function(){promptKeyword=this.value;renderPrompts();};
+  if($("btnExportPrompts"))$("btnExportPrompts").onclick=promptExportXlsx;
+  if($("btnImportPrompts"))$("btnImportPrompts").onclick=function(){var f=$("promptImportFile");if(f){f.value="";f.click();}};
+  if($("promptImportFile"))$("promptImportFile").onchange=function(){promptImportFiles(this.files);};
   // 指令提示词吸顶条：滚动后出现底边分隔线（仅该视图生效）
   (function(){
     if(typeof document==="undefined"||!document.querySelector)return;
