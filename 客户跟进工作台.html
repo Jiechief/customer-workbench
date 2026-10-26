@@ -704,9 +704,46 @@
   .px-group-h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border);margin-bottom:4px;cursor:pointer;}
   .px-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0 4px 18px;font-size:13px;cursor:pointer;}
   .px-item small{color:var(--muted);}
-  .px-map{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
-  .px-map label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
-  .px-map select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:12.5px;}
+  /* ---- 列清单：每列一行，勾选 + 指定用途 ---- */
+  .px-cols-wrap{margin:14px 0 4px;}
+  .px-cols-head{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:10px;}
+  .px-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);}
+  .px-col{display:flex;align-items:center;gap:10px;min-width:0;}
+  .px-col-check{display:flex;align-items:center;flex:0 0 auto;}
+  .px-col-check input{width:18px;height:18px;cursor:pointer;accent-color:var(--accent);}
+  .px-col-name{flex:1 1 auto;min-width:0;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .px-col select{flex:0 0 132px;height:40px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--card-bg);color:var(--text);font-size:14px;}
+  .px-col.is-off .px-col-name{color:var(--muted2);}
+
+  /* ---- 指令模块整体放大 ---- */
+  #viewPrompts .prompt-form .field{margin-bottom:16px;}
+  #viewPrompts .prompt-form .field label{display:block;font-size:14.5px;font-weight:600;margin-bottom:7px;color:var(--text);}
+  #viewPrompts .prompt-form .field input,#viewPrompts .prompt-form .field select,#viewPrompts .prompt-form .field textarea{
+    width:100%;font-size:15.5px;padding:12px 14px;min-height:48px;border:1px solid var(--border);
+    border-radius:10px;background:var(--card-bg);color:var(--text);line-height:1.6;}
+  #viewPrompts .prompt-form .field select{height:48px;}
+  #viewPrompts .prompt-form .field textarea{min-height:158px;line-height:1.75;resize:vertical;}
+  #viewPrompts .prompt-form .field input:focus,#viewPrompts .prompt-form .field select:focus,#viewPrompts .prompt-form .field textarea:focus{
+    border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);outline:none;}
+  #viewPrompts .prompt-form .prompt-actions{display:flex;gap:12px;margin-top:4px;}
+  #viewPrompts .prompt-form .prompt-actions .btn{height:46px;padding:0 28px;font-size:15.5px;border-radius:10px;}
+
+  #modalPExport .sheet h3,#modalPImport .sheet h3{font-size:20px;}
+  #modalPExport .modal-hint,#modalPImport .modal-hint{font-size:14px;line-height:1.75;margin-bottom:6px;}
+  #modalPExport .btn,#modalPImport .btn{height:42px;padding:0 20px;font-size:14.5px;border-radius:10px;}
+  .px-tools{gap:10px;margin:14px 0;}
+  .px-count{font-size:13.5px;}
+  .px-list,.px-preview{padding:8px 14px;border-radius:12px;}
+  .px-group{margin:10px 0 14px;}
+  .px-group-h{font-size:15.5px;padding:6px 0;}
+  .px-group-h input,.px-item input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
+  .px-item{font-size:14.5px;padding:7px 0 7px 20px;align-items:center;}
+  .px-item small{font-size:12.5px;}
+  .px-table{font-size:14px;}
+  .px-table th{padding:11px 12px;font-size:13.5px;}
+  .px-table td{padding:10px 12px;}
+  .px-table input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .px-dup,.px-new{font-size:13px;}
   .px-table{width:100%;border-collapse:collapse;font-size:12.5px;}
   .px-table th{position:sticky;top:0;background:var(--panel);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:600;z-index:1;}
   .px-table td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
@@ -2055,11 +2092,9 @@ body{background:var(--bg);}
   <div class="sheet" style="max-width:980px;">
     <h3>导入识别 · <span id="pxFileName" style="font-size:13px;color:var(--muted);"></span></h3>
     <div class="modal-hint">先确认每列对应什么字段，再勾选要导入的行。默认只勾选未重复的行，重复的会标红。</div>
-    <div class="px-map">
-      <div><label>分类列</label><select id="pxmCat"></select></div>
-      <div><label>智能体列</label><select id="pxmAgents"></select></div>
-      <div><label>指令词列</label><select id="pxmText"></select></div>
-      <div><label>标题列</label><select id="pxmTitle"></select></div>
+    <div class="px-cols-wrap">
+      <div class="px-cols-head">下面是文件里的所有列。勾选需要的列，并在右侧指定它对应哪个字段；不需要的列取消勾选即可，不会导入。</div>
+      <div class="px-cols" id="pxCols"></div>
     </div>
     <div class="px-tools">
       <button class="btn" type="button" onclick="window.__pio.rowAll(true)">全选</button>
@@ -5937,7 +5972,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var arr=Array.prototype.slice.call(files||[]);
     if(!arr.length)return;
     if(!window.XLSX){toast("表格库未加载，无法导入");return;}
-    var st={files:[],rows:[],header:null,map:{cat:0,agents:1,text:2,title:3},maxCol:0,checked:{}};
+    var st={files:[],rows:[],header:null,cols:null,maxCol:0,checked:{}};
     var i=0;
     var next=function(){
       if(i>=arr.length){pxImportState=st;promptImportOpen();return;}
@@ -5949,7 +5984,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           var cm=promptColumnMap(head);
           if(st.header===null){
             st.header=(cm.start===1)?head:null;
-            st.map=cm.idx;
           }
           var skip=cm.start;
           if(st.header&&head.join("|")===st.header.join("|"))skip=1;
@@ -5971,33 +6005,78 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var st=pxImportState;if(!st)return;
     var fn=$("pxFileName");
     if(fn)fn.textContent=st.files.join("、")+" · 共 "+st.rows.length+" 行";
-    var cols=Math.max(st.maxCol,st.header?st.header.length:0);
-    var optAll="";
-    for(var c=0;c<cols;c++){
-      var label=(st.header&&st.header[c])?st.header[c]:"第 "+(c+1)+" 列";
-      optAll+='<option value="'+c+'">'+esc(String(label))+'（第'+(c+1)+'列）</option>';
-    }
-    var pairs=[["pxmCat","cat",true],["pxmAgents","agents",false],["pxmText","text",true],["pxmTitle","title",false]];
-    pairs.forEach(function(p){
-      var el=$(p[0]);if(!el)return;
-      el.innerHTML=(p[2]?"":'<option value="-1">（不使用）</option>')+optAll;
-      var v=st.map[p[1]];
-      el.value=String(v==null?-1:v);
-      var key=p[1];
-      el.onchange=function(){
-        var n=parseInt(this.value,10);
-        st.map[key]=isNaN(n)?-1:n;
-        promptImportRender(true);
-      };
-    });
+    promptImportBuildCols();
+    promptImportRenderCols();
     promptImportRender(true);
     openModal("modalPImport");
   }
+  // 把文件里真实存在的每一列都列出来，交给用户自己决定导入哪些、放进哪个字段
+  function promptImportBuildCols(){
+    var st=pxImportState;
+    if(st.cols&&st.cols.length)return;
+    var cnt=Math.max(st.maxCol||0,st.header?st.header.length:0);
+    if(!cnt)cnt=1;
+    var roles=["cat","agents","text","title"];
+    st.cols=[];
+    for(var c=0;c<cnt;c++){
+      var h=(st.header&&st.header[c]!=null)?String(st.header[c]).trim():"";
+      st.cols.push({
+        idx:c,
+        name:(h?h:"第 "+(c+1)+" 列")+"（第"+(c+1)+"列）",
+        role:roles[c]||"ignore",
+        on:!!roles[c]
+      });
+    }
+  }
+  function promptImportRoleOpts(cur){
+    return [["cat","分类"],["title","标题"],["agents","智能体"],["text","指令词"],["ignore","不导入"]].map(function(p){
+      return '<option value="'+p[0]+'"'+(cur===p[0]?" selected":"")+'>'+p[1]+'</option>';
+    }).join("");
+  }
+  function promptImportRenderCols(){
+    var st=pxImportState;if(!st)return;
+    var box=$("pxCols");if(!box)return;
+    var html="";
+    (st.cols||[]).forEach(function(col){
+      html+='<div class="px-col'+(col.on?"":" is-off")+'">'+
+        '<label class="px-col-check"><input type="checkbox" '+(col.on?"checked":"")+' onchange="window.__pio.colToggle('+col.idx+',this.checked)"></label>'+
+        '<span class="px-col-name" title="'+esc(col.name)+'">'+esc(col.name)+'</span>'+
+        '<select onchange="window.__pio.colRole('+col.idx+',this.value)">'+promptImportRoleOpts(col.role)+'</select>'+
+        '</div>';
+    });
+    box.innerHTML=html;
+  }
+  function promptImportNextRole(){
+    var st=pxImportState||{cols:[]};
+    var used={};
+    (st.cols||[]).forEach(function(c){if(c.on&&c.role!=="ignore")used[c.role]=1;});
+    var order=["cat","text","agents","title"];
+    for(var i=0;i<order.length;i++){if(!used[order[i]])return order[i];}
+    return "ignore";
+  }
+  function promptImportColToggle(idx,on){
+    var st=pxImportState;if(!st)return;
+    var c=st.cols[idx];if(!c)return;
+    c.on=!!on;
+    if(!on)c.role="ignore";
+    else if(c.role==="ignore")c.role=promptImportNextRole();
+    promptImportRenderCols();
+    promptImportRender(false);
+  }
+  function promptImportColRole(idx,role){
+    var st=pxImportState;if(!st)return;
+    var c=st.cols[idx];if(!c)return;
+    c.role=role||"ignore";
+    c.on=(c.role!=="ignore");
+    promptImportRenderCols();
+    promptImportRender(false);
+  }
   function promptImportVal(row,key){
     var st=pxImportState;if(!st)return "";
-    var idx=st.map[key];
-    if(idx==null||idx<0)return "";
-    var v=row.raw[idx];
+    var col=null;
+    (st.cols||[]).forEach(function(c){if(!col&&c.on&&c.role===key)col=c;});
+    if(!col)return "";
+    var v=row.raw[col.idx];
     return String(v==null?"":v).trim();
   }
   function promptImportIsDup(cat,text){
@@ -6063,6 +6142,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function promptImportDo(){
     var st=pxImportState;if(!st)return;
+    var hasCat=false,hasText=false;
+    (st.cols||[]).forEach(function(c){
+      if(!c.on)return;
+      if(c.role==="cat")hasCat=true;
+      if(c.role==="text")hasText=true;
+    });
+    if(!hasCat||!hasText){toast("请至少勾选一列作为「分类」、一列作为「指令词」");return;}
     var added=0,dup=0,skip=0;
     st.rows.forEach(function(r,ri){
       if(!st.checked[ri]){skip++;return;}
@@ -6081,7 +6167,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.__pio={
     pickAll:promptExportPickAll,pickInvert:promptExportPickInvert,gToggle:promptExportGroupToggle,
     doExport:promptExportDo,rowAll:promptImportRowsAll,rowNewOnly:promptImportOnlyNew,
-    rowCheck:promptImportRowCheck,doImport:promptImportDo,exportAll:promptExportXlsx
+    rowCheck:promptImportRowCheck,doImport:promptImportDo,exportAll:promptExportXlsx,
+    colToggle:promptImportColToggle,colRole:promptImportColRole
   };
 
   // 暴露给自动化冒烟测试
