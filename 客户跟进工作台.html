@@ -2581,7 +2581,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           throw err;
         }).then(function(j){
           if(to)clearTimeout(to);
-          var content=j&&j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:"";
+          var content=aiPickContent(j);
+          if(!aiTextOk(content)){
+            throw new Error("返回里没有可解析的正文（接口地址可能不是 OpenAI 兼容格式，或该模型未返回内容）");
+          }
           var dur=Date.now()-t0;
           aiLogUsage({ts:Date.now(),provider:provider.id,model:model,scene:scene,success:true,
             tokensIn:aiEstimateTokens(JSON.stringify(body.messages||"")),
@@ -2612,6 +2615,56 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
   window.aiCall=aiCall;
+  // 从各家接口返回里抠出正文字符串：OpenAI 兼容 / DashScope 原生 / Anthropic / content 数组
+  function aiPickContent(j){
+    if(j==null)return "";
+    if(typeof j==="string")return j;
+    if(typeof j!=="object")return String(j);
+    var ch=(j.choices&&j.choices[0])||null;
+    if(ch){
+      if(ch.message&&typeof ch.message.content==="string"&&ch.message.content.trim())return ch.message.content;
+      if(ch.message&&Array.isArray(ch.message.content)){
+        var ta=ch.message.content.map(function(x){return (x&&typeof x==="object")?(x.text||x.content||""):String(x||"");}).join("");
+        if(ta.trim())return ta;
+      }
+      if(typeof ch.text==="string"&&ch.text.trim())return ch.text;
+      if(ch.delta&&typeof ch.delta.content==="string")return ch.delta.content;
+    }
+    if(j.output&&typeof j.output==="object"){
+      if(typeof j.output.text==="string"&&j.output.text.trim())return j.output.text;
+      if(j.output.choices)return aiPickContent({choices:j.output.choices});
+      if(j.output.message&&typeof j.output.message.content==="string")return j.output.message.content;
+    }
+    if(typeof j.content==="string"&&j.content.trim())return j.content;
+    if(Array.isArray(j.content)){
+      var tb=j.content.map(function(x){return (x&&typeof x==="object")?(x.text||x.content||""):String(x||"");}).join("");
+      if(tb.trim())return tb;
+    }
+    if(j.message&&typeof j.message.content==="string")return j.message.content;
+    if(j.output_message&&typeof j.output_message.content==="string")return j.output_message.content;
+    if(typeof j.text==="string"&&j.text.trim())return j.text;
+    if(typeof j.result==="string"&&j.result.trim())return j.result;
+    if(j.data&&typeof j.data==="object"){var td=aiPickContent(j.data);if(td)return td;}
+    return "";
+  }
+  // aiCall 统一返回对象（{content,provider,model,fallbackUsed}）；老调用点直接把回调参数当字符串用会渲染成 [object Object]
+  // 这里统一取纯文本：兼容字符串 / {content} / 各家原始结构
+  function aiText(res){
+    if(res==null)return "";
+    if(typeof res==="string")return res;
+    if(typeof res!=="object")return String(res);
+    if(typeof res.content==="string"&&res.content.trim())return res.content;
+    return aiPickContent(res);
+  }
+  // 拿到的是不是一块能用的文字（空 / [object Object] / undefined 字符串）
+  function aiTextOk(v){
+    var s=String(v==null?"":v).trim();
+    if(!s)return false;
+    if(/^\[object /i.test(s))return false;
+    if(/^undefined$/i.test(s)||/^null$/i.test(s))return false;
+    return true;
+  }
+  window.aiText=aiText;window.aiTextOk=aiTextOk;window.aiPickContent=aiPickContent;
   // 本地服务器（启动本地服务器.bat）提供同源 /proxy 转发；直连被浏览器跨域拦截时自动改走代理
   function apiProxyUrl(base){return "/proxy?"+encodeURIComponent(base);}
   function isPresetModel(v){if(!v)return false;for(var k in PROVIDERS){if(PROVIDERS[k].text===v)return true;}return false;}
@@ -6696,9 +6749,48 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(d&&Array.isArray(d.sessions)){phSessions=d.sessions;phCurId=d.curId||"";}
       else if(d&&(d.raw||d.final)){phSessions=[{id:phNewId(),ts:phStamp(),raw:d.raw||"",questions:d.questions||[],answers:d.answers||{},final:d.final||"",mode:d.mode||"",scenario:""}];phCurId=phSessions[0].id;}
     }catch(e){}
+    phSanitize();
     var s=phFind(phCurId);
     if(!s&&phSessions.length){phCurId=phSessions[0].id;s=phSessions[0];}
     if(s){phRaw=s.raw||"";phQuestions=Array.isArray(s.questions)?s.questions:[];phAnswers=s.answers||{};phFinal=s.final||"";phMode=s.mode||"";phScenario=s.scenario||"";}
+  }
+  // 洗掉早期版本存进来的坏数据（[object Object] / 非字符串 final）
+  function phCleanText(v){
+    if(v==null)return "";
+    if(typeof v==="object")v=aiText(v);
+    var s=String(v);
+    if(/^\[object /i.test(s.trim()))return "";
+    if(/^(undefined|null)$/i.test(s.trim()))return "";
+    return s;
+  }
+  function phSanitize(){
+    var dirty=false;
+    (phSessions||[]).forEach(function(s){
+      if(!s||typeof s!=="object")return;
+      var f=phCleanText(s.final);
+      if(f!==s.final){s.final=f;dirty=true;}
+      var r=phCleanText(s.raw);
+      if(r!==s.raw){s.raw=r;dirty=true;}
+      if(!Array.isArray(s.questions)){if(s.questions){s.questions=[];dirty=true;}}
+      else{
+        var q=[];
+        s.questions.forEach(function(x){
+          if(!x)return;
+          if(typeof x==="string"){if(x.trim()){q.push({dim:"补充说明",question:x});dirty=true;}return;}
+          var qq=phCleanText(x.question||x.q||"");
+          if(!qq){dirty=true;return;}
+          q.push({dim:PH_DIMS.indexOf(x.dim)>=0?x.dim:"补充说明",question:qq});
+        });
+        if(q.length!==s.questions.length)dirty=true;
+        s.questions=q;
+      }
+      if(!Array.isArray(s.answers)){s.answers={};dirty=true;}
+    });
+    if(dirty){
+      phSessions=phSessions.filter(function(s){return !!(s&&(s.raw||s.final||(s.questions&&s.questions.length)));});
+      try{lsSet(PH_KEY,JSON.stringify({curId:phCurId,sessions:phSessions}));}catch(e){}
+    }
+    return dirty;
   }
   function phLocalQuestions(){
     return [
@@ -6710,6 +6802,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ];
   }
   function phParseQuestions(txt){
+    if(!txt)return [];
+    if(typeof txt==="object")txt=aiText(txt);
     if(!txt)return [];
     var s=String(txt).replace(/```json/gi,"").replace(/```/g,"").trim();
     var m=s.match(/\[[\s\S]*\]/);
@@ -6842,7 +6936,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var list=phVisible();
     if(!list.length){box.innerHTML='<div class="ph-empty">还没有历史。生成过的 Prompt 会自动存在这里，方便下次找到。</div>';return;}
     box.innerHTML=list.map(function(s,i){
-      var title=(s.final||s.raw||"").split("\n")[0].slice(0,50)||"（空）";
+      var title=(phCleanText(s.final)||phCleanText(s.raw)||"").split("\n")[0].slice(0,50)||"（这条没有内容，重新生成一次）";
       var badge=s.scenario?('<span class="ph-q-dim">'+esc(s.scenario)+'</span>'):"";
       var src=s.mode==="ai"?"AI":"本地模板";
       return '<div class="ph-hitem'+(s.id===phCurId?" cur":"")+'">'+
@@ -6866,9 +6960,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(phProvider){
       aiCall("promptHelper",{messages:[
         {role:"system",content:PH_ASK_SYS},{role:"user",content:raw}
-      ]}).then(function(txt){
-        var qs=phParseQuestions(txt);
-        if(!qs.length)qs=phLocalQuestions();
+      ]}).then(function(res){
+        var qs=phParseQuestions(aiText(res));
+        if(!qs.length){
+          phQuestions=phLocalQuestions();phAnswers={};phMode="local";phRenderQuestions();phSaveDraft();
+          if(st){st.textContent="模型没有按要求返回追问清单，已改用本地模板追问（不影响继续生成）。";st.className="ph-status ph-warn";}
+          return;
+        }
         phQuestions=qs;phAnswers={};phMode="ai";phRenderQuestions();phSaveDraft();
         if(st){st.textContent="已生成 "+qs.length+" 个追问，点击「补充问题」填写回答。";st.className="ph-status ph-ok";}
       }).catch(function(e){
@@ -6894,8 +6992,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(phProvider){
       aiCall("promptHelper",{messages:[
         {role:"system",content:PH_GEN_SYS},{role:"user",content:phBuildGenInput(phAnswers)}
-      ]}).then(function(txt){
-        phFinal=String(txt||"").trim()||phLocalPrompt(phAnswers);phMode="ai";phRenderFinal();phSaveDraft();phRenderHistory();
+      ]}).then(function(res){
+        var txt=aiText(res).trim();
+        if(!aiTextOk(txt)){
+          phFinal=phLocalPrompt(phAnswers);phMode="local";
+          phRenderFinal(true,"模型返回内容为空");phSaveDraft();phRenderHistory();
+          return;
+        }
+        phFinal=txt;phMode="ai";phRenderFinal();phSaveDraft();phRenderHistory();
       }).catch(function(e){
         phFinal=phLocalPrompt(phAnswers);phMode="local";phRenderFinal(true,(e&&e.message)||String(e));phSaveDraft();phRenderHistory();
       });
@@ -6923,7 +7027,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function phRenderFinal(warn,errMsg){
     var box=$("phFinal");if(!box)return;
-    if(!phFinal){box.innerHTML='<div class="ph-empty">回答完补充问题后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
+    phFinal=phCleanText(phFinal);
+    if(!phFinal.trim()){box.innerHTML='<div class="ph-empty">回答完补充问题后点「生成专业 Prompt」，结果会显示在这里。</div>';return;}
     var meta=phMode==="ai"?("由 AI 生成"):"由本地模板生成（未配置可用的 AI 供应商）";
     if(warn)meta+="；在线失败已回退本地（"+(errMsg||"")+"）";
     box.innerHTML='<div class="ph-final-text" id="phFinalText">'+esc(phFinal)+'</div>'+
