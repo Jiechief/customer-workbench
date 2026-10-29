@@ -728,19 +728,26 @@
   #viewPrompts .prompt-form .prompt-actions{display:flex;gap:12px;margin-top:4px;}
   #viewPrompts .prompt-form .prompt-actions .btn{height:46px;padding:0 28px;font-size:15.5px;border-radius:10px;}
 
-  #modalPExport .sheet h3,#modalPImport .sheet h3,#modalPGroup .sheet h3{font-size:20px;margin-bottom:14px;line-height:1.4;}
-  #modalPExport .modal-hint,#modalPImport .modal-hint,#modalPGroup .modal-hint{font-size:14px;line-height:1.75;margin-bottom:6px;}
-  #modalPExport .btn,#modalPImport .btn,#modalPGroup .btn{height:44px;padding:0 22px;font-size:15px;border-radius:10px;}
+  #modalPExport .sheet h3,#modalPImport .sheet h3,#modalPGroup .sheet h3,#modalPGroupDel .sheet h3{font-size:20px;margin-bottom:14px;line-height:1.4;}
+  #modalPExport .modal-hint,#modalPImport .modal-hint,#modalPGroup .modal-hint,#modalPGroupDel .modal-hint{font-size:14px;line-height:1.75;margin-bottom:6px;}
+  #modalPExport .btn,#modalPImport .btn,#modalPGroup .btn,#modalPGroupDel .btn{height:44px;padding:0 22px;font-size:15px;border-radius:10px;}
   /* ---- 分组弹窗：加宽 + 输入框放大（input 没写 type，通用 .field input[type=text] 选择器盖不到） ---- */
-  #modalPGroup .sheet{max-width:620px;padding:26px 28px 22px;}
-  #modalPGroup .modal-hint{margin:-6px 0 18px;}
-  #modalPGroup .field{margin-bottom:18px;}
-  #modalPGroup .field label{display:block;font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;}
-  #modalPGroup .field input{width:100%;box-sizing:border-box;height:52px;padding:12px 14px;font-size:16px;line-height:1.5;
+  #modalPGroup .sheet,#modalPGroupDel .sheet{max-width:620px;padding:26px 28px 22px;}
+  #modalPGroup .modal-hint,#modalPGroupDel .modal-hint{margin:-6px 0 18px;}
+  #modalPGroup .field,#modalPGroupDel .field{margin-bottom:18px;}
+  #modalPGroup .field label,#modalPGroupDel .field label{display:block;font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  #modalPGroup .field input,#modalPGroupDel .field select{width:100%;box-sizing:border-box;height:52px;padding:12px 14px;font-size:16px;line-height:1.5;
     border:1px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-family:inherit;}
-  #modalPGroup .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);outline:none;}
-  #modalPGroup .foot{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:24px;}
-  #modalPGroup .btn.danger{color:var(--high);}
+  #modalPGroup .field input:focus,#modalPGroupDel .field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);outline:none;}
+  #modalPGroup .foot,#modalPGroupDel .foot{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:24px;}
+  #modalPGroup .btn.danger,#modalPGroupDel .btn.danger{color:var(--high);}
+  /* 删除分组：指令去向 */
+  .pgd-opts{display:flex;flex-direction:column;gap:12px;}
+  .pgd-move{margin:0 0 2px 29px;}
+  .pgd-opt{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--text);margin:0;cursor:pointer;line-height:1.6;}
+  .pgd-opt input{width:19px;height:19px;flex:0 0 auto;accent-color:var(--accent);cursor:pointer;}
+  .pgd-opt b{color:var(--high);font-weight:700;}
+  .pgd-warn{font-size:13.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--border2);border-radius:10px;padding:11px 13px;line-height:1.7;margin-bottom:18px;}
   .px-tools{gap:10px;margin:14px 0;}
   .px-count{font-size:13.5px;}
   .px-list,.px-preview{padding:8px 14px;border-radius:12px;}
@@ -1234,6 +1241,8 @@ body{background:var(--bg);}
  .prompt-group-title .pg-count{font-size:12px;font-weight:500;color:var(--muted2);padding:1px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--border2);}
  .pg-btn{height:29px;padding:0 11px;font-size:12.5px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:3px;line-height:1;font-family:inherit;}
  .pg-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-weak);}
+ .pg-btn.danger{color:var(--high);}
+ .pg-btn.danger:hover{border-color:var(--high);color:var(--high);background:var(--panel2);}
  .prompt-group-empty{border:1px dashed var(--border2);border-radius:12px;padding:14px 16px;color:var(--muted2);font-size:13.5px;margin-bottom:12px;background:var(--panel2);line-height:1.7;}
  .prompt-form .pf-mode{font-size:13px;color:var(--accent);background:var(--accent-weak);border:1px solid var(--accent-soft);border-radius:9px;padding:9px 12px;margin-bottom:14px;font-weight:600;line-height:1.6;}
  .prompt-form .pf-mode b{font-weight:700;}
@@ -2141,9 +2150,21 @@ body{background:var(--bg);}
       <input id="pgName" type="text" placeholder="如：售后客服" maxlength="40" autocomplete="off">
     </div>
     <div class="foot">
-      <button class="btn danger" id="pgDel" type="button" style="display:none;margin-right:auto;">删除该分组</button>
       <button class="btn" onclick="closeModal('modalPGroup')">取消</button>
       <button class="btn primary" type="button" id="pgSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 指令分组：删除（可选把里面的指令一起删或搬到别的分组） -->
+<div class="modal" id="modalPGroupDel">
+  <div class="sheet">
+    <h3 id="pgdTitle">删除分组</h3>
+    <div class="modal-hint" id="pgdHint"></div>
+    <div id="pgdBody"></div>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modalPGroupDel')">取消</button>
+      <button class="btn danger" type="button" id="pgdOk">删除分组</button>
     </div>
   </div>
 </div>
@@ -2691,6 +2712,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var promptAddCat="";        // 添加时预选的分组（从分组标题「+ 指令」进来时带上）
   var promptEditingId="";     // 正在编辑的条目 id，空表示新增
   var pgMode="",pgTarget="";  // 分组弹窗：add / rename + 目标分组名
+  var pgDelMode="move",pgDelConfirm=false; // 删除分组时指令的去向
   var promptIdSeq=0;
   // seed 由 https://awb-checklist.site.accio.ai/ （AWB 新手上手清单 · Accio Work × Agent Hub）提炼
   var promptSeed=[
@@ -5829,9 +5851,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           '<span class="pg-count">'+g.items.length+' 条</span>'+
           '<button type="button" class="pg-btn" data-grename="'+esc(g.cat)+'" title="修改这个分组的名称">重命名</button>'+
           '<button type="button" class="pg-btn" data-gadd="'+esc(g.cat)+'" title="在这个分组里新增一条指令">+ 指令</button>'+
+          '<button type="button" class="pg-btn danger" data-gdel="'+esc(g.cat)+'" title="删除这个分组（可先把指令移到别的分组）">删除分组</button>'+
           '</div>';
         if(!g.items.length){
-          html+='<div class="prompt-group-empty">「'+esc(g.cat)+'」目前是空分组。可以点上面的「+ 指令」直接往里加，也可以在其它条目上点「编辑」，把分组改成这里。</div>';
+          html+='<div class="prompt-group-empty">「'+esc(g.cat)+'」目前是空分组。点上面的「+ 指令」直接往里加，或在其它条目上点「编辑」把分组改成这里；不需要的分组点「删除分组」。</div>';
         }
         g.items.forEach(function(it){
           var agents=(it.agents||[]).map(function(a){return '<span class="prompt-agent">'+esc(a)+'</span>';}).join("");
@@ -5865,6 +5888,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     Array.prototype.forEach.call(root.querySelectorAll("[data-gadd]"),function(b){
       b.onclick=function(){promptAddOpen(b.getAttribute("data-gadd"));};
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-gdel]"),function(b){
+      b.onclick=function(){promptGroupDelOpen(b.getAttribute("data-gdel"));};
     });
     var pfCat=$("pfCat");
     if(pfCat){
@@ -5998,22 +6024,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     loc.g.items.splice(loc.ii,1);
     savePrompts();renderPromptTabs();renderPrompts();toast("已删除（分组保留）");
   }
-  // ---------- 分组：新增 / 重命名 / 删除空分组 ----------
+  // ---------- 分组：新增 / 重命名 / 删除（含指令去向） ----------
   function promptGroupOpen(mode,cat){
     pgMode=(mode==="rename")?"rename":"add";
     pgTarget=cat||"";
-    var t=$("pgTitle"),h=$("pgHint"),n=$("pgName"),d=$("pgDel");
+    var t=$("pgTitle"),h=$("pgHint"),n=$("pgName");
     if(pgMode==="rename"){
       var cnt=promptGroupCount(cat);
       if(t)t.textContent="重命名分组";
       if(h)h.textContent="改名后，该分组下的 "+cnt+" 条指令会一起挂到新名字下，指令内容不变。";
       if(n)n.value=cat||"";
-      if(d)d.style.display=cnt?"none":"inline-flex";
     }else{
       if(t)t.textContent="新增分组";
       if(h)h.textContent="分组只是分类容器；建好后可以用任意条目的「编辑」把指令移动进来。";
       if(n)n.value="";
-      if(d)d.style.display="none";
     }
     openModal("modalPGroup");
     setTimeout(function(){var el=$("pgName");if(el&&el.focus){el.focus();if(el.select)el.select();}},60);
@@ -6038,14 +6062,79 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     savePrompts();closeModal("modalPGroup");renderPromptTabs();renderPrompts();promptFocusForm();
     toast("已新增分组「"+v+"」，可直接往里加指令");
   }
-  function promptGroupDel(){
-    var g=promptGroupByName(pgTarget);
-    if(!g){closeModal("modalPGroup");return;}
-    if((g.items||[]).length){toast("分组里还有指令，请先把它们移到别的分组");return;}
-    promptGroups=promptGroups.filter(function(x){return x.cat!==pgTarget;});
-    if(promptTab===pgTarget)promptTab="all";
-    savePrompts();closeModal("modalPGroup");renderPromptTabs();renderPrompts();
-    toast("已删除空分组");
+  // 删除分组：空分组直接删；有指令时先选去向（移到别的分组 / 一起删）
+  function promptGroupDelOpen(cat){
+    var g=promptGroupByName(cat);
+    if(!g){toast("找不到该分组");return;}
+    pgTarget=cat;
+    var n=(g.items||[]).length;
+    var others=(promptGroups||[]).filter(function(x){return x.cat!==cat;});
+    var t=$("pgdTitle"),h=$("pgdHint"),b=$("pgdBody"),ok=$("pgdOk");
+    if(t)t.textContent="删除分组「"+cat+"」";
+    if(ok)ok.textContent="删除分组";
+    if(!n){
+      pgDelMode="drop";
+      if(h)h.textContent="这是个空分组，删掉只少一个分类，不会动到任何指令。";
+      if(b)b.innerHTML="";
+    }else if(others.length){
+      pgDelMode="move";
+      if(h)h.textContent="这个分组下还有 "+n+" 条指令，先决定它们去哪儿，再删分组。";
+      var opts=others.map(function(x){
+        return '<option value="'+esc(x.cat)+'">'+esc(x.cat)+'（现有 '+((x.items||[]).length)+' 条）</option>';
+      }).join("");
+      if(b)b.innerHTML='<div class="field"><label>这 '+n+' 条指令怎么处理？</label><div class="pgd-opts">'+
+        '<label class="pgd-opt"><input type="radio" name="pgdMode" value="move" checked> 移到别的分组，只删掉这个空壳</label>'+
+        '<div class="pgd-move" id="pgdMoveWrap"><select id="pgdTarget">'+opts+'</select></div>'+
+        '<label class="pgd-opt"><input type="radio" name="pgdMode" value="drop"> 连这 '+n+' 条指令一起删除</label>'+
+        '<div class="pgd-warn" id="pgdWarnBox" style="display:none;">这 '+n+' 条指令会一起消失，且不可恢复（「恢复默认」只会还你默认清单）。</div>'+
+        '<div style="display:none;" id="pgdConfirmWrap"><label class="pgd-opt"><input type="checkbox" id="pgdConfirm"> 我已确认，这 '+n+' 条指令可以删</label></div>'+
+        '</div></div>';
+    }else{
+      pgDelMode="drop";
+      if(h)h.textContent="只剩这一个分组，删掉它这 "+n+" 条指令也会一起没（不可恢复）。";
+      if(b)b.innerHTML='<div class="pgd-warn">没有别的分组能接收这 '+n+' 条指令。想留下它们就先「+ 新建分组」，把指令移过去后再删。</div>'+
+        '<div class="pgd-warn" style="background:var(--panel);"><label class="pgd-opt"><input type="checkbox" id="pgdConfirm"> 我已确认，这 '+n+' 条指令可以删</label></div>';
+    }
+    if(b&&b.querySelectorAll){
+      Array.prototype.forEach.call(b.querySelectorAll('input[name="pgdMode"]'),function(r){
+        r.onchange=function(){promptGroupDelMode(r.value);};
+      });
+    }
+    openModal("modalPGroupDel");
+  }
+  function promptGroupDelMode(v){
+    pgDelMode=(v==="drop")?"drop":"move";
+    var mv=$("pgdMoveWrap"),w=$("pgdWarnBox"),cw=$("pgdConfirmWrap"),c=$("pgdConfirm"),ok=$("pgdOk");
+    if(mv)mv.style.display=(pgDelMode==="move")?"block":"none";
+    if(w)w.style.display=(pgDelMode==="drop")?"block":"none";
+    if(cw)cw.style.display=(pgDelMode==="drop")?"block":"none";
+    if(c)c.checked=false;
+    if(ok)ok.textContent=(pgDelMode==="drop")?"删除分组和指令":"删除分组";
+  }
+  function promptGroupDelConfirm(on){pgDelConfirm=!!on;}
+  function promptGroupDelDo(){
+    var cat=pgTarget,g=promptGroupByName(cat);
+    if(!g){toast("找不到该分组");closeModal("modalPGroupDel");renderPromptTabs();renderPrompts();return;}
+    var items=(g.items||[]),n=items.length,movedTo="";
+    if(n&&pgDelMode==="move"){
+      var sel=$("pgdTarget"),to=sel?String(sel.value||"").trim():"";
+      var tg=to?promptGroupByName(to):null;
+      if(!tg||to===cat){toast("选一个要移入的分组；没有的话先新建一个");return;}
+      tg.items=(tg.items||[]).concat(items);
+      movedTo=to;
+    }
+    if(n&&pgDelMode==="drop"){
+      var cf=$("pgdConfirm");
+      if(cf&&!cf.checked){toast("先勾选确认：这 "+n+" 条指令会一起删掉");return;}
+    }
+    promptGroups=promptGroups.filter(function(x){return x.cat!==cat;});
+    if(promptTab===cat)promptTab="all";
+    if(promptAddCat===cat){promptAddCat="";}
+    if(promptEditingId&&!promptItemById(promptEditingId)){promptEditingId="";promptAdding=false;}
+    pgDelConfirm=false;
+    savePrompts();closeModal("modalPGroupDel");renderPromptTabs();renderPrompts();
+    toast(movedTo?("已删除分组「"+cat+"」，"+n+" 条指令已移到「"+movedTo+"」")
+      :(n?("已删除分组「"+cat+"」及其 "+n+" 条指令"):("已删除空分组「"+cat+"」")));
   }
   function resetPrompts(){
     promptGroups=JSON.parse(JSON.stringify(promptSeed));
@@ -6415,11 +6504,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     colToggle:promptImportColToggle,colRole:promptImportColRole,
     // 分组与二次编辑
     addOpen:promptAddOpen,editOpen:promptEditOpen,saveForm:savePromptForm,del:delPrompt,
-    groupOpen:promptGroupOpen,groupSave:promptGroupSave,groupDel:promptGroupDel,
+    groupOpen:promptGroupOpen,groupSave:promptGroupSave,
+    delOpen:promptGroupDelOpen,delMode:promptGroupDelMode,delConfirm:promptGroupDelConfirm,delDo:promptGroupDelDo,
     itemById:promptItemById,formCurrent:promptFormCurrent,
     getGroups:function(){return promptGroups;},
     setGroups:function(g){promptGroups=g||[];promptEnsureIds();},
-    state:function(){return {adding:promptAdding,editingId:promptEditingId,addCat:promptAddCat,tab:promptTab,pgMode:pgMode,pgTarget:pgTarget};}
+    state:function(){return {adding:promptAdding,editingId:promptEditingId,addCat:promptAddCat,tab:promptTab,
+      pgMode:pgMode,pgTarget:pgTarget,pgDelMode:pgDelMode};}
   };
 
   // 暴露给自动化冒烟测试
@@ -9583,7 +9674,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
    if($("btnAddPrompt"))$("btnAddPrompt").onclick=function(){promptAdding=true;promptEditingId="";promptAddCat="";promptKeyword="";var s=$("promptSearch");if(s)s.value="";renderPromptTabs();renderPrompts();promptFocusForm();};
    if($("btnAddGroup"))$("btnAddGroup").onclick=function(){promptGroupOpen("add","");};
    if($("pgSave"))$("pgSave").onclick=promptGroupSave;
-   if($("pgDel"))$("pgDel").onclick=promptGroupDel;
+   if($("pgdOk"))$("pgdOk").onclick=promptGroupDelDo;
    if($("pgName"))$("pgName").onkeydown=function(e){if(e&&e.key==="Enter"){e.preventDefault();promptGroupSave();}};
   if($("btnResetPrompts"))$("btnResetPrompts").onclick=resetPrompts;
    if($("promptSearch"))$("promptSearch").oninput=function(){promptKeyword=this.value;renderPrompts(true);};
