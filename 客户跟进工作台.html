@@ -728,9 +728,19 @@
   #viewPrompts .prompt-form .prompt-actions{display:flex;gap:12px;margin-top:4px;}
   #viewPrompts .prompt-form .prompt-actions .btn{height:46px;padding:0 28px;font-size:15.5px;border-radius:10px;}
 
-  #modalPExport .sheet h3,#modalPImport .sheet h3{font-size:20px;}
-  #modalPExport .modal-hint,#modalPImport .modal-hint{font-size:14px;line-height:1.75;margin-bottom:6px;}
-  #modalPExport .btn,#modalPImport .btn{height:42px;padding:0 20px;font-size:14.5px;border-radius:10px;}
+  #modalPExport .sheet h3,#modalPImport .sheet h3,#modalPGroup .sheet h3{font-size:20px;margin-bottom:14px;line-height:1.4;}
+  #modalPExport .modal-hint,#modalPImport .modal-hint,#modalPGroup .modal-hint{font-size:14px;line-height:1.75;margin-bottom:6px;}
+  #modalPExport .btn,#modalPImport .btn,#modalPGroup .btn{height:44px;padding:0 22px;font-size:15px;border-radius:10px;}
+  /* ---- 分组弹窗：加宽 + 输入框放大（input 没写 type，通用 .field input[type=text] 选择器盖不到） ---- */
+  #modalPGroup .sheet{max-width:620px;padding:26px 28px 22px;}
+  #modalPGroup .modal-hint{margin:-6px 0 18px;}
+  #modalPGroup .field{margin-bottom:18px;}
+  #modalPGroup .field label{display:block;font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  #modalPGroup .field input{width:100%;box-sizing:border-box;height:52px;padding:12px 14px;font-size:16px;line-height:1.5;
+    border:1px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-family:inherit;}
+  #modalPGroup .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);outline:none;}
+  #modalPGroup .foot{display:flex;gap:12px;justify-content:flex-end;align-items:center;margin-top:24px;}
+  #modalPGroup .btn.danger{color:var(--high);}
   .px-tools{gap:10px;margin:14px 0;}
   .px-count{font-size:13.5px;}
   .px-list,.px-preview{padding:8px 14px;border-radius:12px;}
@@ -2123,12 +2133,12 @@ body{background:var(--bg);}
 
 <!-- 指令分组：新增 / 重命名 -->
 <div class="modal" id="modalPGroup">
-  <div class="sheet" style="max-width:480px;">
+  <div class="sheet">
     <h3 id="pgTitle">新增分组</h3>
     <div class="modal-hint" id="pgHint">分组只是分类容器，建好后可以把任意指令移动进来。</div>
     <div class="field">
       <label>分组名称</label>
-      <input id="pgName" placeholder="如：售后客服" maxlength="40">
+      <input id="pgName" type="text" placeholder="如：售后客服" maxlength="40" autocomplete="off">
     </div>
     <div class="foot">
       <button class="btn danger" id="pgDel" type="button" style="display:none;margin-right:auto;">删除该分组</button>
