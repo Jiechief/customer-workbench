@@ -1573,12 +1573,18 @@ body{background:var(--bg);}
 .cr-scatter .dotc:hover circle{stroke:var(--text);stroke-width:1.6;}
 /* 筛选 */
 .cr-filters{display:flex;flex-direction:column;gap:9px;}
+/* 筛选条控件统一比例：同一行等高（36px）、比例协调，不再扁长 */
+.cr-filters .cr-bar{align-items:stretch;gap:8px;}
+.cr-filters .cr-bar select{height:36px;padding:0 30px 0 12px;min-width:0;line-height:34px;}
+.cr-filters .cr-bar .btn{height:36px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;}
+.cr-filters .cr-bar .cr-lbl{height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--panel);font-size:12.5px;}
+.cr-filters .cr-bar .cr-lbl input[type=number]{width:64px;height:26px;padding:0 6px;font-size:12.5px;}
+.cr-search{flex:1 1 220px;min-width:170px;height:36px;padding:0 12px;}
 .cr-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .cr-chip{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .14s ease;}
 .cr-chip:hover{border-color:var(--border2);color:var(--text);}
 .cr-chip.on{background:var(--accent-weak);border-color:var(--accent);color:var(--accent);font-weight:600;}
 .cr-chip i{font-style:normal;opacity:.7;margin-left:4px;font-size:11px;}
-.cr-search{flex:1 1 220px;min-width:170px;}
 .cr-count{font-size:12px;color:var(--muted);white-space:nowrap;}
 .cr-tablehead{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
 .cr-tablehead .spacer{flex:1 1 auto;}
@@ -2183,7 +2189,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
               <select id="crFOkki"><option value="all">OKKI：全部</option><option value="Y">OKKI：Y</option><option value="N">OKKI：N</option></select>
               <select id="crFDur"><option value="all">服务时长：全部</option></select>
               <select id="crFTier"><option value="all">分层：全部</option></select>
-              <label class="cr-lbl">当前消耗率≥<input type="number" id="crRateMin" min="0" max="200" step="5" style="width:60px;">%</label>
+              <label class="cr-lbl">当前消耗率≥<input type="number" id="crRateMin" min="0" max="200" step="5" style="width:64px;">%</label>
               <button class="btn" id="crBtnReset" type="button">重置筛选</button>
             </div>
           </div>
