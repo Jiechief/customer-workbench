@@ -10042,7 +10042,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     {k:"comp_name",g:"base",t:"co",label:"公司名称",w:224,al:["公司名称","公司名","comp_name","企业名称"]},
     {k:"是否服务中",g:"base",t:"yn",w:78},
     {k:"是否金品",g:"base",t:"yn",w:70},
-    {k:"服务时长分类",g:"base",t:"text",w:96},
+    {k:"服务时长分类",g:"base",t:"dur",w:96},
     {k:"未来最近一次未续会员合同到期月",g:"base",t:"month",label:"未续会员到期月",w:112},
     {k:"is_okki",g:"base",t:"yn",label:"OKKI",w:64,al:["是否okki","is_okki","okki"]},
     {k:"当周期权益",g:"use",t:"num",w:90},
@@ -10126,6 +10126,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var n=crNum(s);
     if(n!==null&&n>20000&&n<80000){var ms2=(n-25569)*86400000,d2=new Date(ms2);return {ms:ms2,label:d2.getUTCFullYear()+"-"+crPad(d2.getUTCMonth()+1)};}
     return {ms:null,label:s};
+  }
+  // 服务时长是序数：首年<次年<第N年…，不能按拼音排
+  var CR_DUR_CN={"一":1,"二":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10};
+  function crDurRank(v){
+    if(crIsBlank(v))return null;
+    var s=String(v).trim();
+    if(s==="首年"||/^第\s*1\s*年/.test(s))return 1;
+    if(s==="次年"||s==="第2年"||/^第\s*二\s*年/.test(s))return 2;
+    var m=s.match(/(\d+)/);
+    if(m)return parseFloat(m[1]);
+    for(var k in CR_DUR_CN)if(s.indexOf("第"+k)===0)return CR_DUR_CN[k];
+    return null;
   }
   function crTierInfo(v){
     if(crIsBlank(v))return {name:"未分层",lo:-99};
@@ -10301,6 +10313,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(col.t==="money"||col.t==="num"||col.t==="int")return crNum(v);
     if(col.t==="month"){var m=crMonthOf(v);return m&&m.ms!==null?m.ms:null;}
     if(col.t==="tier")return crIsBlank(v)?null:crTierInfo(v).lo;
+    if(col.t==="dur")return crDurRank(v);
     if(crIsBlank(v))return null;
     return String(v).trim();
   }
@@ -10539,8 +10552,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return '<div class="cr-rate" title="'+esc(raw)+'"><span class="txt">'+esc(crPctTxt(rr))+'</span><span class="tr"><span class="fl '+
         crRateCls(rr)+'" style="width:'+Math.min(100,Math.max(0,rr*100)).toFixed(1)+'%"></span></span></div>'+crDeltaHtml(r,col);
     }
-    var n=crNum(v);
-    if(n===null)return '<span class="cr-null">—</span>';
+    if(crIsBlank(v))return '<span class="cr-null">—</span>';
+    // 文本列（如服务时长分类）与无法转数值的异常值一律原样显示，不能当空值
+    if(col.t==="text"||col.t==="dur"||crNum(v)===null)return '<span title="'+esc(raw)+'">'+esc(raw)+"</span>";
     return '<span title="'+esc(raw)+'">'+esc(crVerbatim(v))+"</span>"+crDeltaHtml(r,col);
   }
   function crRenderTable(f){
