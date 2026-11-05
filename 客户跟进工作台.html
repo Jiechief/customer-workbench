@@ -3039,6 +3039,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       try{el.scrollTop=y;}catch(e){}
     });
   }
+  // 逐元素记录/还原滚动位置：#list 与 .main-scroll 各自保留自己的值，
+  // 避免用同一个数值刷两边时把另一个容器误滚到底
+  var listHoldScroll=true, listScrollSeq=0;
+  function captureListScroll(){
+    return listScrollTargets().map(function(el){return el?el.scrollTop:0;});
+  }
+  function applyListScrollTo(vals,seq){
+    if(seq!==listScrollSeq)return;              // 期间发生过重置/新一次重绘：放弃补帧
+    var t=listScrollTargets();
+    for(var i=0;i<t.length;i++){
+      if(!t[i]||vals[i]==null)continue;
+      try{t[i].scrollTop=vals[i];}catch(e){}
+    }
+  }
+  function renderListNoHold(fn){
+    var p=listHoldScroll;listHoldScroll=false;
+    try{if(fn)fn();else renderList();}finally{listHoldScroll=p;}
+  }
   var currentCommCustId=null, currentAiCustId=null;
   var importData=null;
   var accioImportData=null;
@@ -4030,8 +4048,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // 所有重绘都走这里：视图切回列表后的短时间窗口内，任何一次重绘都把滚动位置拉回去，
   // 避免后续 renderList（编辑卡片、状态变化等）把位置重置为 0
   function renderList(){
+    var seq=++listScrollSeq;
+    var hold=listHoldScroll;listHoldScroll=true;
+    var before=hold?captureListScroll():null;
     renderListInner();
-    if(Date.now()<listScrollUntil&&listScrollMemo>0)applyListScroll(listScrollMemo);
+    // 视图切回后的短时间窗口内，以「上次离开列表时的位置」为准
+    if(Date.now()<listScrollUntil&&listScrollMemo>0){applyListScroll(listScrollMemo);return;}
+    if(!before)return;
+    var y=Math.max(before[0]||0,before[1]||0);
+    if(y<=0)return;
+    listScrollMemo=y;   // 记录最新位置：随后切走再回来仍停在同一处
+    applyListScrollTo(before,seq);
+    requestAnimationFrame(function(){applyListScrollTo(before,seq);});
+    setTimeout(function(){applyListScrollTo(before,seq);},80);
   }
   // keep=true：视图切换回来时沿用上次的已加载条数与滚动位置；否则视为筛选变化，回到顶部
   function refreshList(keep){
@@ -4047,11 +4076,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       listEnd=PAGE_SIZE;
       renderList();
     }else{
+      // 筛选/排序变化：明确回到顶部，并作废尚未执行的补帧恢复
       listRestorePending=false;
       listScrollUntil=0;
       listScrollMemo=0;
+      listScrollSeq++;
       listEnd=PAGE_SIZE;
-      renderList();
+      renderListInner();
       applyListScroll(0);
     }
     if(mapOpened&&mapInst)mapRefresh();
@@ -5010,9 +5041,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   window.copyAgentUrl=copyAgentUrl;
   window.renderAgentList=renderAgentList;
 
+  // 数据变化后的整体重绘。列表必须原地重绘（renderList）而不是 refreshList()：
+  // 后者是「筛选变化」语义，会把已加载条数收回一页并强制回顶，
+  // 导致新增沟通记录 / 保存客户信息后页面跳回顶部。
   function render(){
     if(currentView==="dashboard"){editingId=null;renderDashboard();}
-    else{renderStats();refreshList();}
+    else{renderStats();renderList();}
   }
 
   // ---------- 总览内标签切换 ----------
@@ -9105,7 +9139,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var idx=-1;
     for(var i=0;i<list.length;i++){if(list[i].id===id){idx=i;break;}}
     if(idx<0){toast("该客户不在当前筛选条件内");return;}
-    if(idx>=listEnd){listEnd=Math.min(list.length,idx+1);renderList();}
+    // 这里补帧恢复会和紧随其后的 scrollIntoView 抢位置，本次重绘不保持滚动
+    if(idx>=listEnd){listEnd=Math.min(list.length,idx+1);renderListNoHold();}
     var el=$("card_"+id);
     if(!el){toast("请先加载更多");return;}
     try{el.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){try{el.scrollIntoView();}catch(e2){}}
