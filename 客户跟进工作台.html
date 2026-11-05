@@ -1643,6 +1643,32 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
 /* KPI 网格：宽屏一行 8 张，中屏 4×2，窄屏 2×4 */
 @media (max-width:1500px){.cr-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media (max-width:820px){.cr-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* 子导航（积分消耗分区） */
+.cr-subnav{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap;}
+.cr-subtab{appearance:none;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;
+  padding:9px 14px;cursor:pointer;border-radius:8px 8px 0 0;position:relative;transition:.15s;}
+.cr-subtab:hover{color:var(--text);background:var(--accent-soft);}
+.cr-subtab.active{color:var(--accent);}
+.cr-subtab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;
+  background:var(--accent);border-radius:2px;}
+.cr-subtab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+.cr-sub[hidden]{display:none !important;}
+.cr-sub{display:flex;flex-direction:column;gap:14px;}
+/* 说明分区 */
+.cr-guide{padding:18px 20px;}
+.cr-guide-list{margin:0;padding-left:20px;font-size:13px;color:var(--text);line-height:1.9;}
+.cr-guide-list b{color:var(--accent);}
+.cr-guide .cr-hint{margin-top:12px;line-height:1.8;}
+/* AccioWork 客户表横向滚动 */
+.accio-scroll{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+.accio-scroll.cr-hscroll{cursor:grab;}
+.accio-scroll.cr-hscroll:active{cursor:grabbing;}
+.accio-scroll.cr-hscroll::-webkit-scrollbar{height:10px;}
+.accio-scroll.cr-hscroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px;}
+.accio-scroll.cr-hscroll::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+.accio-hscroll-hint{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:11.5px;color:var(--muted2);}
+.accio-hscroll-hint .ico{font-size:12px;}
 </style>
 </head>
 <body>
@@ -2084,18 +2110,24 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
           </div>
         </div>
       </div>
-      <!-- 视图：积分消耗 -->
+      <!-- 视图：积分消耗（子导航：概览 / 客户明细 / 使用说明） -->
       <div id="viewCredits" class="view" style="display:none;">
-        <div class="cr-wrap">
+        <nav class="cr-subnav" id="crSubnav" role="tablist" aria-label="积分消耗分区">
+          <button class="cr-subtab active" type="button" role="tab" data-crsub="overview" aria-selected="true">概览</button>
+          <button class="cr-subtab" type="button" role="tab" data-crsub="table" aria-selected="false">客户明细</button>
+          <button class="cr-subtab" type="button" role="tab" data-crsub="guide" aria-selected="false">使用说明</button>
+        </nav>
+        <!-- 分区A：概览 -->
+        <div class="cr-sub" id="crSubOverview" data-crpane="overview">
           <div class="cr-bar">
             <button class="btn primary" id="crBtnImport" type="button">导入积分表</button>
             <input type="file" id="crFile" accept=".xls,.xlsx,.csv" style="display:none;">
             <button class="btn" id="crBtnTpl" type="button" title="导出仅含两行表头的空白模板，按模板填数即可导入">下载导入模板</button>
-            <button class="btn" id="crBtnExport" type="button" title="按当前筛选与排序导出">导出当前视图</button>
             <span class="spacer"></span>
             <label class="cr-lbl" for="crBatch">数据批次</label>
             <select id="crBatch"></select>
             <button class="btn danger" id="crBtnDelBatch" type="button" title="删除当前批次（不影响其他批次与跟进记录）">删批次</button>
+            <button class="btn" id="crBtnExport" type="button" title="按当前筛选与排序导出">导出当前视图</button>
           </div>
           <div class="cr-meta" id="crMeta"></div>
           <div class="cr-kpis" id="crKpis"></div>
@@ -2104,6 +2136,9 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             <div class="cr-panel"><div class="panel-head"><h3>剩余权益待消耗 TOP8</h3><span class="cr-hint">越多越该触达</span></div><div class="cr-chart" id="crLeftChart"></div></div>
             <div class="cr-panel wide"><div class="panel-head"><h3>上期 → 当前 消耗率变化</h3><span class="cr-hint">横轴 上一周期Credit消耗率 · 纵轴 当前Credit消耗率 · 颜色 近21天消耗分层</span></div><div class="cr-chart cr-scatter" id="crScatter"></div></div>
           </div>
+        </div>
+        <!-- 分区B：客户明细 -->
+        <div class="cr-sub" id="crSubTable" data-crpane="table" hidden>
           <div class="cr-filters cr-panel">
             <div class="cr-chips" id="crChips"></div>
             <div class="cr-bar">
@@ -2125,8 +2160,23 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             <span class="cr-hint">点列头排序（空值恒在末尾）· 点任意行看明细与跟进记录</span>
           </div>
           <div class="cr-tablewrap" id="crTableWrap"></div>
-          <div id="crEmpty"></div>
         </div>
+        <!-- 分区C：使用说明 -->
+        <div class="cr-sub" id="crSubGuide" data-crpane="guide" hidden>
+          <div class="cr-panel cr-guide">
+            <div class="panel-head"><h3>这个板块怎么用</h3></div>
+            <ol class="cr-guide-list">
+              <li><b>导入数据</b>：点「导入积分表」选择后台导出的 .xls / .xlsx / .csv，表头自动识别（含别名），每次导入生成一个批次；「下载导入模板」可得两行表头的空表。</li>
+              <li><b>看概览</b>：8 张 KPI + 分层分布 + 待消耗 TOP8 + 上期→当前消耗率变化；象限图点圆点直达该客户。</li>
+              <li><b>筛客户</b>：切到「客户明细」，用快捷视图（服务中 / 当前零消耗 / 6个月内到期 / 口径异常…）叠加搜索与下拉筛选，点列头排序（空值恒在末尾），点行看明细。</li>
+              <li><b>记跟进</b>：明细里可按客户记录电话 / 微信 / 拜访 / 邮件 / 预警和下次跟进日期，保存到本机浏览器，刷新不丢；列表中该客户带「记N」徽标。</li>
+              <li><b>批次对比</b>：同一文件重复导入会替换同批次；新文件名生成新批次，按主账号自动算环比（▲▼ pp），概览头部可切换、可两步确认删除。</li>
+              <li><b>数据安全</b>：所有数据只存本机浏览器（不传服务器）；「导出当前视图」随时另存一份；「导入 JSON」全量备份已包含积分数据。</li>
+            </ol>
+            <div class="cr-hint">列分组与口径：客户基础信息（主账号 ID、公司名称、服务状态、金品、服务时长、到期月、OKKI）/ 积分消耗（当周期权益、剩余、使用次数、当前与累计消耗率、上期对比、近21天节奏与分层）；口径自检 = 权益−剩余=当前消耗、累计使用÷累计权益=累计率、21天节奏=消耗÷(权益×21÷30)。</div>
+          </div>
+        </div>
+        <div id="crEmpty"></div>
       </div>
     </div>
   </main>
@@ -4149,6 +4199,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         });
       }
     });
+    if(typeof crMountAccioHScroll==="function")crMountAccioHScroll();
   }
   function openAccioModal(id){
     var title=$("accioTitle"), fid=$("accio_id"), name=$("accio_name"), plan=$("accio_plan"), openAt=$("accio_openAt"), deliver=$("accio_deliverables"), time=$("accio_time"), block=$("accio_blockReason"), deliverer=$("accio_deliverer");
@@ -4855,6 +4906,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     dashTab=tab;
     $("paneOverview").style.display=tab==="overview"?"block":"none";
     $("paneAccio").style.display=tab==="accio"?"block":"none";
+    if(tab==="accio"&&typeof window.__crHShow==="function"){
+      var hb=document.getElementById("accioBoard");
+      if(hb){hb.__hinted=0;window.__crHShow(hb);}
+    }
     $("paneSkill").style.display=tab==="skill"?"block":"none";
     $("stats").style.display=tab==="overview"?"block":"none";
     document.querySelectorAll(".dash-tab").forEach(function(el){
@@ -10177,7 +10232,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- 本地存储 ----------
   function crDefaultUI(){
     return {batch:"",q:"",svc:"all",gold:"all",okki:"all",dur:"all",tier:"all",rateMin:"",chip:"all",
-      sortKey:"当前Credit消耗率",sortDir:"desc"};
+      sortKey:"当前Credit消耗率",sortDir:"desc",sub:"overview"};
   }
   function loadCredits(){
     if(creditBatches)return;
@@ -10608,6 +10663,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(creditBatches.length){el.innerHTML="";$("crPanels").style.display="";return;}
     $("crPanels").style.display="none";
     $("crKpis").innerHTML="";$("crTierChart").innerHTML="";$("crLeftChart").innerHTML="";$("crScatter").innerHTML="";$("crTableWrap").innerHTML="";
+    var tw=$("crTableWrap");
+    if(tw)tw.innerHTML='<div class="cr-empty" style="border:none;padding:26px;">导入后这里会出现客户明细表：支持列头排序、快捷视图、搜索与逐户跟进记录。</div>';
+    var tw=$("crTableWrap");
+    if(tw)tw.innerHTML='<div class="cr-empty" style="border:none;padding:26px;">导入后这里会出现客户明细表：支持列头排序、快捷视图、搜索与逐户跟进记录。</div>';
+    var tw=$("crTableWrap");
+    if(tw)tw.innerHTML='<div class="cr-empty" style="border:none;padding:26px;">导入后这里会出现客户明细表：支持列头排序、快捷视图、搜索与逐户跟进记录。</div>';
     el.innerHTML='<div class="cr-empty"><h3>还没有导入积分数据</h3><div>导入「AWB 客户积分消耗情况」表格后，这里会出现概览、分层分布、待消耗排行与两期消耗率变化分析。</div>'+
       '<ul><li>① 支持 .xls / .xlsx / .csv，直接选原表即可（第一/二行表头自动识别）</li>'+
       '<li>② 21 列全部按原表列名匹配，数值保留原始精度，导入后自动做口径自检</li>'+
@@ -10621,6 +10682,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var view=$("viewCredits");
     if(!view)return;
     crBindCredits();
+    crBindSubnav();
+    crSetSub(creditUI.sub,true);
     crRenderBatchSelect();
     crRenderEmpty();
     var f=crFiltered();
@@ -10914,6 +10977,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     setTimeout(function(){try{openCustomerDetail(crDetailCustId);}catch(e){}},120);
   }
 
+  // ---------- AccioWork 客户表横滚挂载（renderAccioBoard 后调用） ----------
+  function crMountAccioHScroll(){
+    var box=document.getElementById("accioBoard");
+    if(box)crBindHScroll(box);
+  }
   // ---------- 事件绑定（视图内一次性委托，重渲染不失效） ----------
   function crBindCredits(){
     var view=$("viewCredits");
@@ -10938,6 +11006,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       saveCreditUI();
       $("crSearch").value="";$("crRateMin").value="";
       renderCredits();
+      if(currentView==="credits")crSetSub("table",true);
       toast("筛选已重置");
     };
     $("crChips").addEventListener("click",function(e){
@@ -10986,6 +11055,96 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     batches:function(){loadCredits();return creditBatches.map(function(b){return {id:b.id,label:b.label,fileName:b.fileName,importedAt:b.importedAt,rows:b.rows.length,missing:b.missing||[]};});},
     api:{loadCredits:loadCredits,filtered:crFiltered,cols:CR_COLS,checks:crChecks,num:crNum,rate:crRateVal,month:crMonthOf,tier:crTierInfo,sortRows:crSortRows,active:crActive,prev:crPrevBatch}
   };
+  // ---------- 子导航（概览 / 客户明细 / 使用说明） ----------
+  function crSetSub(name,skipSave){
+    if(!name)name=creditUI.sub||"overview";
+    var tabs=document.querySelectorAll("#crSubnav .cr-subtab"),found=false;
+    Array.prototype.forEach.call(tabs,function(t){
+      var on=t.getAttribute("data-crsub")===name;
+      t.classList.toggle("active",on);
+      t.setAttribute("aria-selected",on?"true":"false");
+      if(on)found=true;
+    });
+    if(!found)name="overview";
+    var panes={overview:$("crSubOverview"),table:$("crSubTable"),guide:$("crSubGuide")};
+    for(var k in panes)if(panes[k])panes[k].hidden=(k!==name);
+    creditUI.sub=name;
+    if(!skipSave)saveCreditUI();
+    if(name==="overview")crRenderMeta(crFiltered());
+  }
+  function crBindSubnav(){
+    var nav=$("crSubnav");
+    if(!nav||nav.__b)return;
+    nav.__b=1;
+    nav.addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest("[data-crsub]"):null;
+      if(!b)return;
+      crSetSub(b.getAttribute("data-crsub"));
+    });
+  }
+  // ---------- AccioWork 客户表：横向滚动（滚轮 + 侧滑拖拽） ----------
+  // .accio-scroll 是页面唯一“可纵向滚动但内容更宽”的客户信息表容器：
+  // 纵向有溢出时滚轮默认上下滚（Shift+滚轮浏览器原生横滚）；纵向滚到底/无溢出时，普通滚轮自动横滚；支持按住拖拽侧滑。
+  function crIsHScrollable(el){return el.scrollWidth-el.clientWidth>1;}
+  function crBindHScroll(box){
+    if(!box||box.__h)return;
+    box.__h=1;
+    window.__crHShow=function(el){
+      var h=document.createElement("div");
+      h.className="accio-hscroll-hint";
+      h.innerHTML='<span class="ico">↔</span>内容较宽：Shift+滚轮 / 按住拖动 / 触控板横滑都可左右浏览';
+      if(crIsHScrollable(el)&&!el.__hinted){
+        el.__hinted=1;
+        if(el.parentNode&&!el.parentNode.querySelector(".accio-hscroll-hint"))el.parentNode.insertBefore(h,el);
+      }
+    };
+    box.addEventListener("wheel",function(e){
+      if(!crIsHScrollable(box))return;
+      var canV=box.scrollHeight-box.clientHeight>1;
+      var dx=Math.abs(e.deltaX),dy=Math.abs(e.deltaY);
+      if(dx>dy)return;                 // 触控板横向手势，浏览器默认即可
+      if(!canV){
+        box.scrollLeft+=e.deltaY;      // 无纵向溢出：滚轮直接横滚
+        e.preventDefault();
+        return;
+      }
+      var atBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-1;
+      var atTop=box.scrollTop<=0;
+      var goingDown=e.deltaY>0;
+      if((goingDown&&atBottom)||(!goingDown&&atTop)){
+        box.scrollLeft+=e.deltaY;      // 纵向到边后接管为横滚
+        e.preventDefault();
+      }
+    },{passive:false});
+    // 触屏侧滑：浏览器原生 touch 已支持，这里只做拖拽鼠标侧滑（按住左键左右拖）
+    var drag=null;
+    box.addEventListener("mousedown",function(e){
+      if(e.button!==0)return;
+      if(!crIsHScrollable(box))return;
+      if(e.target.closest&&(e.target.closest("input,select,textarea,button,a,.inline-edit,.block-display")))return;
+      drag={x:e.pageX,sl:box.scrollLeft};
+      box.classList.add("cr-hscroll");
+      e.preventDefault();
+    });
+    window.addEventListener("mousemove",function(e){
+      if(!drag)return;
+      box.scrollLeft=drag.sl-(e.pageX-drag.x);
+    });
+    window.addEventListener("mouseup",function(){
+      if(!drag)return;
+      drag=null;box.classList.remove("cr-hscroll");
+    });
+    // 首次可横滚时给一次性提示（面板显示后由 mount 重触发）
+    var show=function(){window.__crHShow(box);};
+    setTimeout(show,300);
+    box.addEventListener("scroll",show,{passive:true});
+  }
+  // 客户列表卡片区的 info-grid 同样可能很宽：纵向卡片流内嵌横向滚动条（不改变布局，只加滚动能力）
+  function crBindCardHScroll(){
+    var list=$("list");
+    if(!list)return;
+    // 卡片网格本身自适应换行，无需处理；此函数占位以备后续宽度策略调整
+  }
 })();
 </script>
 </body>
