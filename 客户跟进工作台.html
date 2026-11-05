@@ -436,7 +436,10 @@
   .empty b{display:block;font-size:16px;color:var(--text);margin-bottom:6px;}
 
   /* ---------- 总览面板 ---------- */
-  .dashboard-grid{display:grid;grid-template-columns:1.9fr 1fr;grid-template-rows:auto auto;gap:18px;align-items:stretch;}
+  /* 两栏做成等高「仪表盘带」：行高由容器按 5:4 分配而不是被内容撑开，
+     四块面板各自内部滚动，左右底边永远齐平（内容再多也不会出现空洞） */
+  .dashboard-grid{display:grid;grid-template-columns:1.9fr 1fr;grid-template-rows:minmax(0,2fr) minmax(0,3fr);
+    gap:18px;align-items:stretch;height:clamp(560px,70vh,860px);}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px;box-shadow:var(--shadow);}
   .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -460,10 +463,9 @@
   .time-tag::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);}
   .rel-tag{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:999px;background:var(--panel2);color:var(--muted2);font-size:11px;}
   .dash-actions{display:flex;gap:6px;margin-left:auto;flex-shrink:0;align-items:flex-start;}
-  .panel.today{grid-column:2;grid-row:1;display:flex;flex-direction:column;overflow:hidden;}
-  /* 左栏限高到约一屏，右栏两块靠 stretch 与之等高对齐：两列底边齐、页面不再被拉到几千像素 */
-  .panel.follow{grid-column:1;grid-row:1 / span 2;max-height:calc(100vh - 120px);min-height:480px;display:flex;flex-direction:column;overflow:hidden;}
-  .panel.recent{grid-column:2;grid-row:2;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.today{grid-column:2;grid-row:1;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.follow{grid-column:1;grid-row:1 / span 2;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.recent{grid-column:2;grid-row:2;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;}
   .panel.today .panel-head,.panel.recent .panel-head,.panel.follow .panel-head{flex:none;}
   .panel.today .dash-scroll,.panel.follow .dash-scroll,.panel.recent .dash-scroll{overflow-y:auto;flex:1;min-height:0;margin:0 -8px;padding:0 8px;}
   .panel.accio-board{grid-column:1 / -1;}
@@ -865,8 +867,9 @@
   .pi-empty{font-size:13px;color:var(--muted);padding:14px;text-align:center;background:var(--panel2);border-radius:11px;}
 
   @media (max-width:1200px){
-    .dashboard-grid{grid-template-columns:1fr;grid-template-rows:auto;}
-    .panel.follow,.panel.recent,.panel.today{grid-column:1;grid-row:auto;min-height:0;max-height:none;}
+    .dashboard-grid{grid-template-columns:1fr;grid-template-rows:auto;height:auto;}
+    .panel.follow,.panel.recent,.panel.today{grid-column:1;grid-row:auto;min-height:0;
+      height:clamp(420px,62vh,680px);}
     .dash-chart-row{flex-wrap:wrap;}
     .dash-donut-card{flex:1 1 100%;}
   }
