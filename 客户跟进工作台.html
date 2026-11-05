@@ -1523,7 +1523,7 @@ body{background:var(--bg);}
 .cr-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;line-height:1.6;}
 .cr-meta b{color:var(--text);font-weight:600;}
 .cr-meta .warn{color:var(--high);}
-.cr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;}
+.cr-kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;}
 .cr-kpis .stat b{font-size:21px;}
 .cr-kpis .stat .sub{font-size:11px;color:var(--muted2);}
 .cr-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
@@ -1531,6 +1531,8 @@ body{background:var(--bg);}
 .cr-panel.wide{grid-column:1 / -1;}
 .cr-panel .panel-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
 .cr-panel .panel-head h3{margin:0;font-size:14px;color:var(--text);}
+.cr-panel .panel-head h3::before{content:none !important;}
+.cr-panel .panel-head h3::after{content:none !important;}
 .cr-hint{font-size:11px;color:var(--muted2);}
 .cr-chart{display:flex;flex-direction:column;gap:7px;}
 .cr-brow{display:grid;grid-template-columns:88px 1fr 76px;align-items:center;gap:8px;font-size:12px;}
@@ -1543,6 +1545,7 @@ body{background:var(--bg);}
 .cr-scatter svg{width:100%;height:auto;display:block;}
 .cr-scatter .ax{stroke:var(--border2);stroke-width:1;}
 .cr-scatter text{fill:var(--muted2);font-size:10px;}
+.cr-scatter .axl{fill:var(--muted);font-size:10.5px;}
 .cr-scatter .dotc{cursor:pointer;}
 .cr-scatter .dotc:hover circle{stroke:var(--text);stroke-width:1.6;}
 /* 筛选 */
@@ -1554,9 +1557,11 @@ body{background:var(--bg);}
 .cr-chip i{font-style:normal;opacity:.7;margin-left:4px;font-size:11px;}
 .cr-search{flex:1 1 220px;min-width:170px;}
 .cr-count{font-size:12px;color:var(--muted);white-space:nowrap;}
+.cr-tablehead{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
+.cr-tablehead .spacer{flex:1 1 auto;}
 /* 表格 */
 .cr-tablewrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);max-height:70vh;overflow:auto;}
-table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:2100px;width:max-content;}
+table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:1980px;width:max-content;}
 .cr-table th,.cr-table td{padding:7px 9px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
 .cr-table thead th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;z-index:3;}
 .cr-table thead tr.cr-grprow th{top:0;height:26px;font-size:11.5px;letter-spacing:.4px;color:var(--text);background:var(--sidebar);z-index:4;text-align:center;}
@@ -1634,6 +1639,10 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
 .cr-track,.cr-fill,.cr-rate .tr,.cr-rate .fl{display:block;}
 .cr-rate{display:flex;}
 .cr-note .tag{min-width:34px;justify-content:center;}
+
+/* KPI 网格：宽屏一行 8 张，中屏 4×2，窄屏 2×4 */
+@media (max-width:1500px){.cr-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}}
+@media (max-width:820px){.cr-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
 </head>
 <body>
@@ -2093,9 +2102,9 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
           <div class="cr-panels" id="crPanels">
             <div class="cr-panel"><div class="panel-head"><h3>近21天消耗分层</h3><span class="cr-hint">按家数</span></div><div class="cr-chart" id="crTierChart"></div></div>
             <div class="cr-panel"><div class="panel-head"><h3>剩余权益待消耗 TOP8</h3><span class="cr-hint">越多越该触达</span></div><div class="cr-chart" id="crLeftChart"></div></div>
-            <div class="cr-panel wide"><div class="panel-head"><h3>投入 × 当期消耗率 象限</h3><span class="cr-hint">横轴 近1年国际站投入金额 · 纵轴 当前Credit消耗率 · 颜色 近21天消耗分层</span></div><div class="cr-chart cr-scatter" id="crScatter"></div></div>
+            <div class="cr-panel wide"><div class="panel-head"><h3>上期 → 当前 消耗率变化</h3><span class="cr-hint">横轴 上一周期Credit消耗率 · 纵轴 当前Credit消耗率 · 颜色 近21天消耗分层</span></div><div class="cr-chart cr-scatter" id="crScatter"></div></div>
           </div>
-          <div class="cr-filters">
+          <div class="cr-filters cr-panel">
             <div class="cr-chips" id="crChips"></div>
             <div class="cr-bar">
               <input class="cr-search" type="text" id="crSearch" placeholder="搜索主账号 ID / 公司名称">
@@ -2106,11 +2115,14 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
               <select id="crFOkki"><option value="all">OKKI：全部</option><option value="Y">OKKI：Y</option><option value="N">OKKI：N</option></select>
               <select id="crFDur"><option value="all">服务时长：全部</option></select>
               <select id="crFTier"><option value="all">分层：全部</option></select>
-              <label class="cr-lbl">当期消耗率≥<input type="number" id="crRateMin" min="0" max="200" step="5" style="width:60px;">%</label>
+              <label class="cr-lbl">当前消耗率≥<input type="number" id="crRateMin" min="0" max="200" step="5" style="width:60px;">%</label>
               <button class="btn" id="crBtnReset" type="button">重置筛选</button>
-              <span class="spacer"></span>
-              <span class="cr-count" id="crCount"></span>
             </div>
+          </div>
+          <div class="cr-tablehead">
+            <span class="cr-count" id="crCount"></span>
+            <span class="spacer"></span>
+            <span class="cr-hint">点列头排序（空值恒在末尾）· 点任意行看明细与跟进记录</span>
           </div>
           <div class="cr-tablewrap" id="crTableWrap"></div>
           <div id="crEmpty"></div>
@@ -2133,7 +2145,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <button class="btn" onclick="closeModal('modalCredit')" type="button">关闭</button>
     </div>
     <div class="cr-d-badges" id="crdBadges"></div>
-    <div class="cr-d-sec"><h4>当期权益使用</h4><div class="cr-cmp" id="crdCur"></div></div>
+    <div class="cr-d-sec"><h4>当前权益使用</h4><div class="cr-cmp" id="crdCur"></div></div>
     <div class="cr-d-sec"><h4>周期与节奏对比</h4><div class="cr-cmp" id="crdPeriod"></div></div>
     <div class="cr-d-sec"><h4>跟进记录</h4>
       <div class="cr-note-form">
@@ -2147,7 +2159,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       </div>
       <div class="cr-notes" id="crNotes"></div>
     </div>
-    <div class="cr-d-sec"><h4>原表字段（21 列，右侧为表格原始值）</h4><div class="cr-raw" id="crdRaw"></div></div>
+    <div class="cr-d-sec"><h4>原表字段（按源表列序，右侧为表格原始值）</h4><div class="cr-raw" id="crdRaw"></div></div>
     <div class="cr-d-sec"><h4>口径自检</h4><div class="cr-checks" id="crdCheck"></div></div>
   </div>
 </div>
@@ -10030,7 +10042,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     {k:"comp_name",g:"base",t:"co",label:"公司名称",w:224,al:["公司名称","公司名","comp_name","企业名称"]},
     {k:"是否服务中",g:"base",t:"yn",w:78},
     {k:"是否金品",g:"base",t:"yn",w:70},
-    {k:"近1年国际站投入金额",g:"base",t:"money",w:126},
     {k:"服务时长分类",g:"base",t:"text",w:96},
     {k:"未来最近一次未续会员合同到期月",g:"base",t:"month",label:"未续会员到期月",w:112},
     {k:"is_okki",g:"base",t:"yn",label:"OKKI",w:64,al:["是否okki","is_okki","okki"]},
@@ -10048,9 +10059,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     {k:"近21天日均积分消耗率",g:"use",t:"rate",w:142},
     {k:"近21天消耗分层",g:"use",t:"tier",w:94}
   ];
+  // 已下线字段：源表若仍带这些列，导入时直接丢弃，不入库、不显示、不计入列校验
+  var CR_DROP=["近1年国际站投入金额","国际站投入","近1年投入金额","近1年国际站投入"];
   var CR_CHIPS=[
-    {k:"all",n:"全部"},{k:"svc",n:"服务中"},{k:"right",n:"有当期权益"},
-    {k:"zero",n:"当期零消耗"},{k:"hot80",n:"当期≥80%"},{k:"prev80",n:"上期≥80%"},
+    {k:"all",n:"全部"},{k:"svc",n:"服务中"},{k:"right",n:"有当前权益"},
+    {k:"zero",n:"当前零消耗"},{k:"hot80",n:"当前≥80%"},{k:"prev80",n:"上期≥80%"},
     {k:"renew",n:"6个月内到期"},{k:"noted",n:"有跟进记录"},{k:"bad",n:"口径异常"}
   ];
 
@@ -10152,7 +10165,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- 本地存储 ----------
   function crDefaultUI(){
     return {batch:"",q:"",svc:"all",gold:"all",okki:"all",dur:"all",tier:"all",rateMin:"",chip:"all",
-      sortKey:"近1年国际站投入金额",sortDir:"desc"};
+      sortKey:"当前Credit消耗率",sortDir:"desc"};
   }
   function loadCredits(){
     if(creditBatches)return;
@@ -10164,6 +10177,28 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try{creditUI=JSON.parse(lsGet(CREDIT_UI_KEY)||"null");}catch(e){creditUI=null;}
     if(!creditUI||typeof creditUI!=="object")creditUI=crDefaultUI();
     else{var d=crDefaultUI();for(var k in d)if(creditUI[k]===undefined)creditUI[k]=d[k];}
+    if(!crCol(creditUI.sortKey)){creditUI.sortKey="当前Credit消耗率";creditUI.sortDir="desc";saveCreditUI();}
+    crPurgeDropped();
+  }
+  function crDroppedName(n){
+    var s=String(n==null?"":n).trim(),low=s.toLowerCase();
+    for(var i=0;i<CR_DROP.length;i++)if(CR_DROP[i]===s||CR_DROP[i].toLowerCase()===low)return true;
+    return false;
+  }
+  // 旧批次里可能还存着已下线字段，加载时清一次，确保关联信息彻底不再出现
+  function crPurgeDropped(){
+    var changed=false;
+    creditBatches.forEach(function(b){
+      if(b.extra&&b.extra.length){
+        var keep=[];
+        b.extra.forEach(function(n){if(crDroppedName(n))changed=true;else keep.push(n);});
+        if(keep.length!==b.extra.length)b.extra=keep;
+      }
+      (b.rows||[]).forEach(function(r){
+        for(var key in r)if(crDroppedName(key)){delete r[key];changed=true;}
+      });
+    });
+    if(changed)saveCredits();
   }
   function saveCredits(){lsSet(CREDIT_KEY,JSON.stringify(creditBatches));lsWarn();}
   function saveCreditNotes(){lsSet(CREDIT_NOTE_KEY,JSON.stringify(creditNotes));lsWarn();}
@@ -10320,7 +10355,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     parts.push("导入于 <b>"+crStamp(b.importedAt)+"</b>");
     parts.push("客户 <b>"+f.all.length+"</b> 家，当前显示 <b>"+f.rows.length+"</b> 家");
     var miss=(b.missing&&b.missing.length)?b.missing:[];
-    parts.push(miss.length?'<span class="warn">列校验：缺 '+miss.length+" 列（"+esc(miss.join("、"))+"）</span>":"列校验：21 列全部匹配");
+    parts.push(miss.length?'<span class="warn">列校验：缺 '+miss.length+" 列（"+esc(miss.join("、"))+"）</span>":"列校验："+CR_COLS.length+" 列全部匹配");
     if(b.extra&&b.extra.length)parts.push("附加列 <b>"+b.extra.length+"</b> 个（明细内可见）");
     parts.push(badN?'<span class="warn">口径异常 <b style="color:var(--high)">'+badN+"</b> 家</span>":"口径自检全部通过");
     parts.push("跟进记录 <b>"+noteN+"</b> 家");
@@ -10342,18 +10377,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var d=crNum(crGet(r,"近21天日均积分消耗"));
       if(d===null||d===0)d21zero++;
     });
-    var cur=crSum(rows,"当前消耗Credit"),eq=crSum(rows,"当周期权益"),inv=crSum(rows,"近1年国际站投入金额");
-    var w=eq.sum>0?cur.sum/eq.sum:null;
+    var cur=crSum(rows,"当前消耗Credit"),eq=crSum(rows,"当周期权益"),left=crSum(rows,"剩余权益");
+    var w=eq.sum>0?cur.sum/eq.sum:null,wl=eq.sum>0?left.sum/eq.sum:null;
     var gold=0;rows.forEach(function(r){if(crYnMatch(crGet(r,"是否金品"),"Y"))gold++;});
     el.innerHTML=[
       crKpiCard("客户数",rows.length,f.all.length&&f.all.length!==rows.length?"共 "+f.all.length+" 家":"当前批次"),
       crKpiCard("服务中",svc,"金品 "+gold+" 家"),
-      crKpiCard("有当期权益",right,"权益合计 "+(eq.n?crMoney(eq.sum):"—")),
-      crKpiCard("当期消耗 Credit",(cur.n?crMoney(cur.sum):"—"),"覆盖 "+cur.n+" 家"),
+      crKpiCard("有当前权益",right,"权益合计 "+(eq.n?crMoney(eq.sum):"—")),
+      crKpiCard("当前消耗 Credit",(cur.n?crMoney(cur.sum):"—"),"覆盖 "+cur.n+" 家"),
       crKpiCard("加权消耗率",w===null?"—":esc(crPctTxt(w)),"Σ消耗 ÷ Σ权益"),
       crKpiCard("上期≥80%",prev80,"需重点盯"),
       crKpiCard("近21天零消耗",d21zero,"唤醒对象"),
-      crKpiCard("近1年投入",(inv.n?"¥"+crMoney(inv.sum):"—"),"覆盖 "+inv.n+" 家")
+      crKpiCard("剩余权益",(left.n?crMoney(left.sum):"—"),wl===null?("覆盖 "+left.n+" 家"):("还有 "+crPctTxt(wl)+" 没用"))
     ].join("");
   }
   function crBarRow(nm,val,txt,cls){
@@ -10399,43 +10434,41 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var el=$("crScatter");if(!el)return;
     var pts=[];
     f.rows.forEach(function(r){
-      var x=crNum(crGet(r,"近1年国际站投入金额")),y=crRateVal(crGet(r,"当前Credit消耗率"));
+      var x=crRateVal(crGet(r,"上一周期Credit消耗率")),y=crRateVal(crGet(r,"当前Credit消耗率"));
       if(x!==null&&y!==null)pts.push({x:x,y:y,r:r});
     });
-    if(pts.length<2){el.innerHTML='<div class="cr-notempty">需要至少 2 家「投入金额 + 当期消耗率」同时有值的客户</div>';return;}
-    var W=760,H=248,pl=54,pr=18,pt=14,pb=32,iw=W-pl-pr,ih=H-pt-pb;
-    var xmax=0,ymax=0,xs=[];
-    pts.forEach(function(p){if(p.x>xmax)xmax=p.x;if(p.y>ymax)ymax=p.y;xs.push(p.x);});
-    xs.sort(function(a,b){return a-b;});
-    xmax=xmax*1.08||1;ymax=Math.max(0.5,Math.min(ymax*1.15,1.4));
-    var xm=xs[Math.floor(xs.length/2)];
-    function sx(v){return pl+(v/xmax)*iw;}
-    function sy(v){return pt+ih-(v/ymax)*ih;}
+    if(pts.length<2){el.innerHTML='<div class="cr-notempty">需要至少 2 家「上一周期消耗率 + 当前消耗率」同时有值的客户</div>';return;}
+    var W=760,H=248,pl=64,pr=18,pt=14,pb=34,iw=W-pl-pr,ih=H-pt-pb;
+    var top=0;
+    pts.forEach(function(p){if(p.x>top)top=p.x;if(p.y>top)top=p.y;});
+    top=Math.max(1,Math.min(Math.ceil(top*1.15*4)/4,1.6));
+    function sx(v){return pl+(v/top)*iw;}
+    function sy(v){return pt+ih-(v/top)*ih;}
     var g=[];
     g.push('<rect x="'+pl+'" y="'+pt+'" width="'+iw+'" height="'+ih+'" fill="none"/>');
     for(var i=0;i<=4;i++){
-      var yv=ymax*i/4,yy=sy(yv);
+      var yv=top*i/4,yy=sy(yv);
       g.push('<line x1="'+pl+'" y1="'+yy.toFixed(1)+'" x2="'+(pl+iw)+'" y2="'+yy.toFixed(1)+'" class="ax" stroke-dasharray="3 3"/>');
       g.push('<text x="'+(pl-6)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end">'+crPctTxt(yv)+"</text>");
     }
     for(var j=0;j<=4;j++){
-      var xv=xmax*j/4,xx=sx(xv);
+      var xv=top*j/4,xx=sx(xv);
       g.push('<line x1="'+xx.toFixed(1)+'" y1="'+pt+'" x2="'+xx.toFixed(1)+'" y2="'+(pt+ih)+'" class="ax" opacity=".45"/>');
-      g.push('<text x="'+xx.toFixed(1)+'" y="'+(pt+ih+14)+'" text-anchor="middle">'+(xv>=10000?(xv/10000).toFixed(xv>=100000?0:1)+"万":Math.round(xv))+"</text>");
+      g.push('<text x="'+xx.toFixed(1)+'" y="'+(pt+ih+14)+'" text-anchor="middle">'+crPctTxt(xv)+"</text>");
     }
-    g.push('<line x1="'+sx(xm).toFixed(1)+'" y1="'+pt+'" x2="'+sx(xm).toFixed(1)+'" y2="'+(pt+ih)+'" class="ax"/>');
-    g.push('<line x1="'+pl+'" y1="'+sy(0.5).toFixed(1)+'" x2="'+(pl+iw)+'" y2="'+sy(0.5).toFixed(1)+'" class="ax"/>');
-    g.push('<text x="'+(pl+iw)+'" y="'+(pt+ih+28)+'" text-anchor="end">近1年国际站投入金额（元）</text>');
-    g.push('<text x="12" y="'+(pt+8)+'">当期Credit消耗率</text>');
+    // 对角线 y=x：上方=比上期用得更快（升温），下方=降温
+    g.push('<line x1="'+sx(0).toFixed(1)+'" y1="'+sy(0).toFixed(1)+'" x2="'+sx(top).toFixed(1)+'" y2="'+sy(top).toFixed(1)+'" class="ax" stroke-dasharray="5 4"/>');
+    g.push('<text class="axl" x="'+(pl+iw)+'" y="'+(pt+ih+30)+'" text-anchor="end">上一周期Credit消耗率</text>');
+    g.push('<text class="axl" x="14" y="'+(pt+ih/2).toFixed(1)+'" transform="rotate(-90 14 '+(pt+ih/2).toFixed(1)+')" text-anchor="middle">当前Credit消耗率</text>');
     pts.forEach(function(p){
       var ti=crTierInfo(crGet(p.r,"近21天消耗分层"));
       var col=ti.lo>=80?"var(--high)":(ti.lo>=30?"var(--mid)":(ti.lo>=0&&ti.lo>-99?"var(--accent)":"var(--low)"));
       var nm=String(crGet(p.r,"comp_name")||crGet(p.r,"主账号id")||"—");
       g.push('<g class="dotc" data-crkey="'+esc(crKey(p.r))+'"><circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+
-        '" r="5" style="fill:'+col+';fill-opacity:.82;stroke:var(--panel)" stroke-width="1"><title>'+esc(nm)+"｜投入 "+crVerbatim(p.x)+"｜当期消耗率 "+crPctTxt(p.y)+"｜分层 "+ti.name+"</title></circle></g>");
+        '" r="5" style="fill:'+col+';fill-opacity:.82;stroke:var(--panel)" stroke-width="1"><title>'+esc(nm)+"｜上期 "+crPctTxt(p.x)+"｜当前 "+crPctTxt(p.y)+"｜Δ "+(p.y>=p.x?"+":"−")+crPctTxt(Math.abs(p.y-p.x))+"｜分层 "+ti.name+"</title></circle></g>");
     });
-    el.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="投入与消耗率象限图">'+g.join("")+"</svg>"+
-      '<div class="cr-hint">右上＝投入高且用得快（保持）｜左上＝投入高但消耗低（重点触达）｜右下＝低投入高消耗（可谈增购）</div>';
+    el.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="上期与当前消耗率变化图">'+g.join("")+"</svg>"+
+      '<div class="cr-hint">对角线上方＝比上期用得更快（升温）｜下方＝降温｜右上＝持续高消耗，左下＝两期都没怎么用</div>';
   }
   function crChipsHtml(f){
     return CR_CHIPS.map(function(c){
@@ -10538,10 +10571,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
     h+="</tbody>";
     var rows=f.rows;
-    var tEq=crSum(rows,"当周期权益"),tLeft=crSum(rows,"剩余权益"),tUse=crSum(rows,"当前使用次数"),tCur=crSum(rows,"当前消耗Credit"),tAe=crSum(rows,"累计权益"),tAu=crSum(rows,"累计权益使用"),tInv=crSum(rows,"近1年国际站投入金额");
+    var tEq=crSum(rows,"当周期权益"),tLeft=crSum(rows,"剩余权益"),tUse=crSum(rows,"当前使用次数"),tCur=crSum(rows,"当前消耗Credit"),tAe=crSum(rows,"累计权益"),tAu=crSum(rows,"累计权益使用");
     var foot={};
     foot["主账号id"]="合计 "+rows.length+" 家";
-    foot["近1年国际站投入金额"]=tInv.n?crMoney(tInv.sum):"—";
     foot["当周期权益"]=tEq.n?crMoney(tEq.sum):"—";
     foot["剩余权益"]=tLeft.n?crMoney(tLeft.sum):"—";
     foot["当前使用次数"]=tUse.n?crMoney(tUse.sum):"—";
@@ -10562,7 +10594,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(creditBatches.length){el.innerHTML="";$("crPanels").style.display="";return;}
     $("crPanels").style.display="none";
     $("crKpis").innerHTML="";$("crTierChart").innerHTML="";$("crLeftChart").innerHTML="";$("crScatter").innerHTML="";$("crTableWrap").innerHTML="";
-    el.innerHTML='<div class="cr-empty"><h3>还没有导入积分数据</h3><div>导入「AWB 客户积分消耗情况」表格后，这里会出现概览、分层分布、待消耗排行与象限分析。</div>'+
+    el.innerHTML='<div class="cr-empty"><h3>还没有导入积分数据</h3><div>导入「AWB 客户积分消耗情况」表格后，这里会出现概览、分层分布、待消耗排行与两期消耗率变化分析。</div>'+
       '<ul><li>① 支持 .xls / .xlsx / .csv，直接选原表即可（第一/二行表头自动识别）</li>'+
       '<li>② 21 列全部按原表列名匹配，数值保留原始精度，导入后自动做口径自检</li>'+
       '<li>③ 每次导入生成一个批次，可切换查看并按主账号自动算环比（▲▼pp）</li>'+
@@ -10602,6 +10634,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var h=String(txt==null?"":txt).trim();
     if(!h)return null;
     var low=h.toLowerCase();
+    if(crDroppedName(h))return "__drop";
     for(var i=0;i<CR_COLS.length;i++){
       var c=CR_COLS[i];
       if(c.k===h||c.k.toLowerCase()===low)return c.k;
@@ -10634,6 +10667,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var header=aoa[hidx],canon={},extras=[],seenKey={};
     for(var c=0;c<header.length;c++){
       var m=crMatchHeader(header[c]);
+      if(m==="__drop"){canon[c]=null;continue;}
       if(m){canon[c]=m;seenKey[m]=1;}
       else{
         var t=String(header[c]==null?"":header[c]).trim();
@@ -10675,7 +10709,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     creditUI.batch=batch.id;
     saveCredits();saveCreditUI();
     renderCredits();
-    toast("导入 "+rows.length+" 家（"+(missing.length?"缺 "+missing.length+" 列":"21 列全匹配")+(badN?"，口径异常 "+badN+" 家":"")+"）");
+    toast("导入 "+rows.length+" 家（"+(missing.length?"缺 "+missing.length+" 列":CR_COLS.length+" 列全匹配")+(badN?"，口径异常 "+badN+" 家":"")+"）");
   }
   function crReadFile(file){
     if(!file)return;
@@ -10769,8 +10803,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     badges.push('<span class="cr-badge '+(ti.lo<0?"cold":(ti.lo<10?"cold":(ti.lo<30?"y":(ti.lo<80?"warn":"hot"))))+'">'+esc(ti.name)+"</span>");
     var mm=crMonthOf(crGet(r,"未来最近一次未续会员合同到期月"));
     if(mm)badges.push('<span class="cr-badge cold">未续会员到期 '+esc(mm.label)+"</span>");
-    var inv=crNum(crGet(r,"近1年国际站投入金额"));
-    if(inv!==null)badges.push('<span class="cr-badge cold">近1年投入 ¥'+esc(crMoney(inv))+"</span>");
     $("crdBadges").innerHTML=badges.join("");
     var e=crNum(crGet(r,"当周期权益")),l=crNum(crGet(r,"剩余权益")),c=crNum(crGet(r,"当前消耗Credit")),t=crNum(crGet(r,"当前使用次数"));
     $("crdCur").innerHTML=[
@@ -10785,7 +10817,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return '<div class="box"><div class="k">'+esc(k)+'</div><div class="v">'+(v===null?"—":esc(crPctTxt(v)))+"</div>"+crMiniBar(v)+(m?'<div class="m">'+esc(m)+"</div>":"")+"</div>";
     }
     $("crdPeriod").innerHTML=[
-      pbox("当期消耗率",r1,e?"已用 "+crTrim(c||0)+" / "+crTrim(e):null),
+      pbox("当前消耗率",r1,e?"已用 "+crTrim(c||0)+" / "+crTrim(e):null),
       pbox("上一周期消耗率",r2,null),
       pbox("累计消耗率",r3,null),
       pbox("近21天消耗率",r4,"分层 "+ti.name)
@@ -10904,7 +10936,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if(th){
         var k=th.getAttribute("data-crk");
         if(creditUI.sortKey===k)creditUI.sortDir=creditUI.sortDir==="asc"?"desc":"asc";
-        else{var sc=crCol(k);var numeric=sc&&(sc.t==="money"||sc.t==="num"||sc.t==="int"||sc.t==="rate"||sc.t==="month");creditUI.sortKey=k;creditUI.sortDir=numeric?"desc":"asc";}
+        else{var sc=crCol(k);var numeric=sc&&(sc.t==="money"||sc.t==="num"||sc.t==="int"||sc.t==="rate");creditUI.sortKey=k;creditUI.sortDir=numeric?"desc":"asc";}
         saveCreditUI();renderCredits();return;
       }
       var g=e.target.closest?e.target.closest("[data-crkey]"):null;
