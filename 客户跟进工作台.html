@@ -1515,6 +1515,125 @@ body{background:var(--bg);}
    .ph-q:first-child{border-top:none;padding-top:2px;}
    .ph-q-dim{display:inline-block;font-size:11px;padding:2px 9px;border-radius:999px;background:var(--accent-weak);color:var(--accent);border:1px solid var(--accent-soft);margin-bottom:6px;}
    .ph-q-text{font-size:13px;color:var(--text);margin:0 0 6px;line-height:1.5;}
+/* ================= 积分消耗板块 ================= */
+.cr-wrap{display:flex;flex-direction:column;gap:14px;}
+.cr-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.cr-bar .spacer,.cr-d-head .spacer{flex:1 1 auto;}
+.cr-lbl{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.cr-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;line-height:1.6;}
+.cr-meta b{color:var(--text);font-weight:600;}
+.cr-meta .warn{color:var(--high);}
+.cr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;}
+.cr-kpis .stat b{font-size:21px;}
+.cr-kpis .stat .sub{font-size:11px;color:var(--muted2);}
+.cr-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;}
+.cr-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;box-shadow:var(--shadow);}
+.cr-panel.wide{grid-column:1 / -1;}
+.cr-panel .panel-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.cr-panel .panel-head h3{margin:0;font-size:14px;color:var(--text);}
+.cr-hint{font-size:11px;color:var(--muted2);}
+.cr-chart{display:flex;flex-direction:column;gap:7px;}
+.cr-brow{display:grid;grid-template-columns:88px 1fr 76px;align-items:center;gap:8px;font-size:12px;}
+.cr-brow .nm{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cr-brow .val{text-align:right;color:var(--text);font-variant-numeric:tabular-nums;}
+.cr-track{height:9px;border-radius:6px;background:var(--panel2);overflow:hidden;}
+.cr-fill{height:100%;border-radius:6px;background:var(--accent);transition:width .25s ease;}
+.cr-fill.ok{background:var(--ok);} .cr-fill.mid{background:var(--mid);} .cr-fill.high{background:var(--high);} .cr-fill.low{background:var(--low);}
+/* 象限散点 */
+.cr-scatter svg{width:100%;height:auto;display:block;}
+.cr-scatter .ax{stroke:var(--border2);stroke-width:1;}
+.cr-scatter text{fill:var(--muted2);font-size:10px;}
+.cr-scatter .dotc{cursor:pointer;}
+.cr-scatter .dotc:hover circle{stroke:var(--text);stroke-width:1.6;}
+/* 筛选 */
+.cr-filters{display:flex;flex-direction:column;gap:9px;}
+.cr-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.cr-chip{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:12px;cursor:pointer;transition:all .14s ease;}
+.cr-chip:hover{border-color:var(--border2);color:var(--text);}
+.cr-chip.on{background:var(--accent-weak);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.cr-chip i{font-style:normal;opacity:.7;margin-left:4px;font-size:11px;}
+.cr-search{flex:1 1 220px;min-width:170px;}
+.cr-count{font-size:12px;color:var(--muted);white-space:nowrap;}
+/* 表格 */
+.cr-tablewrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);max-height:70vh;overflow:auto;}
+table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:2100px;width:max-content;}
+.cr-table th,.cr-table td{padding:7px 9px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
+.cr-table thead th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;z-index:3;}
+.cr-table thead tr.cr-grprow th{top:0;height:26px;font-size:11.5px;letter-spacing:.4px;color:var(--text);background:var(--sidebar);z-index:4;text-align:center;}
+.cr-table thead tr.cr-hdrow th{top:26px;height:30px;cursor:pointer;user-select:none;}
+.cr-table thead tr.cr-hdrow th:hover{color:var(--text);background:var(--accent-soft);}
+.cr-table thead th .ar{opacity:.35;margin-left:3px;font-size:10px;}
+.cr-table thead th.sorted{color:var(--accent);background:var(--accent-weak);}
+.cr-table thead th.sorted .ar{opacity:1;}
+.cr-table tbody tr{cursor:pointer;}
+.cr-table tbody tr:hover td{background:var(--accent-weak);}
+.cr-table td.num,.cr-table th.num{text-align:right;font-variant-numeric:tabular-nums;}
+.cr-table td.mid,.cr-table th.mid{text-align:center;}
+.cr-table .cell-id{font-weight:600;color:var(--text);}
+.cr-table .cell-co{white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis;}
+.cr-table tfoot td{position:sticky;bottom:0;background:var(--panel2);font-weight:700;color:var(--text);border-top:1px solid var(--border2);z-index:2;}
+/* 冻结首列 */
+.cr-table .frz{position:sticky;left:0;background:var(--panel);z-index:2;}
+.cr-table thead .frz{z-index:6;background:var(--panel2);}
+.cr-table tbody tr:hover .frz{background:var(--accent-weak);}
+.cr-table tfoot .frz{background:var(--panel2);z-index:5;}
+/* 消耗率单元格 */
+.cr-rate{display:flex;align-items:center;gap:6px;min-width:118px;}
+.cr-rate .txt{width:52px;text-align:right;font-variant-numeric:tabular-nums;}
+.cr-rate .tr{flex:1;height:7px;border-radius:5px;background:var(--panel2);overflow:hidden;min-width:44px;}
+.cr-rate .fl{height:100%;border-radius:5px;}
+.cr-delta{font-size:10.5px;line-height:1.2;}
+.cr-delta.up{color:var(--ok);} .cr-delta.dn{color:var(--high);} .cr-delta.flat{color:var(--muted2);}
+/* 徽标 */
+.cr-badge{display:inline-flex;align-items:center;gap:3px;border-radius:6px;padding:1px 6px;font-size:11px;line-height:1.6;}
+.cr-badge.y{background:var(--accent-soft);color:var(--accent);}
+.cr-badge.n{background:var(--panel2);color:var(--muted2);}
+.cr-badge.gold{background:rgba(217,154,78,.16);color:#a9702a;}
+.cr-badge.hot{background:rgba(210,96,107,.14);color:var(--high);}
+.cr-badge.cold{background:var(--panel2);color:var(--muted);}
+.cr-badge.note{background:rgba(79,158,107,.14);color:var(--ok);}
+.cr-badge.warn{background:rgba(224,162,58,.16);color:#a9702a;}
+.cr-null{color:var(--muted2);}
+/* 空状态 */
+.cr-empty{background:var(--panel);border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:34px 22px;text-align:center;color:var(--muted);}
+.cr-empty h3{margin:0 0 8px;font-size:16px;color:var(--text);}
+.cr-empty ul{list-style:none;padding:0;margin:12px 0 16px;font-size:12.5px;line-height:2;}
+/* 明细弹窗 */
+.cr-sheet{max-width:940px;}
+.cr-d-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.cr-d-name{font-size:18px;font-weight:700;color:var(--text);line-height:1.3;}
+.cr-d-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.cr-d-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.cr-d-sec{margin-bottom:14px;}
+.cr-d-sec h4{margin:0 0 8px;font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.3px;}
+.cr-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.cr-cmp .box{background:var(--panel2);border-radius:10px;padding:10px 12px;}
+.cr-cmp .box .k{font-size:11px;color:var(--muted);}
+.cr-cmp .box .v{font-size:15px;font-weight:700;color:var(--text);margin-top:3px;word-break:break-all;line-height:1.35;}
+.cr-cmp .box .m{font-size:11px;color:var(--muted2);margin-top:2px;}
+.cr-raw{max-height:230px;overflow:auto;border:1px solid var(--border);border-radius:10px;}
+.cr-raw table{width:100%;border-collapse:collapse;font-size:12px;}
+.cr-raw th,.cr-raw td{padding:5px 9px;border-bottom:1px solid var(--border);text-align:left;}
+.cr-raw th{color:var(--muted);font-weight:600;background:var(--panel2);position:sticky;top:0;}
+.cr-raw td.v{text-align:right;font-variant-numeric:tabular-nums;word-break:break-all;}
+.cr-checks{display:flex;flex-direction:column;gap:5px;font-size:12px;}
+.cr-checks .ok{color:var(--ok);} .cr-checks .no{color:var(--high);} .cr-checks .sk{color:var(--muted2);}
+/* 跟进记录 */
+.cr-note-form{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+.cr-note-form input[type=text]{flex:1 1 240px;}
+.cr-notes{display:flex;flex-direction:column;gap:7px;max-height:210px;overflow:auto;}
+.cr-note{display:flex;gap:9px;align-items:flex-start;background:var(--panel2);border-radius:10px;padding:8px 10px;}
+.cr-note .tag{flex-shrink:0;}
+.cr-note .bd{flex:1;min-width:0;}
+.cr-note .tx{font-size:12.5px;color:var(--text);line-height:1.6;word-break:break-word;}
+.cr-note .mt{font-size:11px;color:var(--muted2);margin-top:2px;}
+.cr-note .del{border:none;background:transparent;color:var(--muted2);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;}
+.cr-note .del:hover{color:var(--high);}
+.cr-notempty{font-size:12px;color:var(--muted2);}
+
+.cr-track,.cr-fill,.cr-rate .tr,.cr-rate .fl{display:block;}
+.cr-rate{display:flex;}
+.cr-note .tag{min-width:34px;justify-content:center;}
 </style>
 </head>
 <body>
@@ -1554,6 +1673,10 @@ body{background:var(--bg);}
       <a class="nav-item" data-view="plans" data-tip="合作方案">
         <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
         <span class="nav-text">合作方案</span>
+      </a>
+      <a class="nav-item" data-view="credits" data-tip="积分消耗">
+        <svg viewBox="0 0 24 24"><path d="M11 20v-6h2v6h6v-8h-5.2l3.2-8.8L15 2l-6 9h3l-2 7h1zm1-18a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/></svg>
+        <span class="nav-text">积分消耗</span>
       </a>
       <div class="nav-sep">快捷操作</div>
       <a class="nav-item nav-action" id="navAdd" data-tip="新增客户">
@@ -1952,10 +2075,82 @@ body{background:var(--bg);}
           </div>
         </div>
       </div>
+      <!-- 视图：积分消耗 -->
+      <div id="viewCredits" class="view" style="display:none;">
+        <div class="cr-wrap">
+          <div class="cr-bar">
+            <button class="btn primary" id="crBtnImport" type="button">导入积分表</button>
+            <input type="file" id="crFile" accept=".xls,.xlsx,.csv" style="display:none;">
+            <button class="btn" id="crBtnTpl" type="button" title="导出仅含两行表头的空白模板，按模板填数即可导入">下载导入模板</button>
+            <button class="btn" id="crBtnExport" type="button" title="按当前筛选与排序导出">导出当前视图</button>
+            <span class="spacer"></span>
+            <label class="cr-lbl" for="crBatch">数据批次</label>
+            <select id="crBatch"></select>
+            <button class="btn danger" id="crBtnDelBatch" type="button" title="删除当前批次（不影响其他批次与跟进记录）">删批次</button>
+          </div>
+          <div class="cr-meta" id="crMeta"></div>
+          <div class="cr-kpis" id="crKpis"></div>
+          <div class="cr-panels" id="crPanels">
+            <div class="cr-panel"><div class="panel-head"><h3>近21天消耗分层</h3><span class="cr-hint">按家数</span></div><div class="cr-chart" id="crTierChart"></div></div>
+            <div class="cr-panel"><div class="panel-head"><h3>剩余权益待消耗 TOP8</h3><span class="cr-hint">越多越该触达</span></div><div class="cr-chart" id="crLeftChart"></div></div>
+            <div class="cr-panel wide"><div class="panel-head"><h3>投入 × 当期消耗率 象限</h3><span class="cr-hint">横轴 近1年国际站投入金额 · 纵轴 当前Credit消耗率 · 颜色 近21天消耗分层</span></div><div class="cr-chart cr-scatter" id="crScatter"></div></div>
+          </div>
+          <div class="cr-filters">
+            <div class="cr-chips" id="crChips"></div>
+            <div class="cr-bar">
+              <input class="cr-search" type="text" id="crSearch" placeholder="搜索主账号 ID / 公司名称">
+              <select id="crFService">
+                <option value="all">服务中：全部</option><option value="Y">服务中：Y</option><option value="N">服务中：N</option>
+              </select>
+              <select id="crFGold"><option value="all">金品：全部</option><option value="Y">金品：Y</option><option value="N">金品：N</option></select>
+              <select id="crFOkki"><option value="all">OKKI：全部</option><option value="Y">OKKI：Y</option><option value="N">OKKI：N</option></select>
+              <select id="crFDur"><option value="all">服务时长：全部</option></select>
+              <select id="crFTier"><option value="all">分层：全部</option></select>
+              <label class="cr-lbl">当期消耗率≥<input type="number" id="crRateMin" min="0" max="200" step="5" style="width:60px;">%</label>
+              <button class="btn" id="crBtnReset" type="button">重置筛选</button>
+              <span class="spacer"></span>
+              <span class="cr-count" id="crCount"></span>
+            </div>
+          </div>
+          <div class="cr-tablewrap" id="crTableWrap"></div>
+          <div id="crEmpty"></div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
 
+<!-- 积分消耗：客户明细与跟进记录 -->
+<div class="modal" id="modalCredit">
+  <div class="sheet cr-sheet">
+    <div class="cr-d-head">
+      <div style="min-width:0;">
+        <div class="cr-d-name" id="crdName">—</div>
+        <div class="cr-d-sub" id="crdSub"></div>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn" id="crBtnGoCustomer" type="button" style="display:none;" title="在客户列表中打开同名客户">查看客户档案</button>
+      <button class="btn" onclick="closeModal('modalCredit')" type="button">关闭</button>
+    </div>
+    <div class="cr-d-badges" id="crdBadges"></div>
+    <div class="cr-d-sec"><h4>当期权益使用</h4><div class="cr-cmp" id="crdCur"></div></div>
+    <div class="cr-d-sec"><h4>周期与节奏对比</h4><div class="cr-cmp" id="crdPeriod"></div></div>
+    <div class="cr-d-sec"><h4>跟进记录</h4>
+      <div class="cr-note-form">
+        <select id="crnType">
+          <option value="电话">电话</option><option value="微信">微信</option><option value="拜访">拜访</option>
+          <option value="邮件">邮件</option><option value="备注" selected>备注</option><option value="预警">预警</option>
+        </select>
+        <input type="date" id="crnNext" title="下次跟进日期（可选）">
+        <input type="text" id="crnText" placeholder="记一条跟进 / 备注，回车即可保存">
+        <button class="btn primary" id="crnAdd" type="button">添加记录</button>
+      </div>
+      <div class="cr-notes" id="crNotes"></div>
+    </div>
+    <div class="cr-d-sec"><h4>原表字段（21 列，右侧为表格原始值）</h4><div class="cr-raw" id="crdRaw"></div></div>
+    <div class="cr-d-sec"><h4>口径自检</h4><div class="cr-checks" id="crdCheck"></div></div>
+  </div>
+</div>
 <!-- 客户新增/编辑 -->
 <div class="modal" id="modalCustomer">
   <div class="sheet">
@@ -5806,7 +6001,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if($("viewPrompts"))$("viewPrompts").style.display=view==="prompts"?"block":"none";
     if($("viewPromptHelper"))$("viewPromptHelper").style.display=view==="prompthelper"?"block":"none";
     if($("viewPlans"))$("viewPlans").style.display=view==="plans"?"block":"none";
-    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="map"?"客户地图":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":"客户列表";
+    if($("viewCredits"))$("viewCredits").style.display=view==="credits"?"block":"none";
+    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="map"?"客户地图":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":view==="credits"?"积分消耗":"客户列表";
     $("pageTitle").textContent=title;
     document.querySelectorAll(".nav-item[data-view]").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-view")===view);
@@ -5817,6 +6013,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
     else if(view==="prompthelper"){phRender();}
     else if(view==="plans"){renderPlans();}
+    else if(view==="credits"){renderCredits();}
   }
 
   // ---------- 指令提示词板块：渲染与交互 ----------
@@ -9017,7 +9214,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               "df_customer_workbench_accio_mark_v1","df_customer_workbench_accio_skill_v1",
               "df_customer_workbench_accio_skill_cats_v1","df_customer_workbench_plans_v1",
               "df_customer_workbench_planlib_v1","df_customer_workbench_prompts_v1",
-              "df_customer_workbench_agents_v1"
+              "df_customer_workbench_agents_v1",
+              "df_customer_workbench_credits_v1","df_customer_workbench_credit_notes_v1",
+              "df_customer_workbench_credits_ui_v1"
             ];
             var restored=0;
             MIGRATE_KEYS.forEach(function(k){
@@ -9818,6 +10017,929 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }
     _lastReminderCount=n;
   },60000);
+  // ==================== 积分消耗板块 ====================
+  // 数据来自外部导出的「AWB客户积分消耗情况」表，导入后保存在本地 localStorage。
+  // 列定义中的 k 必须与源表表头严格一致（导入按 k/别名匹配），界面显示名用 label 覆盖。
+  var CREDIT_KEY="df_customer_workbench_credits_v1";
+  var CREDIT_NOTE_KEY="df_customer_workbench_credit_notes_v1";
+  var CREDIT_UI_KEY="df_customer_workbench_credits_ui_v1";
+  var creditBatches=null,creditNotes=null,creditUI=null,crDetailKey=null;
+  var CR_GROUPS=[{g:"base",name:"客户基础信息"},{g:"use",name:"积分消耗"}];
+  var CR_COLS=[
+    {k:"主账号id",g:"base",t:"id",label:"主账号 ID",w:116},
+    {k:"comp_name",g:"base",t:"co",label:"公司名称",w:224,al:["公司名称","公司名","comp_name","企业名称"]},
+    {k:"是否服务中",g:"base",t:"yn",w:78},
+    {k:"是否金品",g:"base",t:"yn",w:70},
+    {k:"近1年国际站投入金额",g:"base",t:"money",w:126},
+    {k:"服务时长分类",g:"base",t:"text",w:96},
+    {k:"未来最近一次未续会员合同到期月",g:"base",t:"month",label:"未续会员到期月",w:112},
+    {k:"is_okki",g:"base",t:"yn",label:"OKKI",w:64,al:["是否okki","is_okki","okki"]},
+    {k:"当周期权益",g:"use",t:"num",w:90},
+    {k:"剩余权益",g:"use",t:"num",w:90},
+    {k:"当前使用次数",g:"use",t:"int",w:92},
+    {k:"当前消耗Credit",g:"use",t:"num",w:108},
+    {k:"当前Credit消耗率",g:"use",t:"rate",w:142},
+    {k:"累计权益",g:"use",t:"num",w:90},
+    {k:"累计权益使用",g:"use",t:"num",w:102},
+    {k:"累计Credit消耗率",g:"use",t:"rate",w:142},
+    {k:"上一周期Credit消耗率",g:"use",t:"rate",w:142},
+    {k:"上一周期消耗率是否80%以上",g:"use",t:"yn",label:"上期≥80%",w:88},
+    {k:"近21天日均积分消耗",g:"use",t:"num",w:116},
+    {k:"近21天日均积分消耗率",g:"use",t:"rate",w:142},
+    {k:"近21天消耗分层",g:"use",t:"tier",w:94}
+  ];
+  var CR_CHIPS=[
+    {k:"all",n:"全部"},{k:"svc",n:"服务中"},{k:"right",n:"有当期权益"},
+    {k:"zero",n:"当期零消耗"},{k:"hot80",n:"当期≥80%"},{k:"prev80",n:"上期≥80%"},
+    {k:"renew",n:"6个月内到期"},{k:"noted",n:"有跟进记录"},{k:"bad",n:"口径异常"}
+  ];
+
+  // ---------- 取值 / 格式化 ----------
+  function crIsBlank(v){return v===undefined||v===null||v==="";}
+  function crGet(row,k){var v=row?row[k]:null;return crIsBlank(v)?null:v;}
+  function crPad(n){return (n<10?"0":"")+n;}
+  function crNum(v){
+    if(crIsBlank(v))return null;
+    if(typeof v==="number")return isFinite(v)?v:null;
+    var s=String(v).replace(/[,，\s￥¥$]/g,"");
+    if(s===""||s==="-"||s==="—")return null;
+    var n=parseFloat(s.replace(/%$/,""));
+    return isFinite(n)?n:null;
+  }
+  function crRateVal(v){
+    if(crIsBlank(v))return null;
+    if(typeof v==="number")return isFinite(v)?v:null;
+    var s=String(v).trim(),n=crNum(s);
+    if(n===null)return null;
+    return /%$/.test(s)?n/100:n;
+  }
+  function crTrim(n){
+    if(n===null||typeof n!=="number"||!isFinite(n))return "";
+    var a=Math.abs(n),dp=a>=1000?2:(a>=1?4:6),s=n.toFixed(dp);
+    if(s.indexOf(".")>=0)s=s.replace(/0+$/,"").replace(/\.$/,"");
+    return s;
+  }
+  function crGroupInt(s){var p=s.split(".");p[0]=p[0].replace(/\B(?=(\d{3})+$)/g,",");return p.join(".");}
+  function crMoney(n){
+    var s=crTrim(n);if(!s)return "";
+    return crGroupInt(s);
+  }
+  // 源表数值原样呈现：只加千分位、不四舍五入，避免显示值与表格原值不一致
+  function crVerbatim(v){
+    if(v===null||v===undefined||v==="")return "";
+    var s=String(v).trim();
+    if(/^-?\d+(\.\d+)?$/.test(s))return crGroupInt(s);
+    var n=crNum(s);
+    return n===null?s:crGroupInt(String(n));
+  }
+  function crPctTxt(r){
+    if(r===null)return "";
+    var p=r*100;
+    if(p>=10)return p.toFixed(1)+"%";
+    if(p>=1)return p.toFixed(2)+"%";
+    if(p>=0.01)return p.toFixed(3)+"%";
+    if(p===0)return "0%";
+    return p.toFixed(4)+"%";
+  }
+  function crRateCls(r){if(r===null)return "low";if(r>=0.8)return "high";if(r>=0.3)return "mid";if(r>=0.1)return "";return "low";}
+  function crMonthOf(v){
+    if(crIsBlank(v))return null;
+    if(typeof v==="number"){
+      if(v>20000&&v<80000){var ms=(v-25569)*86400000,d=new Date(ms);return {ms:ms,label:d.getUTCFullYear()+"-"+crPad(d.getUTCMonth()+1)};}
+      return {ms:null,label:String(v)};
+    }
+    var s=String(v).trim(),m=s.match(/^(\d{4})\D{0,3}(\d{1,2})/);
+    if(m){var y=+m[1],mo=+m[2];if(mo>=1&&mo<=12)return {ms:Date.UTC(y,mo-1,1),label:y+"-"+crPad(mo)};}
+    var n=crNum(s);
+    if(n!==null&&n>20000&&n<80000){var ms2=(n-25569)*86400000,d2=new Date(ms2);return {ms:ms2,label:d2.getUTCFullYear()+"-"+crPad(d2.getUTCMonth()+1)};}
+    return {ms:null,label:s};
+  }
+  function crTierInfo(v){
+    if(crIsBlank(v))return {name:"未分层",lo:-99};
+    var s=String(v).trim();
+    if(/消耗|未开|无/.test(s)&&!/^\d+\s*[_\-~至]/.test(s))return {name:s,lo:-1};
+    var m=s.match(/(\d+(?:\.\d+)?)/);
+    return {name:s,lo:m?parseFloat(m[1]):999};
+  }
+  function crYnBadge(v){
+    if(crIsBlank(v))return '<span class="cr-null">—</span>';
+    var s=String(v).trim(),u=s.toUpperCase();
+    if(u==="Y"||u==="YES"||s==="是"||u==="TRUE"||s==="1")return '<span class="cr-badge y">是</span>';
+    if(u==="N"||u==="NO"||s==="否"||u==="FALSE"||s==="0")return '<span class="cr-badge n">否</span>';
+    return '<span class="cr-badge cold">'+esc(s)+"</span>";
+  }
+  function crYnMatch(v,f){
+    if(f==="all")return true;
+    var s=crIsBlank(v)?"":String(v).trim().toUpperCase();
+    var yes=(s==="Y"||s==="YES"||s==="TRUE"||s==="1"),no=(s==="N"||s==="NO"||s==="FALSE"||s==="0");
+    if(f==="Y")return yes;
+    if(f==="N")return no;
+    return true;
+  }
+  function crCol(key){for(var i=0;i<CR_COLS.length;i++)if(CR_COLS[i].k===key)return CR_COLS[i];return null;}
+  function crKey(row){
+    var id=String(crGet(row,"主账号id")||"").trim();
+    if(id)return id.toLowerCase();
+    var co=String(crGet(row,"comp_name")||"").trim();
+    return co?("co:"+co.toLowerCase()):"";
+  }
+  function crRawText(col,v){
+    if(crIsBlank(v))return "";
+    if(col.t==="month"){var m=crMonthOf(v);return m?m.label:String(v);}
+    return String(v);
+  }
+
+  // ---------- 本地存储 ----------
+  function crDefaultUI(){
+    return {batch:"",q:"",svc:"all",gold:"all",okki:"all",dur:"all",tier:"all",rateMin:"",chip:"all",
+      sortKey:"近1年国际站投入金额",sortDir:"desc"};
+  }
+  function loadCredits(){
+    if(creditBatches)return;
+    try{creditBatches=JSON.parse(lsGet(CREDIT_KEY)||"[]");}catch(e){creditBatches=null;}
+    if(!creditBatches||!creditBatches.length)creditBatches=[];
+    creditBatches=creditBatches.filter(function(b){return b&&typeof b==="object"&&Object.prototype.toString.call(b.rows)==="[object Array]"&&b.rows.length;});
+    try{creditNotes=JSON.parse(lsGet(CREDIT_NOTE_KEY)||"{}")||{};}catch(e){creditNotes={};}
+    if(!creditNotes||typeof creditNotes!=="object")creditNotes={};
+    try{creditUI=JSON.parse(lsGet(CREDIT_UI_KEY)||"null");}catch(e){creditUI=null;}
+    if(!creditUI||typeof creditUI!=="object")creditUI=crDefaultUI();
+    else{var d=crDefaultUI();for(var k in d)if(creditUI[k]===undefined)creditUI[k]=d[k];}
+  }
+  function saveCredits(){lsSet(CREDIT_KEY,JSON.stringify(creditBatches));lsWarn();}
+  function saveCreditNotes(){lsSet(CREDIT_NOTE_KEY,JSON.stringify(creditNotes));lsWarn();}
+  function saveCreditUI(){lsSet(CREDIT_UI_KEY,JSON.stringify(creditUI));}
+  function crBatchById(id){for(var i=0;i<creditBatches.length;i++)if(creditBatches[i].id===id)return creditBatches[i];return null;}
+  function crActive(){
+    var b=crBatchById(creditUI.batch);
+    if(b)return b;
+    return creditBatches.length?creditBatches[0]:null;
+  }
+  function crPrevBatch(){
+    var a=crActive();if(!a)return null;
+    for(var i=0;i<creditBatches.length;i++)if(creditBatches[i].id===a.id)return creditBatches[i+1]||null;
+    return null;
+  }
+  function crPrevRow(row){
+    var p=crPrevBatch();if(!p)return null;
+    var k=crKey(row);if(!k)return null;
+    for(var i=0;i<p.rows.length;i++)if(crKey(p.rows[i])===k)return p.rows[i];
+    return null;
+  }
+
+  // ---------- 口径自检（保证与原表一致，不改动原值） ----------
+  function crChecks(row){
+    var out=[],e=crNum(crGet(row,"当周期权益")),l=crNum(crGet(row,"剩余权益")),c=crNum(crGet(row,"当前消耗Credit"));
+    if(e!==null&&l!==null&&c!==null){
+      var d=Math.abs((e-l)-c),tol=Math.max(1e-6,Math.abs(e)*1e-9);
+      out.push({ok:d<=tol,label:"当周期权益 − 剩余权益 = 当前消耗Credit",detail:crTrim(e)+" − "+crTrim(l)+" = "+crTrim(e-l)+"｜表内 "+crTrim(c)});
+    }else out.push({ok:null,label:"当周期权益 − 剩余权益 = 当前消耗Credit",detail:"字段为空，未校验"});
+    var ae=crNum(crGet(row,"累计权益")),au=crNum(crGet(row,"累计权益使用")),ar=crRateVal(crGet(row,"累计Credit消耗率"));
+    if(ae&&au!==null&&ar!==null){
+      var v=au/ae;out.push({ok:Math.abs(v-ar)<=1e-6,label:"累计权益使用 ÷ 累计权益 = 累计Credit消耗率",detail:crTrim(v)+"｜表内 "+crTrim(ar)});
+    }else out.push({ok:null,label:"累计权益使用 ÷ 累计权益 = 累计Credit消耗率",detail:"字段为空，未校验"});
+    var d21=crNum(crGet(row,"近21天日均积分消耗")),d21r=crRateVal(crGet(row,"近21天日均积分消耗率"));
+    if(e&&d21!==null&&d21r!==null){
+      var v2=d21/(e*21/30);out.push({ok:Math.abs(v2-d21r)<=1e-6,label:"近21天消耗 ÷ (当周期权益×21÷30) = 近21天消耗率",detail:crTrim(v2)+"｜表内 "+crTrim(d21r)});
+    }else out.push({ok:null,label:"近21天消耗 ÷ (当周期权益×21÷30) = 近21天消耗率",detail:"字段为空或无权益，未校验"});
+    return out;
+  }
+  function crRowBad(row){
+    var a=crChecks(row);
+    for(var i=0;i<a.length;i++)if(a[i].ok===false)return true;
+    return false;
+  }
+
+  // ---------- 筛选与排序 ----------
+  function crBaseRows(rows){
+    var q=(creditUI.q||"").trim().toLowerCase();
+    var rm=(creditUI.rateMin===""||creditUI.rateMin==null)?null:parseFloat(creditUI.rateMin);
+    if(rm!==null&&!isFinite(rm))rm=null;
+    return rows.filter(function(r){
+      if(q){
+        var id=String(crGet(r,"主账号id")||"").toLowerCase(),co=String(crGet(r,"comp_name")||"").toLowerCase();
+        if(id.indexOf(q)<0&&co.indexOf(q)<0)return false;
+      }
+      if(!crYnMatch(crGet(r,"是否服务中"),creditUI.svc))return false;
+      if(!crYnMatch(crGet(r,"是否金品"),creditUI.gold))return false;
+      if(!crYnMatch(crGet(r,"is_okki"),creditUI.okki))return false;
+      if(creditUI.dur!=="all"){
+        var d=crIsBlank(crGet(r,"服务时长分类"))?"(空)":String(crGet(r,"服务时长分类")).trim();
+        if(d!==creditUI.dur)return false;
+      }
+      if(creditUI.tier!=="all"){
+        var t=crIsBlank(crGet(r,"近21天消耗分层"))?"(空)":String(crGet(r,"近21天消耗分层")).trim();
+        if(t!==creditUI.tier)return false;
+      }
+      if(rm!==null&&rm>0){
+        var rr=crRateVal(crGet(r,"当前Credit消耗率"));
+        if(rr===null||rr<rm/100)return false;
+      }
+      return true;
+    });
+  }
+  function crChipOk(r,chip){
+    if(chip==="all")return true;
+    if(chip==="svc")return crYnMatch(crGet(r,"是否服务中"),"Y");
+    if(chip==="right")return (crNum(crGet(r,"当周期权益"))||0)>0;
+    if(chip==="zero"){
+      var c=crNum(crGet(r,"当前消耗Credit"));
+      return (c===null||c===0)&&(crNum(crGet(r,"当周期权益"))||0)>0;
+    }
+    if(chip==="hot80"){var h=crRateVal(crGet(r,"当前Credit消耗率"));return h!==null&&h>=0.8;}
+    if(chip==="prev80"){
+      if(crYnMatch(crGet(r,"上一周期消耗率是否80%以上"),"Y"))return true;
+      var p=crRateVal(crGet(r,"上一周期Credit消耗率"));return p!==null&&p>=0.8;
+    }
+    if(chip==="renew"){
+      var m=crMonthOf(crGet(r,"未来最近一次未续会员合同到期月"));
+      if(!m||m.ms===null)return false;
+      var day=86400000;
+      return m.ms>Date.now()-day*31&&m.ms-Date.now()<=day*31*6;
+    }
+    if(chip==="noted"){var k=crKey(r);return !!(creditNotes[k]&&creditNotes[k].length);}
+    if(chip==="bad")return crRowBad(r);
+    return true;
+  }
+  function crSortVal(row,col){
+    var v=crGet(row,col.k);
+    if(col.t==="rate")return crRateVal(v);
+    if(col.t==="money"||col.t==="num"||col.t==="int")return crNum(v);
+    if(col.t==="month"){var m=crMonthOf(v);return m&&m.ms!==null?m.ms:null;}
+    if(col.t==="tier")return crIsBlank(v)?null:crTierInfo(v).lo;
+    if(crIsBlank(v))return null;
+    return String(v).trim();
+  }
+  // 排序：数值列按数值、文本列按中文拼音；空值一律沉底（升降序都不挤到顶部）；同值按主账号稳定
+  function crSortRows(rows,key,dir){
+    var col=crCol(key);if(!col)return rows;
+    var has=[],emp=[];
+    for(var i=0;i<rows.length;i++){var v=crSortVal(rows[i],col);if(v===null||v==="")emp.push(rows[i]);else has.push(rows[i]);}
+    var s=(dir==="asc")?1:-1;
+    has.sort(function(a,b){
+      var x=crSortVal(a,col),y=crSortVal(b,col),r;
+      if(typeof x==="number"&&typeof y==="number")r=x-y;
+      else{try{r=String(x).localeCompare(String(y),"zh-Hans-CN",{numeric:true});}catch(e){r=String(x)<String(y)?-1:(String(x)>String(y)?1:0);}}
+      if(r!==0)return r*s;
+      var xa=String(crGet(a,"主账号id")||""),xb=String(crGet(b,"主账号id")||"");
+      return xa<xb?-1:(xa>xb?1:0);
+    });
+    return has.concat(emp);
+  }
+  function crFiltered(){
+    var a=crActive();
+    if(!a)return {all:[],base:[],rows:[],chipCounts:{}};
+    var base=crBaseRows(a.rows),cc={};
+    CR_CHIPS.forEach(function(c){
+      if(c.k==="all"){cc.all=base.length;return;}
+      var n=0;for(var i=0;i<base.length;i++)if(crChipOk(base[i],c.k))n++;
+      cc[c.k]=n;
+    });
+    var rows=creditUI.chip==="all"?base.slice():base.filter(function(r){return crChipOk(r,creditUI.chip);});
+    rows=crSortRows(rows,creditUI.sortKey,creditUI.sortDir);
+    return {all:a.rows,base:base,rows:rows,chipCounts:cc};
+  }
+  // ---------- 渲染：概览 / 图表 / 表格 ----------
+  function crIsNumCol(c){return c.t==="money"||c.t==="num"||c.t==="int";}
+  function crKpiCard(label,val,sub){
+    return '<div class="stat"><span class="stat-label">'+esc(label)+"</span><b>"+val+"</b>"+
+      (sub?'<span class="sub">'+esc(sub)+"</span>":"")+"</div>";
+  }
+  function crStamp(ms){
+    var d=new Date(ms||Date.now());
+    return d.getFullYear()+"-"+crPad(d.getMonth()+1)+"-"+crPad(d.getDate())+" "+crPad(d.getHours())+":"+crPad(d.getMinutes());
+  }
+  function crRenderMeta(f){
+    var el=$("crMeta");if(!el)return;
+    var b=crActive();
+    if(!b){el.innerHTML="";return;}
+    var badN=0,noteN=0;
+    f.all.forEach(function(r){if(crRowBad(r))badN++;var k=crKey(r);if(creditNotes[k]&&creditNotes[k].length)noteN++;});
+    var parts=[];
+    parts.push("批次：<b>"+esc(b.label||b.fileName||"未命名")+"</b>");
+    if(b.fileName)parts.push("来源：<b>"+esc(b.fileName)+"</b>");
+    parts.push("导入于 <b>"+crStamp(b.importedAt)+"</b>");
+    parts.push("客户 <b>"+f.all.length+"</b> 家，当前显示 <b>"+f.rows.length+"</b> 家");
+    var miss=(b.missing&&b.missing.length)?b.missing:[];
+    parts.push(miss.length?'<span class="warn">列校验：缺 '+miss.length+" 列（"+esc(miss.join("、"))+"）</span>":"列校验：21 列全部匹配");
+    if(b.extra&&b.extra.length)parts.push("附加列 <b>"+b.extra.length+"</b> 个（明细内可见）");
+    parts.push(badN?'<span class="warn">口径异常 <b style="color:var(--high)">'+badN+"</b> 家</span>":"口径自检全部通过");
+    parts.push("跟进记录 <b>"+noteN+"</b> 家");
+    el.innerHTML=parts.join("<span>·</span>");
+  }
+  function crSum(rows,key){
+    var s=0,n=0;
+    rows.forEach(function(r){var v=crNum(crGet(r,key));if(v!==null){s+=v;n++;}});
+    return {sum:s,n:n};
+  }
+  function crRenderKpis(f){
+    var el=$("crKpis");if(!el)return;
+    var rows=f.rows;
+    var svc=0,right=0,prev80=0,d21zero=0;
+    rows.forEach(function(r){
+      if(crYnMatch(crGet(r,"是否服务中"),"Y"))svc++;
+      if((crNum(crGet(r,"当周期权益"))||0)>0)right++;
+      if(crChipOk(r,"prev80"))prev80++;
+      var d=crNum(crGet(r,"近21天日均积分消耗"));
+      if(d===null||d===0)d21zero++;
+    });
+    var cur=crSum(rows,"当前消耗Credit"),eq=crSum(rows,"当周期权益"),inv=crSum(rows,"近1年国际站投入金额");
+    var w=eq.sum>0?cur.sum/eq.sum:null;
+    var gold=0;rows.forEach(function(r){if(crYnMatch(crGet(r,"是否金品"),"Y"))gold++;});
+    el.innerHTML=[
+      crKpiCard("客户数",rows.length,f.all.length&&f.all.length!==rows.length?"共 "+f.all.length+" 家":"当前批次"),
+      crKpiCard("服务中",svc,"金品 "+gold+" 家"),
+      crKpiCard("有当期权益",right,"权益合计 "+(eq.n?crMoney(eq.sum):"—")),
+      crKpiCard("当期消耗 Credit",(cur.n?crMoney(cur.sum):"—"),"覆盖 "+cur.n+" 家"),
+      crKpiCard("加权消耗率",w===null?"—":esc(crPctTxt(w)),"Σ消耗 ÷ Σ权益"),
+      crKpiCard("上期≥80%",prev80,"需重点盯"),
+      crKpiCard("近21天零消耗",d21zero,"唤醒对象"),
+      crKpiCard("近1年投入",(inv.n?"¥"+crMoney(inv.sum):"—"),"覆盖 "+inv.n+" 家")
+    ].join("");
+  }
+  function crBarRow(nm,val,txt,cls){
+    return '<div class="cr-brow"><span class="nm" title="'+esc(nm)+'">'+esc(nm)+"</span>"+
+      '<span class="cr-track"><span class="cr-fill '+(cls||"")+'" style="width:'+val+'%"></span></span>'+
+      '<span class="val">'+esc(txt)+"</span></div>";
+  }
+  function crRenderTierChart(f){
+    var el=$("crTierChart");if(!el)return;
+    var map={},total=f.rows.length;
+    f.rows.forEach(function(r){
+      var ti=crTierInfo(crGet(r,"近21天消耗分层")),key=ti.name;
+      if(!map[key])map[key]={name:key,lo:ti.lo,n:0};
+      map[key].n++;
+    });
+    var arr=[];for(var k in map)arr.push(map[k]);
+    arr.sort(function(a,b){return a.lo-b.lo;});
+    if(!arr.length){el.innerHTML='<div class="cr-notempty">暂无数据</div>';return;}
+    var max=0;arr.forEach(function(a){if(a.n>max)max=a.n;});
+    el.innerHTML=arr.map(function(a){
+      var cls=a.lo<=(-1)?"low":(a.lo<10?"low":(a.lo<30?"":(a.lo<80?"mid":"high")));
+      return crBarRow(a.name,max?a.n/max*100:0,a.n+" 家 · "+(total?Math.round(a.n/total*100):0)+"%",cls);
+    }).join("");
+  }
+  function crRenderLeftChart(f){
+    var el=$("crLeftChart");if(!el)return;
+    var arr=[];
+    f.rows.forEach(function(r){
+      var l=crNum(crGet(r,"剩余权益"));
+      if(l!==null&&l>0)arr.push({nm:String(crGet(r,"comp_name")||crGet(r,"主账号id")||"—"),left:l,eq:crNum(crGet(r,"当周期权益"))});
+    });
+    arr.sort(function(a,b){return b.left-a.left;});
+    arr=arr.slice(0,8);
+    if(!arr.length){el.innerHTML='<div class="cr-notempty">当前筛选下没有剩余权益数据</div>';return;}
+    var max=arr[0].left||1;
+    el.innerHTML=arr.map(function(a){
+      var pct=(a.left/max)*100;
+      var right=a.eq>0?(a.left/a.eq):null;
+      return crBarRow(a.nm,pct,crVerbatim(a.left)+(right!==null?" · "+crPctTxt(right):""),right!==null?(right>=0.7?"high":(right>=0.4?"mid":"ok")):"");
+    }).join("");
+  }
+  function crRenderScatter(f){
+    var el=$("crScatter");if(!el)return;
+    var pts=[];
+    f.rows.forEach(function(r){
+      var x=crNum(crGet(r,"近1年国际站投入金额")),y=crRateVal(crGet(r,"当前Credit消耗率"));
+      if(x!==null&&y!==null)pts.push({x:x,y:y,r:r});
+    });
+    if(pts.length<2){el.innerHTML='<div class="cr-notempty">需要至少 2 家「投入金额 + 当期消耗率」同时有值的客户</div>';return;}
+    var W=760,H=248,pl=54,pr=18,pt=14,pb=32,iw=W-pl-pr,ih=H-pt-pb;
+    var xmax=0,ymax=0,xs=[];
+    pts.forEach(function(p){if(p.x>xmax)xmax=p.x;if(p.y>ymax)ymax=p.y;xs.push(p.x);});
+    xs.sort(function(a,b){return a-b;});
+    xmax=xmax*1.08||1;ymax=Math.max(0.5,Math.min(ymax*1.15,1.4));
+    var xm=xs[Math.floor(xs.length/2)];
+    function sx(v){return pl+(v/xmax)*iw;}
+    function sy(v){return pt+ih-(v/ymax)*ih;}
+    var g=[];
+    g.push('<rect x="'+pl+'" y="'+pt+'" width="'+iw+'" height="'+ih+'" fill="none"/>');
+    for(var i=0;i<=4;i++){
+      var yv=ymax*i/4,yy=sy(yv);
+      g.push('<line x1="'+pl+'" y1="'+yy.toFixed(1)+'" x2="'+(pl+iw)+'" y2="'+yy.toFixed(1)+'" class="ax" stroke-dasharray="3 3"/>');
+      g.push('<text x="'+(pl-6)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end">'+crPctTxt(yv)+"</text>");
+    }
+    for(var j=0;j<=4;j++){
+      var xv=xmax*j/4,xx=sx(xv);
+      g.push('<line x1="'+xx.toFixed(1)+'" y1="'+pt+'" x2="'+xx.toFixed(1)+'" y2="'+(pt+ih)+'" class="ax" opacity=".45"/>');
+      g.push('<text x="'+xx.toFixed(1)+'" y="'+(pt+ih+14)+'" text-anchor="middle">'+(xv>=10000?(xv/10000).toFixed(xv>=100000?0:1)+"万":Math.round(xv))+"</text>");
+    }
+    g.push('<line x1="'+sx(xm).toFixed(1)+'" y1="'+pt+'" x2="'+sx(xm).toFixed(1)+'" y2="'+(pt+ih)+'" class="ax"/>');
+    g.push('<line x1="'+pl+'" y1="'+sy(0.5).toFixed(1)+'" x2="'+(pl+iw)+'" y2="'+sy(0.5).toFixed(1)+'" class="ax"/>');
+    g.push('<text x="'+(pl+iw)+'" y="'+(pt+ih+28)+'" text-anchor="end">近1年国际站投入金额（元）</text>');
+    g.push('<text x="12" y="'+(pt+8)+'">当期Credit消耗率</text>');
+    pts.forEach(function(p){
+      var ti=crTierInfo(crGet(p.r,"近21天消耗分层"));
+      var col=ti.lo>=80?"var(--high)":(ti.lo>=30?"var(--mid)":(ti.lo>=0&&ti.lo>-99?"var(--accent)":"var(--low)"));
+      var nm=String(crGet(p.r,"comp_name")||crGet(p.r,"主账号id")||"—");
+      g.push('<g class="dotc" data-crkey="'+esc(crKey(p.r))+'"><circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+
+        '" r="5" style="fill:'+col+';fill-opacity:.82;stroke:var(--panel)" stroke-width="1"><title>'+esc(nm)+"｜投入 "+crVerbatim(p.x)+"｜当期消耗率 "+crPctTxt(p.y)+"｜分层 "+ti.name+"</title></circle></g>");
+    });
+    el.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="投入与消耗率象限图">'+g.join("")+"</svg>"+
+      '<div class="cr-hint">右上＝投入高且用得快（保持）｜左上＝投入高但消耗低（重点触达）｜右下＝低投入高消耗（可谈增购）</div>';
+  }
+  function crChipsHtml(f){
+    return CR_CHIPS.map(function(c){
+      var n=f.chipCounts[c.k];
+      return '<button type="button" class="cr-chip'+(creditUI.chip===c.k?" on":"")+'" data-chip="'+c.k+'">'+esc(c.n)+"<i>"+(n===undefined?0:n)+"</i></button>";
+    }).join("");
+  }
+  function crFillSelects(f){
+    var dur=$("crFDur"),tier=$("crFTier");
+    var b=crActive();
+    if(dur&&b){
+      var keep=creditUI.dur,set={};
+      b.rows.forEach(function(r){set[crIsBlank(crGet(r,"服务时长分类"))?"(空)":String(crGet(r,"服务时长分类")).trim()]=1;});
+      var html='<option value="all">服务时长：全部</option>';
+      Object.keys(set).sort(function(a,x){return a.localeCompare(x,"zh-Hans-CN");}).forEach(function(k){
+        html+='<option value="'+esc(k)+'"'+(keep===k?" selected":"")+">"+esc(k==="(空)"?"（空）":k)+"</option>";
+      });
+      dur.innerHTML=html;dur.value=keep;
+    }
+    if(tier&&b){
+      var keep2=creditUI.tier,map={};
+      b.rows.forEach(function(r){var ti=crTierInfo(crGet(r,"近21天消耗分层"));map[ti.name]=ti.lo;});
+      var arr2=[];for(var k2 in map)arr2.push({n:k2,lo:map[k2]});
+      arr2.sort(function(a,x){return a.lo-x.lo;});
+      var html2='<option value="all">分层：全部</option>';
+      arr2.forEach(function(t){html2+='<option value="'+esc(t.n)+'"'+(keep2===t.n?" selected":"")+">"+esc(t.n==="未分层"?"（空）":t.n)+"</option>";});
+      tier.innerHTML=html2;tier.value=keep2;
+    }
+  }
+  function crDeltaHtml(r,col){
+    if(col.k!=="当前Credit消耗率"&&col.k!=="累计Credit消耗率"&&col.k!=="剩余权益")return "";
+    var pv=crPrevRow(r);if(!pv)return "";
+    var cur=col.t==="rate"?crRateVal(crGet(r,col.k)):crNum(crGet(r,col.k));
+    var pre=col.t==="rate"?crRateVal(crGet(pv,col.k)):crNum(crGet(pv,col.k));
+    if(cur===null||pre===null)return "";
+    var d=cur-pre;
+    if(col.t==="rate"){
+      var pp=d*100;
+      if(Math.abs(pp)<0.05)return '<div class="cr-delta flat">与上期持平</div>';
+      return '<div class="cr-delta '+(pp>0?"up":"dn")+'">'+(pp>0?"▲ +":"▼ ")+pp.toFixed(1)+"pp</div>";
+    }
+    if(Math.abs(d)<1e-9)return "";
+    return '<div class="cr-delta flat">'+(d>0?"+":"−")+crTrim(Math.abs(d))+"</div>";
+  }
+  function crCellHtml(col,r){
+    var v=crGet(r,col.k),raw=crRawText(col,v);
+    if(col.t==="id"){
+      var key=crKey(r),notes=creditNotes[key]||[],badge="";
+      if(notes.length)badge+='<span class="cr-badge note" title="跟进记录 '+notes.length+' 条">记'+notes.length+"</span>";
+      if(crRowBad(r))badge+='<span class="cr-badge warn" title="口径自检未通过，明细可查看具体项">检</span>';
+      return '<span class="cell-id">'+esc(v||"—")+"</span>"+(badge?" "+badge:"");
+    }
+    if(col.t==="co")return '<span class="cell-co" title="'+esc(raw)+'">'+esc(v?raw:"—")+"</span>";
+    if(col.t==="yn")return crYnBadge(v);
+    if(col.t==="tier"){
+      if(crIsBlank(v))return '<span class="cr-null">—</span>';
+      var ti=crTierInfo(v),cls=ti.lo<0?"cold":(ti.lo<10?"cold":(ti.lo<30?"y":(ti.lo<80?"warn":"hot")));
+      return '<span class="cr-badge '+cls+'">'+esc(raw)+"</span>";
+    }
+    if(col.t==="month"){var m=crMonthOf(v);if(!m)return '<span class="cr-null">—</span>';var r2=0;
+      if(m.ms!==null){r2=Math.round((m.ms-Date.now())/86400000);}
+      var sub=m.ms!==null?(r2<0?("已过期 "+(-r2)+" 天"):(r2<=180?("剩 "+r2+" 天"):"")):"";
+      return esc(m.label)+(sub?'<div class="cr-delta dn">'+sub+"</div>":"");
+    }
+    if(col.t==="rate"){
+      var rr=crRateVal(v);
+      if(rr===null)return '<span class="cr-null">—</span>';
+      return '<div class="cr-rate" title="'+esc(raw)+'"><span class="txt">'+esc(crPctTxt(rr))+'</span><span class="tr"><span class="fl '+
+        crRateCls(rr)+'" style="width:'+Math.min(100,Math.max(0,rr*100)).toFixed(1)+'%"></span></span></div>'+crDeltaHtml(r,col);
+    }
+    var n=crNum(v);
+    if(n===null)return '<span class="cr-null">—</span>';
+    return '<span title="'+esc(raw)+'">'+esc(crVerbatim(v))+"</span>"+crDeltaHtml(r,col);
+  }
+  function crRenderTable(f){
+    var wrap=$("crTableWrap");if(!wrap)return;
+    var cnt=$("crCount");
+    if(cnt)cnt.textContent="显示 "+f.rows.length+" / "+f.all.length+" 家　排序："+(crCol(creditUI.sortKey)?(crCol(creditUI.sortKey).label||creditUI.sortKey):"—")+(creditUI.sortDir==="asc"?" ↑":" ↓");
+    if(!f.all.length){wrap.innerHTML="";return;}
+    var gw={};CR_COLS.forEach(function(c){gw[c.g]=(gw[c.g]||0)+1;});
+    var h='<table class="cr-table"><thead><tr class="cr-grprow">';
+    CR_GROUPS.forEach(function(gp){h+='<th colspan="'+(gw[gp.g]||0)+'">'+esc(gp.name)+" · "+(gw[gp.g]||0)+" 列</th>";});
+    h+='</tr><tr class="cr-hdrow">';
+    CR_COLS.forEach(function(c,i){
+      var on=creditUI.sortKey===c.k;
+      h+='<th data-crk="'+esc(c.k)+'" class="'+(on?"sorted ":"")+(crIsNumCol(c)?"num":"")+(c.t==="yn"||c.t==="tier"?" mid":"")+(i===0?" frz":"")+'" style="min-width:'+c.w+'px" title="'+esc(c.k)+'｜点击排序">'+
+        esc(c.label||c.k)+'<span class="ar">'+(on?(creditUI.sortDir==="asc"?"▲":"▼"):"⇅")+"</span></th>";
+    });
+    h+="</tr></thead><tbody>";
+    if(!f.rows.length){
+      h+='<tr><td colspan="'+CR_COLS.length+'" style="text-align:center;color:var(--muted);padding:26px;">没有符合当前筛选条件的客户，试试「重置筛选」</td></tr>';
+    }
+    f.rows.forEach(function(r){
+      var key=crKey(r);
+      h+='<tr data-crkey="'+esc(key)+'">';
+      CR_COLS.forEach(function(c,i){
+        h+='<td class="'+(crIsNumCol(c)?"num":"")+(c.t==="yn"||c.t==="tier"?" mid":"")+(i===0?" frz":"")+'"'+(crIsNumCol(c)||c.t==="rate"?' style="min-width:'+c.w+'px"':"")+">"+crCellHtml(c,r)+"</td>";
+      });
+      h+="</tr>";
+    });
+    h+="</tbody>";
+    var rows=f.rows;
+    var tEq=crSum(rows,"当周期权益"),tLeft=crSum(rows,"剩余权益"),tUse=crSum(rows,"当前使用次数"),tCur=crSum(rows,"当前消耗Credit"),tAe=crSum(rows,"累计权益"),tAu=crSum(rows,"累计权益使用"),tInv=crSum(rows,"近1年国际站投入金额");
+    var foot={};
+    foot["主账号id"]="合计 "+rows.length+" 家";
+    foot["近1年国际站投入金额"]=tInv.n?crMoney(tInv.sum):"—";
+    foot["当周期权益"]=tEq.n?crMoney(tEq.sum):"—";
+    foot["剩余权益"]=tLeft.n?crMoney(tLeft.sum):"—";
+    foot["当前使用次数"]=tUse.n?crMoney(tUse.sum):"—";
+    foot["当前消耗Credit"]=tCur.n?crMoney(tCur.sum):"—";
+    foot["当前Credit消耗率"]=tEq.sum>0?crPctTxt(tCur.sum/tEq.sum):"—";
+    foot["累计权益"]=tAe.n?crMoney(tAe.sum):"—";
+    foot["累计权益使用"]=tAu.n?crMoney(tAu.sum):"—";
+    foot["累计Credit消耗率"]=tAe.sum>0?crPctTxt(tAu.sum/tAe.sum):"—";
+    h+='<tfoot><tr>';
+    CR_COLS.forEach(function(c,i){
+      h+='<td class="'+(crIsNumCol(c)||c.t==="rate"?"num":"")+(i===0?" frz":"")+'">'+(foot[c.k]!==undefined?esc(foot[c.k]):"")+"</td>";
+    });
+    h+="</tr></tfoot></table>";
+    wrap.innerHTML=h;
+  }
+  function crRenderEmpty(){
+    var el=$("crEmpty");if(!el)return;
+    if(creditBatches.length){el.innerHTML="";$("crPanels").style.display="";return;}
+    $("crPanels").style.display="none";
+    $("crKpis").innerHTML="";$("crTierChart").innerHTML="";$("crLeftChart").innerHTML="";$("crScatter").innerHTML="";$("crTableWrap").innerHTML="";
+    el.innerHTML='<div class="cr-empty"><h3>还没有导入积分数据</h3><div>导入「AWB 客户积分消耗情况」表格后，这里会出现概览、分层分布、待消耗排行与象限分析。</div>'+
+      '<ul><li>① 支持 .xls / .xlsx / .csv，直接选原表即可（第一/二行表头自动识别）</li>'+
+      '<li>② 21 列全部按原表列名匹配，数值保留原始精度，导入后自动做口径自检</li>'+
+      '<li>③ 每次导入生成一个批次，可切换查看并按主账号自动算环比（▲▼pp）</li>'+
+      '<li>④ 数据只存在本机浏览器，可点右上「导出当前视图」另存一份</li></ul>'+
+      '<button class="btn primary" type="button" onclick="window.__credits.pickFile()">导入积分表</button> '+
+      '<button class="btn" type="button" onclick="window.__credits.template()">下载导入模板</button></div>';
+  }
+  function renderCredits(){
+    loadCredits();
+    var view=$("viewCredits");
+    if(!view)return;
+    crBindCredits();
+    crRenderBatchSelect();
+    crRenderEmpty();
+    var f=crFiltered();
+    crRenderMeta(f);
+    if(!f.all.length)return;
+    crFillSelects(f);
+    var chips=$("crChips");if(chips)chips.innerHTML=crChipsHtml(f);
+    crRenderKpis(f);
+    crRenderTierChart(f);
+    crRenderLeftChart(f);
+    crRenderScatter(f);
+    crRenderTable(f);
+  }
+  function crRenderBatchSelect(){
+    var sel=$("crBatch");if(!sel)return;
+    var a=crActive();
+    if(!creditBatches.length){sel.innerHTML='<option value="">（无批次）</option>';sel.disabled=true;return;}
+    sel.disabled=false;
+    sel.innerHTML=creditBatches.map(function(b,i){
+      return '<option value="'+esc(b.id)+'"'+(a&&a.id===b.id?" selected":"")+">"+esc((b.label||b.fileName||"批次"+(i+1)))+" · "+b.rows.length+" 家 · "+crStamp(b.importedAt)+"</option>";
+    }).join("");
+  }
+  // ---------- 导入 / 导出 ----------
+  function crMatchHeader(txt){
+    var h=String(txt==null?"":txt).trim();
+    if(!h)return null;
+    var low=h.toLowerCase();
+    for(var i=0;i<CR_COLS.length;i++){
+      var c=CR_COLS[i];
+      if(c.k===h||c.k.toLowerCase()===low)return c.k;
+      if(c.label===h)return c.k;
+      if(c.al)for(var j=0;j<c.al.length;j++)if(c.al[j].toLowerCase()===low)return c.k;
+    }
+    return null;
+  }
+  function crGroupRowAoa(){
+    var row=[],seen={};
+    CR_COLS.forEach(function(c,i){row[i]="";if(!seen[c.g]){seen[c.g]=1;CR_GROUPS.forEach(function(gp){if(gp.g===c.g)row[i]=gp.name;});}});
+    return row;
+  }
+  function crIngest(wb,fileName){
+    var names=(wb&&wb.SheetNames)||[];
+    if(!names.length){toast("表格里没有可读取的工作表");return;}
+    var hidx=-1,aoa=null,wsName="";
+    for(var s=0;s<names.length;s++){
+      var ws=wb.Sheets[names[s]];
+      var a=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:true,blankrows:false});
+      if(!a||!a.length)continue;
+      for(var i=0;i<Math.min(a.length,8);i++){
+        var hit=false;
+        for(var j=0;j<a[i].length;j++)if(crMatchHeader(a[i][j])==="主账号id")hit=true;
+        if(hit){aoa=a;hidx=i;wsName=names[s];break;}
+      }
+      if(hidx>=0)break;
+    }
+    if(hidx<0){toast("没找到表头行（需要包含「主账号id」列）");return;}
+    var header=aoa[hidx],canon={},extras=[],seenKey={};
+    for(var c=0;c<header.length;c++){
+      var m=crMatchHeader(header[c]);
+      if(m){canon[c]=m;seenKey[m]=1;}
+      else{
+        var t=String(header[c]==null?"":header[c]).trim();
+        if(t&&extras.indexOf(t)<0)extras.push(t);
+        canon[c]=t||null;
+      }
+    }
+    var missing=[];
+    CR_COLS.forEach(function(col){if(!seenKey[col.k])missing.push(col.k);});
+    var rows=[];
+    for(var r=hidx+1;r<aoa.length;r++){
+      var line=aoa[r],obj={},any=false;
+      for(var k=0;k<line.length;k++){
+        var key=canon[k];if(!key)continue;
+        var v=line[k];
+        if(v===""||v===null||v===undefined)continue;
+        if(typeof v!=="number")v=String(v).trim();
+        if(key==="主账号id")v=String(v).trim();
+        obj[key]=v;any=true;
+      }
+      if(!any)continue;
+      var idv=String(obj["主账号id"]||"");
+      if(/合计|总计|小计/.test(idv))continue;
+      if(!idv&&!obj["comp_name"])continue;
+      rows.push(obj);
+    }
+    if(!rows.length){toast("表头识别成功，但没读到数据行");return;}
+    var badN=0;
+    rows.forEach(function(r){if(crRowBad(r))badN++;});
+    var base=String(fileName||"积分表").replace(/\.[^.]+$/,"");
+    var batch={id:"cb"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),label:base,fileName:fileName||"",
+      importedAt:Date.now(),sheet:wsName,missing:missing,extra:extras,rows:rows};
+    var replaced=false;
+    for(var b=0;b<creditBatches.length;b++){
+      if(creditBatches[b].fileName===batch.fileName&&creditBatches[b].label===batch.label){creditBatches[b]=batch;replaced=true;break;}
+    }
+    if(!replaced)creditBatches.unshift(batch);
+    if(creditBatches.length>24)creditBatches=creditBatches.slice(0,24);
+    creditUI.batch=batch.id;
+    saveCredits();saveCreditUI();
+    renderCredits();
+    toast("导入 "+rows.length+" 家（"+(missing.length?"缺 "+missing.length+" 列":"21 列全匹配")+(badN?"，口径异常 "+badN+" 家":"")+"）");
+  }
+  function crReadFile(file){
+    if(!file)return;
+    var finish=function(wb){try{crIngest(wb,file.name);}catch(e){toast("解析失败："+(e&&e.message?e.message:e));}};
+    if(/\.csv$/i.test(file.name)){
+      var r1=new FileReader();
+      r1.onload=function(){try{finish(XLSX.read(String(r1.result||""),{type:"string"}));}catch(e){toast("解析失败："+e.message);}};
+      r1.onerror=function(){toast("读取文件失败");};
+      r1.readAsText(file,"utf-8");
+      return;
+    }
+    var r2=new FileReader();
+    r2.onload=function(){try{finish(XLSX.read(new Uint8Array(r2.result),{type:"array"}));}catch(e){toast("解析失败："+(e&&e.message?e.message:e));}};
+    r2.onerror=function(){toast("读取文件失败");};
+    r2.readAsArrayBuffer(file);
+  }
+  function crAoaOf(rows){
+    var aoa=[crGroupRowAoa()];
+    var hd=[];CR_COLS.forEach(function(c,i){hd[i]=c.k;});
+    aoa.push(hd);
+    (rows||[]).forEach(function(r){
+      var line=[];
+      CR_COLS.forEach(function(c,i){var v=crGet(r,c.k);line[i]=(v===null?"":v);});
+      aoa.push(line);
+    });
+    return aoa;
+  }
+  function crWrite(fileName,rows){
+    if(!window.XLSX||!XLSX.writeFile){toast("当前环境缺少表格导出能力");return;}
+    var aoa=crAoaOf(rows);
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=CR_COLS.map(function(c){return {wch:Math.max(10,Math.min(26,Math.round(c.w/8)))};});
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"积分消耗");
+    XLSX.writeFile(wb,fileName);
+    toast("已导出 "+((rows&&rows.length)||0)+" 家 → "+fileName);
+  }
+  function crExportView(){
+    var f=crFiltered();
+    if(!f.rows.length){toast("当前没有可导出的数据");return;}
+    var d=new Date();
+    crWrite("积分消耗_"+d.getFullYear()+crPad(d.getMonth()+1)+crPad(d.getDate())+"_"+f.rows.length+"家.xlsx",f.rows);
+  }
+  function crTemplate(){crWrite("积分消耗导入模板.xlsx",[]);}
+  var crDelArmed=0;
+  function crDelBatch(){
+    var a=crActive();
+    if(!a){toast("没有批次");return;}
+    var btn=$("crBtnDelBatch");
+    // 两步确认：不用原生 confirm（浏览器可能屏蔽，自动化也点不到）
+    if(Date.now()-crDelArmed>6000){
+      crDelArmed=Date.now();
+      if(btn)btn.textContent="再点一次确认删除";
+      toast("再点一次确认删除批次「"+(a.label||a.fileName)+"」（"+a.rows.length+" 家），跟进记录不会丢");
+      return;
+    }
+    crDelArmed=0;
+    if(btn)btn.textContent="删批次";
+    for(var i=0;i<creditBatches.length;i++)if(creditBatches[i].id===a.id){creditBatches.splice(i,1);break;}
+    creditUI.batch=creditBatches.length?creditBatches[0].id:"";
+    saveCredits();saveCreditUI();renderCredits();
+    toast("已删除该批次");
+  }
+
+  // ---------- 明细与跟进记录 ----------
+  function crRowByKey(key){
+    var a=crActive();if(!a)return null;
+    for(var i=0;i<a.rows.length;i++)if(crKey(a.rows[i])===key)return a.rows[i];
+    return null;
+  }
+  function crBox(k,v,m){
+    return '<div class="box"><div class="k">'+esc(k)+"</div><div class=\"v\">"+v+"</div>"+(m?'<div class="m">'+esc(m)+"</div>":"")+"</div>";
+  }
+  function crMiniBar(r){
+    if(r===null)return '<div class="cr-track" style="margin-top:6px"><span class="cr-fill low" style="width:0%"></span></div>';
+    return '<div style="margin-top:6px" class="cr-track"><span class="cr-fill '+crRateCls(r)+'" style="width:'+Math.min(100,Math.max(0,r*100)).toFixed(1)+'%"></span></div>';
+  }
+  function crRenderDetail(key){
+    var r=crRowByKey(key);
+    if(!r){toast("该客户不在当前批次");return;}
+    var co=String(crGet(r,"comp_name")||"").trim();
+    $("crdName").textContent=co||String(crGet(r,"主账号id")||"—");
+    $("crdSub").innerHTML="主账号 "+esc(String(crGet(r,"主账号id")||"—"))+(co?"　·　"+esc(co):"")+"　·　批次 "+esc((crActive()||{}).label||"");
+    var badges=[];
+    badges.push(crYnBadge(crGet(r,"是否服务中")).replace("是","服务中").replace("否","已停服"));
+    var gld=crYnBadge(crGet(r,"是否金品")).replace("是","金品").replace("否","非金品");
+    badges.push(gld);
+    var okk=crYnBadge(crGet(r,"is_okki")).replace("是","OKKI").replace("否","无 OKKI");
+    badges.push(okk);
+    var ti=crTierInfo(crGet(r,"近21天消耗分层"));
+    badges.push('<span class="cr-badge '+(ti.lo<0?"cold":(ti.lo<10?"cold":(ti.lo<30?"y":(ti.lo<80?"warn":"hot"))))+'">'+esc(ti.name)+"</span>");
+    var mm=crMonthOf(crGet(r,"未来最近一次未续会员合同到期月"));
+    if(mm)badges.push('<span class="cr-badge cold">未续会员到期 '+esc(mm.label)+"</span>");
+    var inv=crNum(crGet(r,"近1年国际站投入金额"));
+    if(inv!==null)badges.push('<span class="cr-badge cold">近1年投入 ¥'+esc(crMoney(inv))+"</span>");
+    $("crdBadges").innerHTML=badges.join("");
+    var e=crNum(crGet(r,"当周期权益")),l=crNum(crGet(r,"剩余权益")),c=crNum(crGet(r,"当前消耗Credit")),t=crNum(crGet(r,"当前使用次数"));
+    $("crdCur").innerHTML=[
+      crBox("当周期权益",e===null?"—":esc(crVerbatim(e)),null),
+      crBox("已消耗 Credit",c===null?"—":esc(crVerbatim(c)),e?"占 "+crPctTxt(c/e):null),
+      crBox("剩余权益",l===null?"—":esc(crVerbatim(l)),e?"占 "+crPctTxt(l/e):null),
+      crBox("使用次数",t===null?"—":esc(crVerbatim(t)),(t&&c)?("均次 "+crTrim(c/t)+" Credit"):null)
+    ].join("");
+    var r1=crRateVal(crGet(r,"当前Credit消耗率")),r2=crRateVal(crGet(r,"上一周期Credit消耗率")),
+        r3=crRateVal(crGet(r,"累计Credit消耗率")),r4=crRateVal(crGet(r,"近21天日均积分消耗率"));
+    function pbox(k,v,m){
+      return '<div class="box"><div class="k">'+esc(k)+'</div><div class="v">'+(v===null?"—":esc(crPctTxt(v)))+"</div>"+crMiniBar(v)+(m?'<div class="m">'+esc(m)+"</div>":"")+"</div>";
+    }
+    $("crdPeriod").innerHTML=[
+      pbox("当期消耗率",r1,e?"已用 "+crTrim(c||0)+" / "+crTrim(e):null),
+      pbox("上一周期消耗率",r2,null),
+      pbox("累计消耗率",r3,null),
+      pbox("近21天消耗率",r4,"分层 "+ti.name)
+    ].join("");
+    var raw='<table><thead><tr><th>分组</th><th>原表字段</th><th>表格原始值</th></tr></thead><tbody>';
+    CR_COLS.forEach(function(col){
+      var v=crGet(r,col.k),txt=crRawText(col,v);
+      var gp=col.g==="base"?"客户基础信息":"积分消耗";
+      raw+="<tr><th>"+esc(gp)+"</th><td>"+esc(col.k)+"</td><td class=\"v\">"+(txt===""?'<span class="cr-null">（空）</span>':esc(txt))+"</td></tr>";
+    });
+    var b=crActive();
+    ((b&&b.extra)||[]).forEach(function(k){
+      var v=crGet(r,k),txt=v===null?"":String(v);
+      raw+="<tr><th>附加列</th><td>"+esc(k)+'</td><td class="v">'+(txt===""?'<span class="cr-null">（空）</span>':esc(txt))+"</td></tr>";
+    });
+    raw+="</tbody></table>";
+    $("crdRaw").innerHTML=raw;
+    var ch=crChecks(r);
+    $("crdCheck").innerHTML=ch.map(function(x){
+      var cls=x.ok===true?"ok":(x.ok===false?"no":"sk");
+      var mark=x.ok===true?"✓":(x.ok===false?"✕":"—");
+      return '<div class="'+cls+'">'+mark+" "+esc(x.label)+'　<span style="color:var(--muted2)">'+esc(x.detail)+"</span></div>";
+    }).join("");
+    var cid=null;
+    if(co&&typeof customers!=="undefined"){
+      for(var i=0;i<customers.length;i++){
+        var nm=String(customers[i].name||"").trim();
+        if(nm===co){cid=customers[i].id;break;}
+        var aid=String(crGet(r,"主账号id")||"").trim();
+        if(aid&&String(customers[i].accioworkNote||"").indexOf(aid)>=0){cid=customers[i].id;break;}
+      }
+    }
+    crDetailCustId=cid;
+    var gbtn=$("crBtnGoCustomer");
+    if(gbtn)gbtn.style.display=cid?"":"none";
+    crRenderNotes();
+  }
+  var crDetailCustId=null;
+  function crRenderNotes(){
+    var box=$("crNotes");if(!box)return;
+    var list=(creditNotes[crDetailKey]||[]).slice();
+    if(!list.length){box.innerHTML='<div class="cr-notempty">还没有记录。写下这次的沟通结论或下次跟进时间，下次打开这张表时不会忘。</div>';return;}
+    box.innerHTML=list.map(function(n){
+      var cls=n.type==="预警"?"hot":(n.type==="备注"?"cold":"y");
+      return '<div class="cr-note"><span class="cr-badge tag '+cls+'">'+esc(n.type)+"</span>"+
+        '<div class="bd"><div class="tx">'+esc(n.text)+"</div>"+
+        '<div class="mt">'+crStamp(n.at)+(n.nextAt?"　→　下次跟进 "+esc(n.nextAt):"")+"</div></div>"+
+        '<button class="del" type="button" data-crnote="'+esc(n.id)+'" title="删除这条记录">✕</button></div>';
+    }).join("");
+  }
+  function crAddNote(){
+    if(!crDetailKey)return;
+    var t=$("crnText"),tp=$("crnType"),nx=$("crnNext");
+    var txt=(t.value||"").trim();
+    if(!txt){toast("先写一句记录内容");t.focus();return;}
+    if(!creditNotes[crDetailKey])creditNotes[crDetailKey]=[];
+    creditNotes[crDetailKey].unshift({id:"cn"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      at:Date.now(),type:tp.value||"备注",text:txt,nextAt:nx.value||""});
+    if(creditNotes[crDetailKey].length>200)creditNotes[crDetailKey]=creditNotes[crDetailKey].slice(0,200);
+    saveCreditNotes();
+    t.value="";nx.value="";
+    crRenderNotes();
+    crRenderTable(crFiltered());
+    var chips=$("crChips");if(chips)chips.innerHTML=crChipsHtml(crFiltered());
+    toast("记录已保存（本地）");
+  }
+  function crDelNote(id){
+    var list=creditNotes[crDetailKey]||[];
+    for(var i=0;i<list.length;i++)if(list[i].id===id){list.splice(i,1);break;}
+    if(!list.length)delete creditNotes[crDetailKey];
+    saveCreditNotes();
+    crRenderNotes();
+    crRenderTable(crFiltered());
+    toast("已删除该记录");
+  }
+  function crGoCustomer(){
+    if(!crDetailCustId){toast("客户列表里没有同名客户");return;}
+    closeModal("modalCredit");
+    switchView("customers");
+    setTimeout(function(){try{openCustomerDetail(crDetailCustId);}catch(e){}},120);
+  }
+
+  // ---------- 事件绑定（视图内一次性委托，重渲染不失效） ----------
+  function crBindCredits(){
+    var view=$("viewCredits");
+    if(!view||view.__crb)return;
+    view.__crb=1;
+    $("crBtnImport").onclick=function(){$("crFile").click();};
+    $("crFile").onchange=function(){var f=this.files&&this.files[0];this.value="";if(f)crReadFile(f);};
+    $("crBtnTpl").onclick=crTemplate;
+    $("crBtnExport").onclick=crExportView;
+    $("crBtnDelBatch").onclick=crDelBatch;
+    $("crBatch").onchange=function(){creditUI.batch=this.value;saveCreditUI();renderCredits();};
+    var deb=null;
+    function soon(){clearTimeout(deb);deb=setTimeout(renderCredits,220);}
+    $("crSearch").oninput=function(){creditUI.q=this.value;saveCreditUI();soon();};
+    $("crRateMin").oninput=function(){creditUI.rateMin=this.value;saveCreditUI();soon();};
+    [["crFService","svc"],["crFGold","gold"],["crFOkki","okki"],["crFDur","dur"],["crFTier","tier"]].forEach(function(p){
+      var el=$(p[0]);if(el)el.onchange=function(){creditUI[p[1]]=this.value;saveCreditUI();renderCredits();};
+    });
+    $("crBtnReset").onclick=function(){
+      var b=creditUI.batch;
+      creditUI.q="";creditUI.svc="all";creditUI.gold="all";creditUI.okki="all";creditUI.dur="all";creditUI.tier="all";creditUI.rateMin="";creditUI.chip="all";
+      saveCreditUI();
+      $("crSearch").value="";$("crRateMin").value="";
+      renderCredits();
+      toast("筛选已重置");
+    };
+    $("crChips").addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest("[data-chip]"):null;
+      if(!b)return;
+      creditUI.chip=b.getAttribute("data-chip");saveCreditUI();renderCredits();
+    });
+    $("crTableWrap").addEventListener("click",function(e){
+      var th=e.target.closest?e.target.closest("th[data-crk]"):null;
+      if(th){
+        var k=th.getAttribute("data-crk");
+        if(creditUI.sortKey===k)creditUI.sortDir=creditUI.sortDir==="asc"?"desc":"asc";
+        else{var sc=crCol(k);var numeric=sc&&(sc.t==="money"||sc.t==="num"||sc.t==="int"||sc.t==="rate"||sc.t==="month");creditUI.sortKey=k;creditUI.sortDir=numeric?"desc":"asc";}
+        saveCreditUI();renderCredits();return;
+      }
+      var g=e.target.closest?e.target.closest("[data-crkey]"):null;
+      if(g&&g.getAttribute("data-crkey")){crOpenDetail(g.getAttribute("data-crkey"));return;}
+      var dot=e.target.closest?e.target.closest("g[data-crkey]"):null;
+      if(dot)crOpenDetail(dot.getAttribute("data-crkey"));
+    });
+    $("crScatter").addEventListener("click",function(e){
+      var dot=e.target.closest?e.target.closest("g[data-crkey]"):null;
+      if(dot&&dot.getAttribute("data-crkey"))crOpenDetail(dot.getAttribute("data-crkey"));
+    });
+    $("crnAdd").onclick=crAddNote;
+    $("crnText").onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();crAddNote();}};
+    $("crNotes").addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest("[data-crnote]"):null;
+      if(b)crDelNote(b.getAttribute("data-crnote"));
+    });
+    $("crBtnGoCustomer").onclick=crGoCustomer;
+  }
+  function crOpenDetail(key){
+    if(!key)return;
+    crDetailKey=key;
+    crRenderDetail(key);
+    openModal("modalCredit");
+  }
+  window.__credits={
+    render:renderCredits,
+    openDetail:crOpenDetail,
+    pickFile:function(){var el=$("crFile");if(el)el.click();},
+    template:crTemplate,
+    exportView:crExportView,
+    ingest:crIngest,readFile:crReadFile,
+    batches:function(){loadCredits();return creditBatches.map(function(b){return {id:b.id,label:b.label,fileName:b.fileName,importedAt:b.importedAt,rows:b.rows.length,missing:b.missing||[]};});},
+    api:{loadCredits:loadCredits,filtered:crFiltered,cols:CR_COLS,checks:crChecks,num:crNum,rate:crRateVal,month:crMonthOf,tier:crTierInfo,sortRows:crSortRows,active:crActive,prev:crPrevBatch}
+  };
 })();
 </script>
 </body>
