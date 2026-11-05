@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light" data-skin="teal">
+<html lang="zh-CN" data-theme="light" data-skin="sage">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,6 +50,14 @@
     --high:#d2606b; --mid:#d99a4e; --low:#9aa3a0; --over:#d2606b; --done:#4f86c6; --broken:#8b7e8c;
     --ok:#4f9e6b; --shadow:0 1px 3px rgba(40,70,80,.08),0 4px 16px rgba(40,70,80,.05);
   }
+  /* 护眼青绿（默认皮肤）：清爽、低饱和、护眼 */
+  html[data-skin="sage"]{
+    --bg:#eef3f0; --panel:#f8fbf9; --panel2:#eaf1ed; --sidebar:#e4ece7; --text:#2c3631;
+    --muted:#5f7268; --muted2:#8aa096; --border:#d2e0d8; --border2:#c2d4ca;
+    --accent:#3e9e7c; --accent-soft:#dcefe6; --accent-weak:#eef6f1;
+    --high:#d2606b; --mid:#d99a4e; --low:#9aa3a0; --over:#d2606b; --done:#4f86c6; --broken:#8b7e8c;
+    --ok:#4f9e6b; --shadow:0 1px 3px rgba(40,70,55,.07),0 4px 16px rgba(40,70,55,.04);
+  }
   /* ---------- 深色皮肤（背景+强调色整套，叠加 data-theme=dark） ---------- */
   html[data-skin="purple"][data-theme="dark"]{
     --bg:#1c1a24; --panel:#25222f; --panel2:#2c2938; --sidebar:#1e1c27; --text:#e6e2f0;
@@ -90,6 +98,14 @@
     --bg:#132225; --panel:#1b2e32; --panel2:#22363c; --sidebar:#15261f; --text:#e2f0f3;
     --muted:#8aa6ac; --muted2:#6f8b92; --border:#283c40; --border2:#32474d;
     --accent:#5fb3c4; --accent-soft:#14303a; --accent-weak:#11262c;
+    --high:#e0838b; --mid:#e0ad63; --low:#7d8590; --over:#e0838b; --done:#6f9fe0; --broken:#8c8290;
+    --ok:#5fb07c; --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
+  }
+  /* 护眼青绿 · 深色（非纯黑深绿，护眼） */
+  html[data-skin="sage"][data-theme="dark"]{
+    --bg:#1b2420; --panel:#232e28; --panel2:#2b3730; --sidebar:#18201c; --text:#dceadf;
+    --muted:#9fb2a8; --muted2:#74897e; --border:#2e3c34; --border2:#3a4a40;
+    --accent:#5fb07c; --accent-soft:#1e3328; --accent-weak:#18241c;
     --high:#e0838b; --mid:#e0ad63; --low:#7d8590; --over:#e0838b; --done:#6f9fe0; --broken:#8c8290;
     --ok:#5fb07c; --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
   }
@@ -144,6 +160,11 @@
   .nav-item span.nav-text{white-space:nowrap;overflow:hidden;}
   .sidebar.collapsed .nav-item{justify-content:center;padding:9px 0;}
   .sidebar.collapsed .nav-item span.nav-text{display:none;}
+  .nav-item[draggable="true"]{cursor:grab;}
+  .nav-item[draggable="true"]:active{cursor:grabbing;}
+  .nav-item.nav-dragging{opacity:.4;}
+  .nav-reset{display:block;font-size:12px;color:var(--muted2);padding:7px 12px;border-radius:10px;cursor:pointer;user-select:none;margin-bottom:2px;transition:.15s;}
+  .nav-reset:hover{background:var(--panel2);color:var(--text);}
   .sidebar.collapsed .nav-item::after{content:attr(data-tip);position:absolute;left:100%;top:50%;
     transform:translateY(-50%);margin-left:10px;padding:4px 10px;border-radius:6px;background:var(--text);
     color:var(--panel);font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:50;}
@@ -411,7 +432,7 @@
   .empty b{display:block;font-size:16px;color:var(--text);margin-bottom:6px;}
 
   /* ---------- 总览面板 ---------- */
-  .dashboard-grid{display:grid;grid-template-columns:3fr 2fr;gap:18px;align-items:start;}
+  .dashboard-grid{display:grid;grid-template-columns:1.9fr 1fr;grid-template-rows:auto auto;gap:18px;align-items:stretch;}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
     padding:16px;box-shadow:var(--shadow);}
   .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -435,9 +456,9 @@
   .time-tag::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);}
   .rel-tag{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:999px;background:var(--panel2);color:var(--muted2);font-size:11px;}
   .dash-actions{display:flex;gap:6px;margin-left:auto;flex-shrink:0;align-items:flex-start;}
-  .panel.today{grid-column:1;max-height:560px;display:flex;flex-direction:column;overflow:hidden;}
-  .panel.follow{grid-column:1;max-height:560px;display:flex;flex-direction:column;overflow:hidden;}
-  .panel.recent{grid-column:2;max-height:560px;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.today{grid-column:2;grid-row:1;max-height:560px;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.follow{grid-column:1;grid-row:1 / span 2;max-height:none;min-height:520px;display:flex;flex-direction:column;overflow:hidden;}
+  .panel.recent{grid-column:2;grid-row:2;max-height:560px;display:flex;flex-direction:column;overflow:hidden;}
   .panel.today .dash-scroll,.panel.follow .dash-scroll,.panel.recent .dash-scroll{overflow-y:auto;flex:1;min-height:0;margin:0 -8px;padding:0 8px;}
   .panel.accio-board{grid-column:1 / -1;}
   .panel.accio-board .panel-head h3{font-size:19px;letter-spacing:.2px;}
@@ -582,11 +603,11 @@
   .modal-hint{font-size:12px;color:var(--muted);margin:-4px 0 12px;}
 
   /* ---------- 提醒事宜面板 ---------- */
-  .panel.today{grid-column:1 / -1;border-color:var(--accent);position:relative;overflow:hidden;}
-  .panel.today::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  .panel.follow{border-color:var(--accent);position:relative;overflow:hidden;}
+  .panel.follow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
     background:linear-gradient(180deg,var(--accent),var(--accent-soft));
     background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 60%,transparent));}
-  .panel.today .panel-head h3{color:var(--accent);}
+  .panel.follow .panel-head h3{color:var(--accent);}
   .panel-title{display:flex;align-items:center;gap:8px;margin:0;font-size:15px;font-weight:700;}
   .ph-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
     border-radius:8px;background:var(--accent-soft);color:var(--accent);flex-shrink:0;}
@@ -838,7 +859,8 @@
   .pi-empty{font-size:13px;color:var(--muted);padding:14px;text-align:center;background:var(--panel2);border-radius:11px;}
 
   @media (max-width:1200px){
-    .dashboard-grid{grid-template-columns:1fr;}
+    .dashboard-grid{grid-template-columns:1fr;grid-template-rows:auto;}
+    .panel.follow,.panel.recent,.panel.today{grid-column:1;grid-row:auto;min-height:0;}
   }
   /* 交付人字段：拖入识别 */
   .deliverer-row{display:flex;gap:8px;align-items:stretch;}
@@ -1082,6 +1104,7 @@ html[data-skin="green"][data-theme="dark"]{--bg:#15181f;--panel:#1c2027;--panel2
 html[data-skin="orange"][data-theme="dark"]{--bg:#15181f;--panel:#1c2027;--panel2:#232833;--sidebar:#181b22;--text:#e8ecf2;--muted:#9aa6b3;--muted2:#6f7d8c;--border:#2a2f3a;--border2:#353b48;--accent:#e0a85e;--accent-soft:#33260f;--accent-weak:#2a2014;--high:#ef6b62;--mid:#eab554;--low:#6f7d8c;--over:#ef6b62;--done:#6fa8e0;--broken:#8b8290;--ok:#56b083;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);}
 html[data-skin="rose"][data-theme="dark"]{--bg:#15181f;--panel:#1c2027;--panel2:#232833;--sidebar:#181b22;--text:#e8ecf2;--muted:#9aa6b3;--muted2:#6f7d8c;--border:#2a2f3a;--border2:#353b48;--accent:#e08cb4;--accent-soft:#321d2a;--accent-weak:#2a1f26;--high:#ef6b62;--mid:#eab554;--low:#6f7d8c;--over:#ef6b62;--done:#6fa8e0;--broken:#8b8290;--ok:#56b083;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);}
 html[data-skin="teal"][data-theme="dark"]{--bg:#15181f;--panel:#1c2027;--panel2:#232833;--sidebar:#181b22;--text:#e8ecf2;--muted:#9aa6b3;--muted2:#6f7d8c;--border:#2a2f3a;--border2:#353b48;--accent:#4fc4c2;--accent-soft:#14303a;--accent-weak:#11262c;--high:#ef6b62;--mid:#eab554;--low:#6f7d8c;--over:#ef6b62;--done:#6fa8e0;--broken:#8b8290;--ok:#56b083;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);}
+html[data-skin="sage"][data-theme="dark"]{--bg:#1b2420;--panel:#232e28;--panel2:#2b3730;--sidebar:#18201c;--text:#dceadf;--muted:#9fb2a8;--muted2:#74897e;--border:#2e3c34;--border2:#3a4a40;--accent:#5fb07c;--accent-soft:#1e3328;--accent-weak:#18241c;--high:#e0838b;--mid:#e0ad63;--low:#7d8590;--over:#e0838b;--done:#6fa8e0;--broken:#8c8290;--ok:#5fb07c;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);}
 
 /* 现代风：白底面板、柔和阴影、更克制 */
 body{background:var(--bg);}
@@ -1181,8 +1204,8 @@ body{background:var(--bg);}
 .page-header.band .btn:not(.primary){background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.32);color:#fff;}
 .page-header.band .btn:not(.primary):hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.24);}
 /* 提醒事宜：时间敏感，提级为锚点面板 */
-.panel.today{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%, transparent), var(--shadow);}
-.panel.today .panel-head h3{color:var(--accent);}
+.panel.follow{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%, transparent), var(--shadow);}
+.panel.follow .panel-head h3{color:var(--accent);}
 /* 焦点环：统一交互反馈 */
 .btn:focus-visible,input:focus,textarea:focus,select:focus{outline:2px solid var(--ring);outline-offset:1px;}
 .cd-chart{display:flex;align-items:center;gap:14px;background:var(--panel2);border:1px solid var(--border);
@@ -1684,54 +1707,63 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <button class="collapse-btn" id="sidebarCollapse" type="button" title="折叠/展开侧栏" aria-label="折叠侧栏">&#9664;</button>
     </div>
     <nav class="nav">
-      <div class="nav-sep">主导航</div>
-      <a class="nav-item active" data-view="dashboard" data-tip="工作台总览">
+      <div class="nav-sep" data-group="main">主导航</div>
+      <a class="nav-item active" data-view="dashboard" data-group="main" data-tip="工作台总览">
         <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         <span class="nav-text">工作台总览</span>
       </a>
-      <a class="nav-item" data-view="customers" data-tip="客户列表">
+      <a class="nav-item" data-view="customers" data-group="main" data-tip="客户列表">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
         <span class="nav-text">客户列表</span>
       </a>
-      <a class="nav-item" data-view="map" data-tip="客户地图">
+      <a class="nav-item" data-view="map" data-group="main" data-tip="客户地图">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
         <span class="nav-text">客户地图</span>
       </a>
-      <a class="nav-item" data-view="prompts" data-tip="指令提示词">
-        <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
-        <span class="nav-text">指令提示词</span>
-      </a>
-      <a class="nav-item" data-view="prompthelper" data-tip="Prompt 助手">
-        <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
-        <span class="nav-text">Prompt 助手</span>
-      </a>
-      <a class="nav-item" data-view="plans" data-tip="合作方案">
+      <a class="nav-item" data-view="plans" data-group="main" data-tip="合作方案">
         <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
         <span class="nav-text">合作方案</span>
       </a>
-      <a class="nav-item" data-view="credits" data-tip="积分消耗">
+      <div class="nav-sep" data-group="ai">AI 工具</div>
+      <a class="nav-item" data-view="accio" data-group="ai" data-tip="AccioWork" draggable="true">
+        <svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg>
+        <span class="nav-text">AccioWork</span>
+      </a>
+      <a class="nav-item" data-view="skill" data-group="ai" data-tip="Agent/Skill" draggable="true">
+        <svg viewBox="0 0 24 24"><path d="M9 2v2H7a2 2 0 0 0-2 2v2H3v2h2v2H3v2h2v2a2 2 0 0 0 2 2h2v2h2v-2h2v2h2v-2h2a2 2 0 0 0 2-2v-2h2v-2h-2v-2h2V8h-2V6a2 2 0 0 0-2-2h-2V2h-2v2h-2V2H9zm-2 4h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm2 2v6h6V8H9z"/></svg>
+        <span class="nav-text">Agent/Skill</span>
+      </a>
+      <a class="nav-item" data-view="prompts" data-group="ai" data-tip="指令提示词">
+        <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
+        <span class="nav-text">指令提示词</span>
+      </a>
+      <a class="nav-item" data-view="prompthelper" data-group="ai" data-tip="Prompt 助手">
+        <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+        <span class="nav-text">Prompt 助手</span>
+      </a>
+      <a class="nav-reset" id="navReset" data-tip="恢复默认顺序">↺ 恢复默认顺序</a>
+      <a class="nav-item" data-view="credits" data-group="ai" data-tip="积分消耗">
         <svg viewBox="0 0 24 24"><path d="M11 20v-6h2v6h6v-8h-5.2l3.2-8.8L15 2l-6 9h3l-2 7h1zm1-18a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/></svg>
         <span class="nav-text">积分消耗</span>
       </a>
-      <div class="nav-sep">快捷操作</div>
-      <a class="nav-item nav-action" id="navAdd" data-tip="新增客户">
-        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      <div class="nav-sep" data-group="action">快捷操作</div>
+      <a class="nav-item nav-action" id="navAdd" data-group="action" data-tip="新增客户">        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         <span class="nav-text">新增客户</span>
       </a>
-      <a class="nav-item nav-action" id="navImport" data-tip="导入表格">
+      <a class="nav-item nav-action" id="navImport" data-group="action" data-tip="导入表格">
         <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
         <span class="nav-text">导入表格</span>
       </a>
-      <div class="nav-sep">数据备份</div>
-      <a class="nav-item nav-action" id="navExport" data-tip="导出 JSON">
+      <div class="nav-sep" data-group="backup">数据备份</div>
+      <a class="nav-item nav-action" id="navExport" data-group="backup" data-tip="导出 JSON">
         <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         <span class="nav-text">导出 JSON</span>
       </a>
-      <a class="nav-item nav-action" id="navImportJson" data-tip="导入 JSON">
+      <a class="nav-item nav-action" id="navImportJson" data-group="backup" data-tip="导入 JSON">
         <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5v-2z"/></svg>
         <span class="nav-text">导入 JSON</span>
       </a>
-      <div class="nav-sep">系统</div>
+      <div class="nav-sep" data-group="sys">系统</div>
       <a class="nav-item" id="navSettings" data-tip="设置">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L3.16 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
         <span class="nav-text">设置</span>
@@ -1746,7 +1778,8 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div class="skin-pick">
         <div class="skin-label">主题换肤</div>
         <div class="skin-row" id="skinRow">
-          <button class="skin-dot active" data-skin="purple" style="background:#7a6fc4" title="藕荷紫"></button>
+          <button class="skin-dot active" data-skin="sage" style="background:#3e9e7c" title="护眼青绿（默认）"></button>
+          <button class="skin-dot" data-skin="purple" style="background:#7a6fc4" title="藕荷紫"></button>
           <button class="skin-dot" data-skin="blue" style="background:#4f86c6" title="淡雅蓝"></button>
           <button class="skin-dot" data-skin="green" style="background:#4f9e6b" title="护眼绿"></button>
           <button class="skin-dot" data-skin="orange" style="background:#b58a3e" title="暖米黄"></button>
@@ -1781,15 +1814,18 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div id="viewDashboard" class="view">
         <div id="dashHero"></div>
         <div class="stats" id="stats"></div>
-        <div class="dash-tabs" style="display:none;">
-          <button class="dash-tab active" data-tab="overview" type="button" onclick="switchDashTab('overview')">总览</button>
-          <button class="dash-tab" data-tab="accio" type="button" onclick="switchDashTab('accio')">AccioWork</button>
-          <button class="dash-tab" data-tab="skill" type="button" onclick="switchDashTab('skill')">Agent/Skill</button>
-        </div>
+        <!-- Dashboard 内标签栏已移除：Agent/Skill 已独立为侧栏视图 #viewSkill -->
 
         <!-- 标签：总览 -->
         <div id="paneOverview" class="dash-pane">
         <div class="dashboard-grid">
+          <div class="panel follow">
+            <div class="panel-head">
+              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-3 0-6 1.5-6 4.5V20h12v-2.5C15 14.5 12 13 9 13zm8.5-2.5l1.5 1.5L18 15l-3-3-1.4 1.4 4 4 4.4-4.4z"/></svg></span>待跟进客户</h3>
+              <span class="muted">手动加入待跟进 · 共 <span id="overdueCount">0</span> 人</span>
+            </div>
+            <div class="dash-scroll" id="dashboardOverdue"></div>
+          </div>
           <div class="panel today">
             <div class="panel-head">
               <h3 class="panel-title">
@@ -1827,13 +1863,6 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             </div>
             <div id="todayReminderList"></div>
           </div>
-          <div class="panel follow">
-            <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-3 0-6 1.5-6 4.5V20h12v-2.5C15 14.5 12 13 9 13zm8.5-2.5l1.5 1.5L18 15l-3-3-1.4 1.4 4 4 4.4-4.4z"/></svg></span>待跟进客户</h3>
-              <span class="muted">手动加入待跟进 · 共 <span id="overdueCount">0</span> 人</span>
-            </div>
-            <div class="dash-scroll" id="dashboardOverdue"></div>
-          </div>
           <div class="panel recent">
             <div class="panel-head"><h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c5.2 0 9.5 3.4 9.5 7.7S17.2 18.4 12 18.4c-1.1 0-2.2-.2-3.2-.5L4.6 20c-.7.2-1.3-.5-1-1.2l1.2-2.9C3.1 14.4 2.5 12.6 2.5 10.7 2.5 6.4 6.8 3 12 3z"/></svg></span>最近沟通</h3></div>
             <div class="dash-scroll" id="dashboardRecent"></div>
@@ -1841,73 +1870,77 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         </div>
         </div>
 
-        <!-- 标签：AccioWork -->
-        <div id="paneAccio" class="dash-pane" style="display:none;">
-          <div class="panel accio-board">
-            <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg></span>AccioWork</h3>
-              <div class="panel-head-right">
-                <span class="muted" id="accioCountWrap">共 0 家</span>
-                <button class="btn" type="button" onclick="accioExportNames()">导出名称</button>
-                <button class="btn primary" type="button" onclick="openAccioModal()">+ 添加</button>
-              </div>
+        <!-- AccioWork 面板已搬至独立视图 #viewAccio（见下方） -->
+
+        <!-- Agent/Skill 面板已搬至独立视图 #viewSkill（见下方） -->
+      </div>
+
+      <!-- 视图：Agent/Skill（从 Dashboard 独立出来） -->
+      <div id="viewSkill" class="view" style="display:none;">
+        <!-- 常用 Agent 模块 -->
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-head">
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>常用 Agent</h3>
+            <div class="panel-head-right">
+              <span class="muted" id="agentCount">共 0 个</span>
             </div>
-            <div class="accio-toolbar" id="accioToolbar">
-              <span class="accio-filter-label">名前标记：</span>
-              <div class="accio-filter-group" id="accioFilterChips"></div>
-              <span class="accio-filter-label" style="margin-left:8px;">交付人：</span>
-              <select id="accioDelivererFilter" onchange="accioDoSearch()"><option value="">全部</option></select>
-              <button class="btn" type="button" id="accioResetBtn" onclick="accioResetFilter()" style="display:none;">重置</button>
-              <div class="accio-search">
-                <input id="accioSearchInput" type="text" placeholder="搜索客户名称…" onkeydown="if(event.key==='Enter'){accioDoSearch();}">
-                <button class="btn" type="button" onclick="accioDoSearch()">搜索</button>
-              </div>
+          </div>
+          <div style="padding:12px 16px;">
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+              <input type="text" id="agentUrlInput" placeholder="粘贴 Agent 链接（如 https://accio.ai/agent/xxx）" style="flex:1;min-width:280px;height:38px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;outline:none;">
+              <button class="btn primary" type="button" onclick="analyzeAgent()" id="btnAnalyzeAgent">分析并添加</button>
             </div>
-            <div class="accio-scroll" id="accioBoard"></div>
+            <div id="agentList"></div>
           </div>
         </div>
+        <!-- Skill 库模块 -->
+        <div class="panel skill-board">
+          <div class="panel-head">
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"/></svg></span>Skill 库</h3>
+            <div class="panel-head-right">
+              <span class="muted">共 <span id="skillCount">0</span> 条</span>
+              <button class="btn primary" type="button" onclick="openSkillModal()">+ 添加</button>
+            </div>
+          </div>
+          <div class="skill-toolbar">
+            <input type="text" id="skillSearch" placeholder="搜索技能名称 / 内容..." oninput="renderSkillBoard()">
+            <select id="skillCatFilter" onchange="renderSkillBoard()">
+              <option value="">全部分类</option>
+            </select>
+            <button class="btn ghost" type="button" onclick="openCatManager()">管理分类</button>
+          </div>
+          <div class="skill-drop" id="skillDrop" onclick="document.getElementById('skillFileInput').click()">
+            <div class="big">拖拽文件到这里，或点击选择</div>
+            <div class="sub">支持任意文件（文档 / 图片 / 压缩包等），作为技能素材存入，可随时取回</div>
+            <input type="file" id="skillFileInput" onchange="onSkillFilePicked(event)">
+          </div>
+          <div class="skill-list" id="skillBoard"></div>
+        </div>
+      </div>
 
-        <!-- 标签：Agent/Skill -->
-        <div id="paneSkill" class="dash-pane" style="display:none;">
-          <!-- 常用 Agent 模块 -->
-          <div class="panel" style="margin-bottom:16px;">
-            <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>常用 Agent</h3>
-              <div class="panel-head-right">
-                <span class="muted" id="agentCount">共 0 个</span>
-              </div>
-            </div>
-            <div style="padding:12px 16px;">
-              <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-                <input type="text" id="agentUrlInput" placeholder="粘贴 Agent 链接（如 https://accio.ai/agent/xxx）" style="flex:1;min-width:280px;height:38px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;outline:none;">
-                <button class="btn primary" type="button" onclick="analyzeAgent()" id="btnAnalyzeAgent">分析并添加</button>
-              </div>
-              <div id="agentList"></div>
+      <!-- 视图：AccioWork（从 Dashboard 独立出来） -->
+      <div id="viewAccio" class="view" style="display:none;">
+        <div class="panel accio-board">
+          <div class="panel-head">
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg></span>AccioWork</h3>
+            <div class="panel-head-right">
+              <span class="muted" id="accioCountWrap">共 0 家</span>
+              <button class="btn" type="button" onclick="accioExportNames()">导出名称</button>
+              <button class="btn primary" type="button" onclick="openAccioModal()">+ 添加</button>
             </div>
           </div>
-          <!-- Skill 库模块 -->
-          <div class="panel skill-board">
-            <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"/></svg></span>Skill 库</h3>
-              <div class="panel-head-right">
-                <span class="muted">共 <span id="skillCount">0</span> 条</span>
-                <button class="btn primary" type="button" onclick="openSkillModal()">+ 添加</button>
-              </div>
+          <div class="accio-toolbar" id="accioToolbar">
+            <span class="accio-filter-label">名前标记：</span>
+            <div class="accio-filter-group" id="accioFilterChips"></div>
+            <span class="accio-filter-label" style="margin-left:8px;">交付人：</span>
+            <select id="accioDelivererFilter" onchange="accioDoSearch()"><option value="">全部</option></select>
+            <button class="btn" type="button" id="accioResetBtn" onclick="accioResetFilter()" style="display:none;">重置</button>
+            <div class="accio-search">
+              <input id="accioSearchInput" type="text" placeholder="搜索客户名称…" onkeydown="if(event.key==='Enter'){accioDoSearch();}">
+              <button class="btn" type="button" onclick="accioDoSearch()">搜索</button>
             </div>
-            <div class="skill-toolbar">
-              <input type="text" id="skillSearch" placeholder="搜索技能名称 / 内容..." oninput="renderSkillBoard()">
-              <select id="skillCatFilter" onchange="renderSkillBoard()">
-                <option value="">全部分类</option>
-              </select>
-              <button class="btn ghost" type="button" onclick="openCatManager()">管理分类</button>
-            </div>
-            <div class="skill-drop" id="skillDrop" onclick="document.getElementById('skillFileInput').click()">
-              <div class="big">拖拽文件到这里，或点击选择</div>
-              <div class="sub">支持任意文件（文档 / 图片 / 压缩包等），作为技能素材存入，可随时取回</div>
-              <input type="file" id="skillFileInput" onchange="onSkillFilePicked(event)">
-            </div>
-            <div class="skill-list" id="skillBoard"></div>
           </div>
+          <div class="accio-scroll" id="accioBoard"></div>
         </div>
       </div>
 
@@ -2349,8 +2382,21 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
     <div class="foot">
       <button class="btn" onclick="closeModal('modalCustDetail')">关闭</button>
       <button class="btn" onclick="toggleFollowList(currentCustDetailId);renderCustDetailFollowState()">加入/移出待跟进</button>
-      <button class="btn" onclick="copyCustomerBasic(currentCustDetailId)">复制基础</button>
-      <button class="btn" onclick="copyCustomerFull(currentCustDetailId)">复制详情</button>
+      <button class="btn" id="cdCopyBasic" onclick="copyCustomerBasic(currentCustDetailId)">复制基础</button>
+      <button class="btn" id="cdCopyFull" onclick="copyCustomerFull(currentCustDetailId)">复制详情</button>
+    </div>
+  </div>
+</div>
+
+<!-- 复制兜底弹窗：自动复制被沙箱/浏览器拦截时，文本已选中，手动 Ctrl+C 即可 -->
+<div class="modal" id="modalCopy">
+  <div class="sheet" style="max-width:560px;">
+    <h3>复制客户信息</h3>
+    <div class="modal-hint">下方文本已自动选中，直接按 <b>Ctrl+C</b>（Mac 用 <b>Cmd+C</b>）复制，关闭弹窗后粘贴到任意地方即可。若仍无法自动复制，可用此方式手动复制。</div>
+    <textarea id="copyBoxText" readonly rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;line-height:1.6;resize:vertical;white-space:pre;"></textarea>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modalCopy')">关闭</button>
+      <button class="btn primary" onclick="copyBoxAgain()">再试一次自动复制</button>
     </div>
   </div>
 </div>
@@ -2730,7 +2776,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var MARK_LABELS={red:"红",orange:"橙",amber:"黄",green:"绿",blue:"蓝",purple:"紫",gray:"灰"};
   var skillCats=["开通配置","交付SOP","故障排查","销售话术","进阶玩法"];
   var pendingSkillFile=null; // 暂存待存入的文件（base64）
-  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",mapKey:"",mapSecret:"",mapCity:"",reminderDays:7,theme:"light",skin:"purple"};
+  var settings={provider:"qwen",apiBase:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",apiKey:"",model:"qwen-plus",visionModel:"qwen3-vl-plus",mapKey:"",mapSecret:"",mapCity:"",reminderDays:7,theme:"light",skin:"sage"};
   // ---------- 模型供应商注册表（单一数据源：新增供应商只改这里） ----------
   // 每个供应商给出默认 apiBase / 文本模型 / 视觉模型；vision 为 null/"" 表示该供应商无预设视觉模型
   var PROVIDERS={
@@ -3627,8 +3673,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var donut=renderDonut(high,mid,low,total);
     var tabs='<div class="dash-hero-tabs">'+
       '<button class="dash-hero-tab active" type="button" onclick="switchDashTab(\'overview\')">总览</button>'+
-      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'accio\')">AccioWork</button>'+
-      '<button class="dash-hero-tab" type="button" onclick="switchDashTab(\'skill\')">Agent/Skill</button>'+
       '</div>';
     var heroNum='<div class="dash-hero-num"><b>'+total+'</b><span>总客户数</span></div>';
     var hero='<div class="dash-hero">'+tabs+heroNum+'</div>';
@@ -4050,9 +4094,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           '</div>';
       }).join("");
     }
-    renderAccioBoard();
-    renderSkillBoard();
-    renderAgentList();
   }
 
   // ---------- AccioWork 名前标记筛选 / 名称搜索 / 导出 ----------
@@ -4280,19 +4321,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function copyCustomerBasic(id){
     var c=customers.find(function(x){return x.id===id;});
-    if(!c)return;
+    if(!c){toast("未找到该客户信息");return;}
     var lines=[];
     if(c.name&&String(c.name).trim())lines.push(String(c.name).trim());
     if(c.contactName&&String(c.contactName).trim())lines.push(String(c.contactName).trim());
     if(c.phone&&String(c.phone).trim())lines.push(String(c.phone).trim());
     if(c.address&&String(c.address).trim())lines.push(String(c.address).trim());
     if(!lines.length){toast("暂无可复制的客户信息");return;}
-    copyText(lines.join("\n"));
-    toast("已复制客户基础信息");
+    if(copyText(lines.join("\n")))toast("已复制客户基础信息");
   }
   function copyCustomerFull(id){
     var c=customers.find(function(x){return x.id===id;});
-    if(!c)return;
+    if(!c){toast("未找到该客户信息");return;}
     var lines=[];
     if(c.name&&String(c.name).trim())lines.push(String(c.name).trim());
     if(c.contactName&&String(c.contactName).trim())lines.push(String(c.contactName).trim());
@@ -4308,8 +4348,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
     }
     if(!lines.length){toast("暂无可复制的客户信息");return;}
-    copyText(lines.join("\n"));
-    toast("已复制客户完整信息");
+    if(copyText(lines.join("\n")))toast("已复制客户完整信息");
   }
   window.copyCustomerBasic=copyCustomerBasic;
   window.copyCustomerFull=copyCustomerFull;
@@ -4321,6 +4360,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var c=customers.find(function(x){return x.id===id;});
     if(!c)return;
     currentCustDetailId=id;
+    // 用闭包锁定本次打开的字面量 id，行为与客户列表一致，避免全局变量失效导致复制无反应
+    var cb=$("cdCopyBasic"), cf=$("cdCopyFull");
+    if(cb)cb.onclick=function(){copyCustomerBasic(id);};
+    if(cf)cf.onclick=function(){copyCustomerFull(id);};
     $("cdName").textContent=c.name||"未命名";
     $("cdAvatar").innerHTML=avatar(c.name);
     var badges=cdBadge(intBadgeClass(c.intention),intBadgeText(c.intention));
@@ -4615,13 +4658,47 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(b<1024*1024)return (b/1024).toFixed(1)+" KB";
     return (b/1024/1024).toFixed(2)+" MB";
   }
+  function execCopy(t){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=t; ta.setAttribute("readonly","");
+      ta.style.position="fixed";ta.style.top="0";ta.style.left="0";
+      ta.style.width="1px";ta.style.height="1px";ta.style.padding="0";ta.style.border="none";ta.style.opacity="0";
+      document.body.appendChild(ta);
+      ta.focus();ta.select();
+      try{ta.setSelectionRange(0,ta.value.length);}catch(e){}
+      var ok=false; try{ok=document.execCommand("copy");}catch(e){ok=false;}
+      document.body.removeChild(ta);
+      return !!ok;
+    }catch(e){return false;}
+  }
   function copyText(t){
-    try{ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t);return;} }catch(e){}
-    var ta=document.createElement("textarea");
-    ta.value=t;ta.style.position="fixed";ta.style.opacity="0";
-    document.body.appendChild(ta);ta.select();
-    try{document.execCommand("copy");}catch(e){}
-    document.body.removeChild(ta);
+    t=String(t==null?"":t);
+    if(execCopy(t))return true;                 // 同步兜底，成功即返回
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      try{
+        var p=navigator.clipboard.writeText(t);
+        if(p&&typeof p.then==="function"){p.then(function(){},function(){showCopyBox(t);});return false;}
+      }catch(e){}
+    }
+    showCopyBox(t);                             // 沙箱/拦截环境：弹出可选中文本，手动 Ctrl+C
+    return false;
+  }
+  function showCopyBox(t){
+    try{
+      var box=$("modalCopy"), ta=$("copyBoxText");
+      if(!box||!ta)return;
+      ta.value=String(t==null?"":t);
+      openModal("modalCopy");
+      setTimeout(function(){try{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);}catch(e){}},30);
+    }catch(e){}
+  }
+  function copyBoxAgain(){
+    try{
+      var ta=$("copyBoxText"); if(!ta)return;
+      if(execCopy(ta.value)){toast("已复制");closeModal("modalCopy");return;}
+      if(navigator.clipboard&&navigator.clipboard.writeText){try{navigator.clipboard.writeText(ta.value).then(function(){toast("已复制");closeModal("modalCopy");},function(){});}catch(e){}}
+    }catch(e){}
   }
   window.copyName=function(name){try{copyText(name);}catch(e){}toast("已复制");};
   function populateSkillCatFilter(){
@@ -4905,19 +4982,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function switchDashTab(tab){
     dashTab=tab;
     $("paneOverview").style.display=tab==="overview"?"block":"none";
-    $("paneAccio").style.display=tab==="accio"?"block":"none";
-    if(tab==="accio"&&typeof window.__crHShow==="function"){
-      var hb=document.getElementById("accioBoard");
-      if(hb){hb.__hinted=0;window.__crHShow(hb);}
-    }
-    $("paneSkill").style.display=tab==="skill"?"block":"none";
     $("stats").style.display=tab==="overview"?"block":"none";
     document.querySelectorAll(".dash-tab").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-tab")===tab);
     });
     document.querySelectorAll(".dash-hero-tab").forEach(function(el){
       var t=el.textContent.trim();
-      var match=(tab==="overview"&&t==="总览")||(tab==="accio"&&t==="AccioWork")||(tab==="skill"&&t==="Agent/Skill");
+      var match=(tab==="overview"&&t==="总览");
       el.classList.toggle("active",match);
     });
   }
@@ -6068,9 +6139,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if($("viewPrompts"))$("viewPrompts").style.display=view==="prompts"?"block":"none";
     if($("viewPromptHelper"))$("viewPromptHelper").style.display=view==="prompthelper"?"block":"none";
     if($("viewPlans"))$("viewPlans").style.display=view==="plans"?"block":"none";
+    if($("viewAccio"))$("viewAccio").style.display=view==="accio"?"block":"none";
+    if($("viewSkill"))$("viewSkill").style.display=view==="skill"?"block":"none";
     if($("viewCredits"))$("viewCredits").style.display=view==="credits"?"block":"none";
-    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="map"?"客户地图":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="prompthelper"?"Prompt 助手":view==="credits"?"积分消耗":"客户列表";
-    $("pageTitle").textContent=title;
+    var title=view==="dashboard"?"工作台总览":view==="customers"?"客户列表":view==="map"?"客户地图":view==="prompts"?"指令提示词":view==="plans"?"合作方案":view==="accio"?"AccioWork":view==="skill"?"Agent/Skill":view==="prompthelper"?"Prompt 助手":view==="credits"?"积分消耗":"客户列表";    $("pageTitle").textContent=title;
     document.querySelectorAll(".nav-item[data-view]").forEach(function(el){
       el.classList.toggle("active",el.getAttribute("data-view")===view);
     });
@@ -6080,7 +6152,62 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     else if(view==="prompts"){renderPromptTabs();renderPrompts();}
     else if(view==="prompthelper"){phRender();}
     else if(view==="plans"){renderPlans();}
+    else if(view==="accio"){renderAccioBoard();}
+    else if(view==="skill"){renderSkillBoard();renderAgentList();}
     else if(view==="credits"){renderCredits();}
+  }
+
+  // ---------- 侧栏导航拖拽排序（顺序可自定义，本地保存） ----------
+  var NAV_ORDER_KEY="cwb_nav_order_v1";
+  var DEFAULT_NAV_ORDER=["dashboard","customers","map","plans","accio","skill","prompts","prompthelper","credits"];
+  var navDragEl=null;var navDragGroup=null;
+  function navItems(){return Array.prototype.slice.call(document.querySelectorAll('.nav-item[data-view]'));}
+  function groupOf(el){return el.getAttribute('data-group')||'main';}
+  function getGroupSep(g){var seps=document.querySelectorAll('.nav .nav-sep');for(var i=0;i<seps.length;i++){if((seps[i].getAttribute('data-group')||'')===g)return seps[i];}return null;}
+  function saveNavOrder(){try{localStorage.setItem(NAV_ORDER_KEY,JSON.stringify(navItems().map(function(e){return e.getAttribute('data-view');})));}catch(e){}}
+  function applyNavOrder(order){
+    try{
+      if(!order){order=JSON.parse(localStorage.getItem(NAV_ORDER_KEY)||"null");}
+      if(!order||!order.length)return;
+      var byView={};navItems().forEach(function(e){byView[e.getAttribute('data-view')]=e;});
+      // 按分组独立重排，保证拖拽不串组
+      var groups={};
+      navItems().forEach(function(e){var g=groupOf(e);(groups[g]=groups[g]||[]).push(e);});
+      Object.keys(groups).forEach(function(g){
+        var sep=getGroupSep(g);if(!sep)return;
+        var ref=sep;
+        order.forEach(function(v){
+          var el=byView[v];
+          if(el && groupOf(el)===g){ sep.parentNode.insertBefore(el, ref.nextSibling); ref=el; }
+        });
+      });
+    }catch(e){}
+  }
+  function initNavDrag(){
+    navItems().forEach(function(el){
+      el.setAttribute('draggable','true');
+      el.addEventListener('dragstart',function(){navDragEl=el;navDragGroup=groupOf(el);el.classList.add('nav-dragging');});
+      el.addEventListener('dragend',function(){navDragEl=null;navDragGroup=null;el.classList.remove('nav-dragging');saveNavOrder();});
+    });
+    var nav=document.querySelector('.nav');if(!nav)return;
+    nav.addEventListener('dragover',function(e){
+      if(!navDragEl)return;
+      e.preventDefault();
+      var items=navItems();var y=e.clientY;var target=null;
+      for(var i=0;i<items.length;i++){var r=items[i].getBoundingClientRect();if(y<r.top+r.height/2){target=items[i];break;}}
+      if(!target){ // 悬停在所有项之下：移到本组末尾
+        var same=items.filter(function(it){return groupOf(it)===navDragGroup;});
+        if(same.length){nav.insertBefore(navDragEl, same[same.length-1].nextSibling);}
+        return;
+      }
+      if(groupOf(target)!==navDragGroup)return; // 不同组禁止跨组
+      if(target!==navDragEl)nav.insertBefore(navDragEl,target);
+    });
+  }
+  function resetNavOrder(){
+    try{localStorage.removeItem(NAV_ORDER_KEY);}catch(e){}
+    applyNavOrder(DEFAULT_NAV_ORDER.slice());
+    if(typeof toast==="function")toast("已恢复默认顺序");
   }
 
   // ---------- 指令提示词板块：渲染与交互 ----------
@@ -10027,6 +10154,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   $("ageFilter").onchange=function(){ageFilter=this.value;refreshList();};
   $("sortSelect").onchange=function(){sortMode=this.value;refreshList();};
   document.querySelectorAll(".nav-item[data-view]").forEach(function(el){el.onclick=function(){switchView(el.getAttribute("data-view"));};});
+  // 侧栏拖拽排序：先按已保存顺序重排，再绑定拖拽；并绑定「恢复默认顺序」
+  applyNavOrder();
+  initNavDrag();
+  if($("navReset"))$("navReset").onclick=resetNavOrder;
 
   // ---------- 初始化 ----------
   var today=new Date();
