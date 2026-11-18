@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light" data-skin="sage">
-<head>
+<html lang="zh-CN" data-theme="light" data-skin="sage"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>客户跟进工作台 v6 · 2026-08-23 直接编辑展示</title>
@@ -1694,7 +1693,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
 /* KPI 网格：宽屏一行 8 张，中屏 4×2，窄屏 2×4 */
 @media (max-width:1500px){.cr-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @media (max-width:820px){.cr-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
-/* ================= 最有意向客户专区 ================= */
+/* ================= 重点客户专区 ================= */
 .int-wrap{display:flex;flex-direction:column;gap:12px;}
 .int-bar{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;}
 .int-bar .spacer{flex:1 1 auto;}
@@ -1734,6 +1733,8 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
 .int-pick{height:26px;max-width:150px;padding:0 6px;font-size:12px;}
 .int-tag i{font-style:normal;cursor:pointer;opacity:.65;font-size:12px;}
 .int-tag i:hover{opacity:1;}
+.int-act{display:inline-flex;align-items:center;gap:6px;flex:none;}
+.int-act-label{font-size:12px;color:var(--muted);white-space:nowrap;}
 .int-empty{border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:14px;
   color:var(--muted);font-size:12.5px;line-height:1.65;background:var(--panel2);}
 .int-note{font-size:11.5px;color:var(--muted2);}
@@ -1786,76 +1787,76 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         <div class="brand-title">客户跟进工作台</div>
         <div class="brand-sub">CUSTOMER WORKBENCH</div>
       </div>
-      <button class="collapse-btn" id="sidebarCollapse" type="button" title="折叠/展开侧栏" aria-label="折叠侧栏">&#9664;</button>
+      <button class="collapse-btn" id="sidebarCollapse" type="button" title="折叠/展开侧栏" aria-label="折叠侧栏">◀</button>
     </div>
     <nav class="nav">
       <div class="nav-sep" data-group="main">主导航</div>
       <a class="nav-item active" data-view="dashboard" data-group="main" data-tip="工作台总览">
-        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path></svg>
         <span class="nav-text">工作台总览</span>
       </a>
       <a class="nav-item" data-view="customers" data-group="main" data-tip="客户列表">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>
         <span class="nav-text">客户列表</span>
       </a>
       <a class="nav-item" data-view="map" data-group="main" data-tip="客户地图">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"></path></svg>
         <span class="nav-text">客户地图</span>
       </a>
       <a class="nav-item" data-view="plans" data-group="main" data-tip="合作方案">
-        <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5L14 3.5zM8 12h8v2H8zm0 4h8v2H8zm0-8h4v2H8z"></path></svg>
         <span class="nav-text">合作方案</span>
       </a>
-      <a class="nav-item" data-view="interest" data-group="main" data-tip="最有意向客户">
-        <svg viewBox="0 0 24 24"><path d="M12 2.2l2.7 5.7 6.2.7c.8.1 1.1 1 .5 1.6l-4.6 4.3 1.2 6.2c.2.8-.7 1.4-1.4 1L12 18.8l-5.6 2.9c-.7.4-1.6-.2-1.4-1l1.2-6.2L1.6 10.2c-.6-.6-.3-1.5.5-1.6l6.2-.7z"/></svg>
-        <span class="nav-text">最有意向客户</span>
+      <a class="nav-item" data-view="interest" data-group="main" data-tip="重点客户">
+        <svg viewBox="0 0 24 24"><path d="M12 2.2l2.7 5.7 6.2.7c.8.1 1.1 1 .5 1.6l-4.6 4.3 1.2 6.2c.2.8-.7 1.4-1.4 1L12 18.8l-5.6 2.9c-.7.4-1.6-.2-1.4-1l1.2-6.2L1.6 10.2c-.6-.6-.3-1.5.5-1.6l6.2-.7z"></path></svg>
+        <span class="nav-text">重点客户</span>
       </a>
       <div class="nav-sep" data-group="ai">AI 工具</div>
       <a class="nav-item" data-view="accio" data-group="ai" data-tip="AccioWork" draggable="true">
-        <svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"></path></svg>
         <span class="nav-text">AccioWork</span>
       </a>
       <a class="nav-item" data-view="skill" data-group="ai" data-tip="Agent/Skill" draggable="true">
-        <svg viewBox="0 0 24 24"><path d="M9 2v2H7a2 2 0 0 0-2 2v2H3v2h2v2H3v2h2v2a2 2 0 0 0 2 2h2v2h2v-2h2v2h2v-2h2a2 2 0 0 0 2-2v-2h2v-2h-2v-2h2V8h-2V6a2 2 0 0 0-2-2h-2V2h-2v2h-2V2H9zm-2 4h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm2 2v6h6V8H9z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M9 2v2H7a2 2 0 0 0-2 2v2H3v2h2v2H3v2h2v2a2 2 0 0 0 2 2h2v2h2v-2h2v2h2v-2h2a2 2 0 0 0 2-2v-2h2v-2h-2v-2h2V8h-2V6a2 2 0 0 0-2-2h-2V2h-2v2h-2V2H9zm-2 4h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm2 2v6h6V8H9z"></path></svg>
         <span class="nav-text">Agent/Skill</span>
       </a>
       <a class="nav-item" data-view="prompts" data-group="ai" data-tip="指令提示词">
-        <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M5 3h14a1 1 0 0 1 1 1v17l-3.5-2.4L14 21l-3.5-2.4L7 21l-3-2.4V4a1 1 0 0 1 1-1zm2 4v2h10V7H7zm0 4v2h10v-2H7zm0 4v2h6v-2H7z"></path></svg>
         <span class="nav-text">指令提示词</span>
       </a>
       <a class="nav-item" data-view="prompthelper" data-group="ai" data-tip="Prompt 助手">
-        <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"></path></svg>
         <span class="nav-text">Prompt 助手</span>
       </a>
       <a class="nav-reset" id="navReset" data-tip="恢复默认顺序">↺ 恢复默认顺序</a>
       <a class="nav-item" data-view="credits" data-group="ai" data-tip="积分消耗">
-        <svg viewBox="0 0 24 24"><path d="M11 20v-6h2v6h6v-8h-5.2l3.2-8.8L15 2l-6 9h3l-2 7h1zm1-18a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M11 20v-6h2v6h6v-8h-5.2l3.2-8.8L15 2l-6 9h3l-2 7h1zm1-18a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"></path></svg>
         <span class="nav-text">积分消耗</span>
       </a>
       <div class="nav-sep" data-group="action">快捷操作</div>
-      <a class="nav-item nav-action" id="navAdd" data-group="action" data-tip="新增客户">        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      <a class="nav-item nav-action" id="navAdd" data-group="action" data-tip="新增客户">        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>
         <span class="nav-text">新增客户</span>
       </a>
       <a class="nav-item nav-action" id="navImport" data-group="action" data-tip="导入表格">
-        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"></path></svg>
         <span class="nav-text">导入表格</span>
       </a>
       <div class="nav-sep" data-group="backup">数据备份</div>
       <a class="nav-item nav-action" id="navExport" data-group="backup" data-tip="导出 JSON">
-        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg>
         <span class="nav-text">导出 JSON</span>
       </a>
       <a class="nav-item nav-action" id="navImportJson" data-group="backup" data-tip="导入 JSON">
-        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5v-2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5v-2z"></path></svg>
         <span class="nav-text">导入 JSON</span>
       </a>
       <div class="nav-sep" data-group="sys">系统</div>
       <a class="nav-item" id="navSettings" data-tip="设置">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L3.16 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L3.16 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
         <span class="nav-text">设置</span>
       </a>
       <a class="nav-item" id="navTheme" data-tip="切换深色">
-        <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"></path></svg>
         <span class="nav-text"><span id="themeLabel">切换深色</span></span>
       </a>
     </nav>
@@ -1882,13 +1883,13 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div class="page-header band">
         <div class="page-mark" aria-hidden="true">
           <svg viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="19" cy="19" r="14.5" fill="none" stroke="currentColor" stroke-width="3.2"/>
-            <path d="M4.5 19h9M24.5 19h9" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
-            <circle cx="19" cy="19" r="4.6" fill="currentColor"/>
+            <circle cx="19" cy="19" r="14.5" fill="none" stroke="currentColor" stroke-width="3.2"></circle>
+            <path d="M4.5 19h9M24.5 19h9" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"></path>
+            <circle cx="19" cy="19" r="4.6" fill="currentColor"></circle>
           </svg>
         </div>
-        <svg class="pk-float pk-b1" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h5.4M15.6 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>
-        <svg class="pk-float pk-b2" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 2.2 4.9 13.6c-.4.5 0 1.2.6 1.2h4.9l-1.3 6.9c-.1.8.8 1.2 1.3.6l8.7-11.5c.4-.5 0-1.2-.6-1.2h-5l1.3-6.8c.1-.8-.9-1.2-1.4-.6z" fill="currentColor"/></svg>
+        <svg class="pk-float pk-b1" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M3 12h5.4M15.6 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="12" r="3.2" fill="currentColor"></circle></svg>
+        <svg class="pk-float pk-b2" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 2.2 4.9 13.6c-.4.5 0 1.2.6 1.2h4.9l-1.3 6.9c-.1.8.8 1.2 1.3.6l8.7-11.5c.4-.5 0-1.2-.6-1.2h-5l1.3-6.8c.1-.8-.9-1.2-1.4-.6z" fill="currentColor"></path></svg>
         <div class="page-header-text">
           <div class="crumb"><span id="todayDate">2026年9月6日</span> · <span>CUSTOMER WORKBENCH</span></div>
           <h1 id="pageTitle">工作台总览</h1>
@@ -1907,7 +1908,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         <div class="dashboard-grid">
           <div class="panel follow">
             <div class="panel-head">
-              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-3 0-6 1.5-6 4.5V20h12v-2.5C15 14.5 12 13 9 13zm8.5-2.5l1.5 1.5L18 15l-3-3-1.4 1.4 4 4 4.4-4.4z"/></svg></span>待跟进客户</h3>
+              <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-3 0-6 1.5-6 4.5V20h12v-2.5C15 14.5 12 13 9 13zm8.5-2.5l1.5 1.5L18 15l-3-3-1.4 1.4 4 4 4.4-4.4z"></path></svg></span>待跟进客户</h3>
               <span class="muted">手动加入待跟进 · 共 <span id="overdueCount">0</span> 人</span>
             </div>
             <div class="dash-scroll" id="dashboardOverdue"></div>
@@ -1916,14 +1917,14 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             <div class="panel-head">
               <h3 class="panel-title">
                 <span class="ph-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M13.4 2.2 4.9 13.6c-.4.5 0 1.2.6 1.2h4.9l-1.3 6.9c-.1.8.8 1.2 1.3.6l8.7-11.5c.4-.5 0-1.2-.6-1.2h-5l1.3-6.8c.1-.8-.9-1.2-1.4-.6z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M13.4 2.2 4.9 13.6c-.4.5 0 1.2.6 1.2h4.9l-1.3 6.9c-.1.8.8 1.2 1.3.6l8.7-11.5c.4-.5 0-1.2-.6-1.2h-5l1.3-6.8c.1-.8-.9-1.2-1.4-.6z"></path></svg>
                 </span>
                 提醒事宜
               </h3>
               <div class="panel-head-right">
                 <span class="muted">共 <span id="todayReminderCount">0</span> 项</span>
                 <button class="btn" type="button" onclick="toggleReminderForm()" id="remAddBtn">
-                  <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"></path></svg>
                   添加提醒
                 </button>
               </div>
@@ -1941,7 +1942,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
                 <div class="rf-actions">
                   <button class="btn" type="button" onclick="toggleReminderForm()">取消</button>
                   <button class="btn primary" type="button" onclick="addReminder()">
-                    <svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6l-1.4-1.4L9 13.2 6.4 10.6 5 12z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6l-1.4-1.4L9 13.2 6.4 10.6 5 12z"></path></svg>
                     保存
                   </button>
                 </div>
@@ -1950,7 +1951,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             <div class="dash-scroll" id="todayReminderList"></div>
           </div>
           <div class="panel recent">
-            <div class="panel-head"><h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c5.2 0 9.5 3.4 9.5 7.7S17.2 18.4 12 18.4c-1.1 0-2.2-.2-3.2-.5L4.6 20c-.7.2-1.3-.5-1-1.2l1.2-2.9C3.1 14.4 2.5 12.6 2.5 10.7 2.5 6.4 6.8 3 12 3z"/></svg></span>最近沟通</h3></div>
+            <div class="panel-head"><h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c5.2 0 9.5 3.4 9.5 7.7S17.2 18.4 12 18.4c-1.1 0-2.2-.2-3.2-.5L4.6 20c-.7.2-1.3-.5-1-1.2l1.2-2.9C3.1 14.4 2.5 12.6 2.5 10.7 2.5 6.4 6.8 3 12 3z"></path></svg></span>最近沟通</h3></div>
             <div class="dash-scroll" id="dashboardRecent"></div>
           </div>
         </div>
@@ -1966,7 +1967,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         <!-- 常用 Agent 模块 -->
         <div class="panel" style="margin-bottom:16px;">
           <div class="panel-head">
-            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>常用 Agent</h3>
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="2"></path></svg></span>常用 Agent</h3>
             <div class="panel-head-right">
               <span class="muted" id="agentCount">共 0 个</span>
             </div>
@@ -1982,7 +1983,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         <!-- Skill 库模块 -->
         <div class="panel skill-board">
           <div class="panel-head">
-            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"/></svg></span>Skill 库</h3>
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6zM13 3.5V8h4.5z"></path></svg></span>Skill 库</h3>
             <div class="panel-head-right">
               <span class="muted">共 <span id="skillCount">0</span> 条</span>
               <button class="btn primary" type="button" onclick="openSkillModal()">+ 添加</button>
@@ -2008,7 +2009,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div id="viewAccio" class="view" style="display:none;">
         <div class="panel accio-board">
           <div class="panel-head">
-            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"/></svg></span>AccioWork</h3>
+            <h3 class="panel-title"><span class="ph-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3.5h6A2.5 2.5 0 0 1 17.5 6v.5H20A1.5 1.5 0 0 1 21.5 8v11A1.5 1.5 0 0 1 20 20.5H4A1.5 1.5 0 0 1 2.5 19V8A1.5 1.5 0 0 1 4 6.5h2.5V6A2.5 2.5 0 0 1 9 3.5zm.5 3h5V6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v.5z"></path></svg></span>AccioWork</h3>
             <div class="panel-head-right">
               <span class="muted" id="accioCountWrap">共 0 家</span>
               <button class="btn" type="button" onclick="accioExportNames()">导出名称</button>
@@ -2058,7 +2059,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             </div>
           </div>
           <select id="ageFilter" title="按沟通时间筛选">
-            <option value="all" selected>沟通时间：全部</option>
+            <option value="all" selected="">沟通时间：全部</option>
             <option value="7">最近7天有沟通</option>
             <option value="30">最近30天有沟通</option>
             <option value="over30">超过30天未跟进</option>
@@ -2139,13 +2140,13 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
               <button class="btn" id="btnResetPrompts" type="button" title="清空自定义内容并恢复默认清单">恢复默认</button>
           <button class="btn" id="btnExportPrompts" type="button" title="把当前筛选范围内的指令按集合导出为 Excel">集合导出</button>
           <button class="btn" id="btnImportPrompts" type="button" title="从 Excel / CSV 批量导入指令（可多选文件）">导入文件</button>
-          <input type="file" id="promptImportFile" accept=".xlsx,.xls,.csv" multiple style="display:none">
+          <input type="file" id="promptImportFile" accept=".xlsx,.xls,.csv" multiple="" style="display:none">
             </div>
           </div>
           <div id="promptsRoot"></div>
         </div>
       </div>
-      <!-- 视图：最有意向客户专区（专区名与分组名均可改名，总览页标题入口进入） -->
+      <!-- 视图：重点客户专区（专区名与分组名均可改名，总览页标题入口进入） -->
       <div id="viewInterest" class="view" style="display:none;">
         <div class="int-wrap">
           <div class="int-bar">
@@ -2156,8 +2157,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
             <span class="int-count" id="intCount"></span>
           </div>
           <div class="int-head">
-            <div class="int-title" id="intTitle" contenteditable="true" spellcheck="false"
-              title="点击可直接修改专区名称，改完按回车或点别处保存"></div>
+            <div class="int-title" id="intTitle" contenteditable="true" spellcheck="false" title="点击可直接修改专区名称，改完按回车或点别处保存"></div>
             <span class="int-hint">↑ 专区名可直接改名</span>
           </div>
           <div id="intBody"></div>
@@ -2197,7 +2197,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
         <div class="ph-drawer" id="phDrawer">
           <div class="ph-drawer-head">
             <h3 id="phDrawerTitle">补充问题</h3>
-            <button class="ph-drawer-close" type="button" onclick="window.__ph.closeDrawer()">&times;</button>
+            <button class="ph-drawer-close" type="button" onclick="window.__ph.closeDrawer()">×</button>
           </div>
           <div class="ph-drawer-body" id="phDrawerBody">
             <div id="phQuestions"></div>
@@ -2275,7 +2275,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
           </div>
         </div>
         <!-- 分区B：客户明细 -->
-        <div class="cr-sub" id="crSubTable" data-crpane="table" hidden>
+        <div class="cr-sub" id="crSubTable" data-crpane="table" hidden="">
           <div class="cr-filters cr-panel">
             <div class="cr-chips" id="crChips"></div>
             <div class="cr-bar">
@@ -2299,7 +2299,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
           <div class="cr-tablewrap" id="crTableWrap"></div>
         </div>
         <!-- 分区C：使用说明 -->
-        <div class="cr-sub" id="crSubGuide" data-crpane="guide" hidden>
+        <div class="cr-sub" id="crSubGuide" data-crpane="guide" hidden="">
           <div class="cr-panel cr-guide">
             <div class="panel-head"><h3>这个板块怎么用</h3></div>
             <ol class="cr-guide-list">
@@ -2338,7 +2338,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div class="cr-note-form">
         <select id="crnType">
           <option value="电话">电话</option><option value="微信">微信</option><option value="拜访">拜访</option>
-          <option value="邮件">邮件</option><option value="备注" selected>备注</option><option value="预警">预警</option>
+          <option value="邮件">邮件</option><option value="备注" selected="">备注</option><option value="预警">预警</option>
         </select>
         <input type="date" id="crnNext" title="下次跟进日期（可选）">
         <input type="text" id="crnText" placeholder="记一条跟进 / 备注，回车即可保存">
@@ -2386,7 +2386,8 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
     </div>
     <div class="field">
       <label>关联公司名称</label>
-      <textarea id="f_related" placeholder="多个公司可用英文逗号分隔，或每行写一个&#10;例：温州优升服装辅料有限公司, 永嘉县四月芳菲钮扣饰品有限公司"></textarea>
+      <textarea id="f_related" placeholder="多个公司可用英文逗号分隔，或每行写一个
+例：温州优升服装辅料有限公司, 永嘉县四月芳菲钮扣饰品有限公司"></textarea>
     </div>
     <div class="field">
       <label>AccioWork</label>
@@ -2403,11 +2404,11 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
     <div class="row2">
       <div class="field">
       <label>意向等级</label>
-      <select id="f_intention"><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option><option value="已合作">已合作</option><option value="断约">断约</option></select>
+      <select id="f_intention"><option value="高">高</option><option value="中" selected="">中</option><option value="低">低</option><option value="已合作">已合作</option><option value="断约">断约</option></select>
       </div>
       <div class="field">
         <label>是否有电商经验</label>
-        <select id="f_ecom"><option value="否" selected>否</option><option value="是">是</option></select>
+        <select id="f_ecom"><option value="否" selected="">否</option><option value="是">是</option></select>
       </div>
     </div>
     <div class="field">
@@ -2497,7 +2498,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
   <div class="sheet" style="max-width:560px;">
     <h3>复制客户信息</h3>
     <div class="modal-hint">下方文本已自动选中，直接按 <b>Ctrl+C</b>（Mac 用 <b>Cmd+C</b>）复制，关闭弹窗后粘贴到任意地方即可。若仍无法自动复制，可用此方式手动复制。</div>
-    <textarea id="copyBoxText" readonly rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;line-height:1.6;resize:vertical;white-space:pre;"></textarea>
+    <textarea id="copyBoxText" readonly="" rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card-bg);color:var(--text);font-size:13px;line-height:1.6;resize:vertical;white-space:pre;"></textarea>
     <div class="foot">
       <button class="btn" onclick="closeModal('modalCopy')">关闭</button>
       <button class="btn primary" onclick="copyBoxAgain()">再试一次自动复制</button>
@@ -2603,7 +2604,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div class="t1">把文件拖到这里，或点此选择文件</div>
       <div class="t2">也可以直接 Ctrl+V 粘贴截图 · 支持 图片(png / jpg) / PDF / Word(.docx) / txt / md / csv / Excel</div>
     </div>
-    <input type="file" id="piFile" multiple accept="image/*,.pdf,.docx,.txt,.md,.csv,.xlsx,.xls" style="display:none;">
+    <input type="file" id="piFile" multiple="" accept="image/*,.pdf,.docx,.txt,.md,.csv,.xlsx,.xls" style="display:none;">
     <div class="pi-files" id="piFiles"></div>
     <div class="pi-bar">
       <button class="btn primary" id="piRun" type="button">开始识别</button>
@@ -2625,7 +2626,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       </div>
       <div class="pi-rows" id="piRows"></div>
       <div class="pi-foot">
-        <label style="font-size:13px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="piAll" checked> 全选</label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="piAll" checked=""> 全选</label>
         <span class="spacer"></span>
         <span class="pi-status" id="piSum"></span>
         <button class="btn primary" id="piApply" type="button">加入方案</button>
@@ -2643,13 +2644,13 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
     <h3>AI 跟进分析 · <span id="aiCustName"></span></h3>
     <select class="ai-model-select" id="aiModelSelect" onchange="sceneModels.customerAnalysis=this.value;aiSaveSceneModels();"></select>
     <div class="hint">点「复制提示词」后贴到任意 AI 网页（ChatGPT / DeepSeek / 千问等）即可拿到建议。若已在「设置」里填了 API Key，可点「调用 API 分析」自动获取。<span id="aiFileHint" style="color:var(--high);display:none;">当前是 file:// 本地打开，浏览器可能拦截 API 调用；失败时请关闭本页，双击「启动本地服务器.bat」后再试。</span></div>
-    <textarea class="prompt" id="aiPrompt" readonly></textarea>
+    <textarea class="prompt" id="aiPrompt" readonly=""></textarea>
     <div class="foot">
       <button class="btn" onclick="closeModal('modalAI')">关闭</button>
       <button class="btn" id="btnCallApi" onclick="callApi()">调用 API 分析</button>
       <button class="btn primary" onclick="copyPrompt()">复制提示词</button>
     </div>
-    <div class="field" style="margin-top:14px;"><label>分析结果</label><textarea class="prompt" id="aiResult" readonly placeholder="分析结果显示在这里..."></textarea></div>
+    <div class="field" style="margin-top:14px;"><label>分析结果</label><textarea class="prompt" id="aiResult" readonly="" placeholder="分析结果显示在这里..."></textarea></div>
   </div>
 </div>
 
@@ -2709,7 +2710,7 @@ table.cr-table{border-collapse:separate;border-spacing:0;font-size:12.5px;min-wi
       <div class="deliverer-row">
         <input type="text" id="accio_deliverer" placeholder="例如：张老师">
         <div class="drop-mini" id="accioDelivererDrop" tabindex="0" role="button" aria-label="拖入或选择表格识别交付人">
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"></path></svg>
           <span>拖入识别</span>
           <input type="file" id="accioDelivererFile" accept=".xlsx,.xls,.csv" style="display:none;">
         </div>
@@ -4051,7 +4052,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }else{
         html+='<div class="info-grid">';
         html+=cardMapRow(c);
-        html+=cardInterestRow(c);
         html+=infoValue("联系人名称",c.contactName,false,c.id);
         html+=infoValue("职位",c.position,false,c.id);
         if(c.relatedCompany && String(c.relatedCompany).trim()){
@@ -4088,6 +4088,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         html+='<button class="btn" onclick="openAI(\''+c.id+'\')">AI分析</button>';
         html+='<button class="btn'+(c.inFollowList?' success':'')+'" onclick="toggleFollowList(\''+c.id+'\')">'+(c.inFollowList?'已待跟进':'待跟进')+'</button>';
         html+='<button class="btn" onclick="window.__map.locate(\''+c.id+'\')" title="在地图上解析并定位该客户的位置">地图解析</button>';
+        html+=cardInterestAct(c);
         html+='<span class="sep"></span>';
         html+='<button class="btn danger" onclick="delCustomer(\''+c.id+'\')">删除</button>';
       }
@@ -10348,7 +10349,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   setupAccioDelivererDrop();
   document.title="客户跟进工作台 · 工作台";
   var remTextEl=$("remText");
-  // ==================== 最有意向客户专区 ====================
+  // ==================== 重点客户专区 ====================
   // 数据结构：{title:"专区名", groups:[{id,name,items:[{id:客户id, at:加入时间}]}]}
   // 只存客户 id 引用，客户本体仍在 customers 里；删客户时这里会自动清掉失效引用。
   var INTEREST_KEY="df_customer_workbench_interest_v1";
@@ -10358,8 +10359,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(interestData)return;
     var d=null;
     try{d=JSON.parse(lsGet(INTEREST_KEY)||"null");}catch(e){d=null;}
-    if(!d||typeof d!=="object"||!Array.isArray(d.groups))d={title:"最有意向客户",groups:[]};
-    if(typeof d.title!=="string"||!d.title.trim())d.title="最有意向客户";
+    if(!d||typeof d!=="object"||!Array.isArray(d.groups))d={title:"重点客户",groups:[]};
+    if(typeof d.title!=="string"||!d.title.trim())d.title="重点客户";
     d.groups=d.groups.filter(function(g){
       return g&&typeof g==="object"&&Array.isArray(g.items)&&String(g.name||"").trim()!=="";
     });
@@ -10466,10 +10467,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if(typeof renderList==="function"&&typeof currentView!=="undefined"&&currentView==="customers")renderList();
   }
 
-  // ---------- 客户卡片信息栏：归入专区按钮 ----------
-  function cardInterestRow(c){
+  // ---------- 客户卡片操作栏：归入专区控件（「地图解析」按钮旁） ----------
+  function cardInterestAct(c){
     var gs=interestGroups(), mine=interestGroupsOf(c.id);
-    var h='<div class="info-field"><label>意向专区</label><div class="info-value">';
+    var h='<span class="int-act"><span class="int-act-label">意向专区</span>';
     if(mine.length){
       h+=mine.map(function(g){
         return '<span class="int-tag">'+esc(g.name)+'<i title="从该分组移出" onclick="event.preventDefault();event.stopPropagation();interestRemoveFrom(\''+c.id+'\',\''+g.id+'\')">✕</i></span>';
@@ -10479,18 +10480,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return !mine.some(function(m){return m.id===g.id;});
     });
     if(rest.length){
-      h+=' <select class="int-pick" onclick="event.stopPropagation()" '+
+      h+='<select class="int-pick" onclick="event.stopPropagation()" '+
         // 先 blur 再重绘：否则 select 被 innerHTML 重建销毁时浏览器会自己滚一轮
         'onchange="this.blur();interestPickGroup(\''+c.id+'\',this.value)">'+
-        '<option value="">+'+(mine.length?"加入其它分组":"加入专区")+'</option>'+
+        '<option value="">'+(mine.length?"加入其它分组":"加入专区")+'</option>'+
         rest.map(function(g){return '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>';}).join("")+
         '</select>';
     }else if(mine.length===0){
       h+='<button class="btn mini primary" onclick="event.stopPropagation();interestQuickJoin(\''+c.id+'\')">＋ 加入专区</button>';
     }else{
-      h+=' <span class="int-note">已入全部 '+gs.length+' 组</span>';
+      h+='<span class="int-note">已入全部 '+gs.length+' 组</span>';
     }
-    h+='</div></div>';
+    h+='</span>';
     return h;
   }
   function interestPickGroup(cid,gid){ if(!gid)return; interestApplyJoin(cid,gid); }
@@ -11760,5 +11761,5 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 })();
 </script>
-</body>
-</html>
+
+</body></html>
